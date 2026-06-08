@@ -4646,13 +4646,21 @@ function parseNumber(value) {
   return negative ? -Math.abs(parsed) : parsed;
 }
 
+function parseExcelSerial(value) {
+  const serial = typeof value === "number" ? value : Number.parseFloat(String(value ?? "").trim());
+  if (!Number.isFinite(serial) || serial <= 20000 || serial >= 100000) return null;
+  const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+  const wholeDays = Math.floor(serial);
+  const fraction = serial - wholeDays;
+  excelEpoch.setUTCDate(excelEpoch.getUTCDate() + wholeDays);
+  excelEpoch.setUTCMilliseconds(excelEpoch.getUTCMilliseconds() + Math.round(fraction * 86400000));
+  return Number.isNaN(excelEpoch.valueOf()) ? null : excelEpoch;
+}
+
 function parseDateValue(value) {
   if (value instanceof Date && !Number.isNaN(value.valueOf())) return toDateInput(value);
-  if (typeof value === "number" && value > 20000) {
-    const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-    excelEpoch.setUTCDate(excelEpoch.getUTCDate() + value);
-    return toDateInput(excelEpoch);
-  }
+  const excelDate = parseExcelSerial(value);
+  if (excelDate) return toDateInput(excelDate);
   const text = String(value ?? "").trim();
   if (!text) return "";
   const isoMatch = text.match(/^(\d{4})[./-](\d{1,2})[./-](\d{1,2})/);
@@ -4666,6 +4674,8 @@ function parseDateValue(value) {
     const fullYear = year.length === 2 ? `20${year}` : year;
     return `${fullYear.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
   }
+  const excelFromText = parseExcelSerial(text);
+  if (excelFromText) return toDateInput(excelFromText);
   const parsed = new Date(text);
   if (!Number.isNaN(parsed.valueOf())) return toDateInput(parsed);
   return "";
@@ -4674,6 +4684,10 @@ function parseDateValue(value) {
 function parseDateTimeValue(value) {
   if (value instanceof Date && !Number.isNaN(value.valueOf())) {
     return `${toDateInput(value)} ${toTimeInput(value)}`;
+  }
+  const excelDateTime = parseExcelSerial(value);
+  if (excelDateTime) {
+    return `${toDateInput(excelDateTime)} ${toTimeInput(excelDateTime)}`;
   }
   const text = String(value ?? "").trim();
   if (!text) return "";
@@ -4687,6 +4701,10 @@ function parseDateTimeValue(value) {
     const [, day, month, year, hour = "0", minute = "0", second = "0"] = dotMatch;
     const fullYear = year.length === 2 ? `20${year}` : year;
     return `${fullYear.padStart(4, "0")}-${month.padStart(2, "0")}-${day.padStart(2, "0")} ${hour.padStart(2, "0")}:${minute.padStart(2, "0")}:${second.padStart(2, "0")}`;
+  }
+  const excelFromText = parseExcelSerial(text);
+  if (excelFromText) {
+    return `${toDateInput(excelFromText)} ${toTimeInput(excelFromText)}`;
   }
   const parsed = new Date(text);
   if (!Number.isNaN(parsed.valueOf())) return `${toDateInput(parsed)} ${toTimeInput(parsed)}`;
