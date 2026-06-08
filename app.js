@@ -1008,7 +1008,7 @@ function renderSummary() {
   dom.scopeLabel.textContent = scopeMeta.label;
   dom.scopeTitle.textContent = title;
   dom.metricValue.textContent = formatMoney(total, baseCurrency);
-  dom.metricCashMode.textContent = scope.hasCashOperations ? t("metric.withCash") : t("metric.withoutCash");
+  dom.metricCashMode.textContent = formatCashBreakdown(scope, baseCurrency);
   dom.metricProfit.textContent = formatMoney(scope.totalProfitBase, baseCurrency);
   dom.metricProfit.className = profitClass;
   dom.metricProfitPct.textContent = t("metric.returnPct", { pct: formatPercent(scope.returnPct) });
@@ -2883,8 +2883,17 @@ function isXtbAccountPortfolio(portfolio) {
   return false;
 }
 
-function accountPortfolioLabel({ currency = "PLN" }) {
+function accountPortfolioLabel({ currency = "PLN", sourceFile = "" }) {
+  const accountKind = inferAccountKindFromSource(sourceFile);
+  if (accountKind) return accountKind;
   return cleanCurrency(currency) || "PLN";
+}
+
+function inferAccountKindFromSource(sourceFile = "") {
+  const fileName = String(sourceFile).split(/[\\/]/).pop() || "";
+  if (/^IKE[_-]/i.test(fileName)) return "IKE";
+  if (/^IKZE[_-]/i.test(fileName)) return "IKZE";
+  return "";
 }
 
 function accountPortfolioDisplayName(portfolio) {
@@ -3224,17 +3233,42 @@ async function readRowsFromFile(file) {
   return parseCsv(text).map((row) => withImportMetadata(row, file.name));
 }
 
+function findCashOperationsSheetName(workbook) {
+  const names = workbook.SheetNames || [];
+  const exact = names.find((name) => normalize(name) === "cash operations");
+  if (exact) return exact;
+  return (
+    names.find((name) => {
+      const label = normalize(name);
+      return (
+        label.includes("cash operation") ||
+        label.includes("operacje gotowk") ||
+        label.includes("operacje pieniez") ||
+        label.includes("peniezne operac")
+      );
+    }) || null
+  );
+}
+
+function findWorkbookSheetWithCashHeaders(workbook) {
+  for (const name of workbook.SheetNames || []) {
+    const matrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[name], { header: 1, defval: "", raw: false });
+    const headerIndex = findHeaderRow(matrix);
+    const headers = (matrix[headerIndex] || []).map(normalize);
+    const hasType = headers.some((header) => header === "type" || header === "typ" || header === "operacja");
+    const hasAmount = headers.some((header) => header.includes("amount") || header.includes("kwota") || header.includes("wartosc"));
+    if (hasType && hasAmount) return name;
+  }
+  return workbook.SheetNames?.[0] || "";
+}
+
 function readRowsFromWorkbook(data, sourceName) {
   const workbook = window.XLSX.read(data, { type: "array", cellDates: true });
-  if (workbook.SheetNames.includes("Cash Operations")) {
-    const sheet = workbook.Sheets["Cash Operations"];
-    const matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-    return matrixToObjects(matrix).map((row) => withImportMetadata(row, sourceName, "Cash Operations"));
-  }
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
+  const cashSheetName = findCashOperationsSheetName(workbook) || findWorkbookSheetWithCashHeaders(workbook);
+  const sheet = workbook.Sheets[cashSheetName];
+  if (!sheet) return [];
   const matrix = window.XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: false });
-  return matrixToObjects(matrix).map((row) => withImportMetadata(row, sourceName, sheetName));
+  return matrixToObjects(matrix).map((row) => withImportMetadata(row, sourceName, cashSheetName));
 }
 
 function withImportMetadata(row, sourceName, sheetName = "") {
@@ -3276,7 +3310,7 @@ function getOrCreateAccountPortfolio({ account = "", currency = "PLN", sourceFil
   });
   const existing = state.portfolios.find((portfolio) => portfolio.id === id);
   if (existing) {
-    const displayName = accountPortfolioLabel({ currency: normalizedCurrency });
+    const displayName = accountPortfolioLabel({ currency: normalizedCurrency, sourceFile });
     if (existing.groupId !== group.id) existing.groupId = group.id;
     if (existing.name !== displayName) existing.name = displayName;
     if (!existing.account && accountLabel) existing.account = accountLabel;
@@ -3288,7 +3322,7 @@ function getOrCreateAccountPortfolio({ account = "", currency = "PLN", sourceFil
     groupId: group.id,
     account: accountLabel,
     sourceFile,
-    name: accountPortfolioLabel({ currency: normalizedCurrency }),
+    name: accountPortfolioLabel({ currency: normalizedCurrency, sourceFile }),
     baseCurrency: normalizedCurrency,
     color: currencyPortfolioColor(normalizedCurrency),
     createdAt: new Date().toISOString(),
@@ -3472,13 +3506,17 @@ function mapRowToTransaction(row, portfolioId, index) {
   const fee = Math.abs(
     parseNumber(pick(normalizedRow, ["commission", "prowizja", "fee", "fees", "charge", "charges", "koszty"])),
   );
+  const sourceFile = cleanText(pick(normalizedRow, ["source file"]));
   const currency =
     cleanCurrency(pick(normalizedRow, ["currency", "waluta", "ccy"])) ||
+    inferCurrencyFromSource(sourceFile) ||
     detectCurrency(Object.values(row).join(" ")) ||
     "PLN";
   const finalQuantity = quantity || xtbDeal.quantity || 0;
   const finalPrice = price || xtbDeal.price || 0;
-  const type = detectOperationType(sideText, grossRaw, symbol, finalQuantity, finalPrice);
+  const type =
+    mapXtbOperationTypeFromRow(pick(normalizedRow, ["type", "typ", "operacja", "operation", "transaction type", "rodzaj"])) ||
+    detectOperationType(sideText, grossRaw, symbol, finalQuantity, finalPrice);
   const gross = Math.abs(grossRaw) || finalQuantity * finalPrice || 0;
   if (!date && !symbol && !gross) return null;
   if (!date) return null;
@@ -3524,6 +3562,34 @@ function pick(row, keys) {
   return "";
 }
 
+function mapXtbOperationTypeFromRow(rowType = "") {
+  const value = normalize(rowType);
+  if (!value || /^(total|profit\/loss|profit loss|saldo|suma)$/.test(value)) return "";
+  if (/^stock purchase/.test(value) || /^zakup/.test(value)) return "buy";
+  if (/^stock sell/.test(value) || /^sprzed/.test(value)) return "sell";
+  if (/^ike deposit/.test(value) || /^ikze deposit/.test(value)) return "transfer";
+  if (/^deposit/.test(value) || /^wplata/.test(value)) return "deposit";
+  if (/^withdrawal/.test(value) || /^wyplata/.test(value)) return "withdrawal";
+  if (/^subaccount transfer/.test(value) || /^transfer/.test(value) || /^przelew/.test(value) || /^konwersja/.test(value)) {
+    return "transfer";
+  }
+  if (/^dividend/.test(value) || /^divident/.test(value) || /^dywidenda/.test(value)) return "dividend";
+  if (/withholding tax/.test(value) || /free.funds interest tax/.test(value) || /^podatek/.test(value)) return "tax";
+  if (/free.funds interest/.test(value) || /^odset/.test(value) || /^interest/.test(value)) return "interest";
+  return "";
+}
+
+function formatCashBreakdown(scope, baseCurrency = "PLN") {
+  if (!scope.hasCashOperations) return t("metric.withoutCash");
+  const positive = scope.cashRows.filter((row) => row.value > 0.001);
+  if (!positive.length) return t("metric.withCash");
+  const parts = positive.map((row) => {
+    if (row.currency === baseCurrency) return `${row.currency} ${formatNumber(row.value)}`;
+    return `${row.currency} ${formatNumber(row.value)} (≈${formatMoney(row.valueBase, baseCurrency)})`;
+  });
+  return t("metric.cashBreakdown", { parts: parts.join(", "), total: formatMoney(scope.cashValueBase, baseCurrency) });
+}
+
 function parseXtbDealComment(comment) {
   const text = String(comment || "");
   const match = text.match(/\b(?:OPEN|CLOSE)\s+(?:BUY|SELL)\s+([0-9]+(?:[.,][0-9]+)?)(?:\s*\/\s*[0-9]+(?:[.,][0-9]+)?)?\s*@\s*([0-9]+(?:[.,][0-9]+)?)/i);
@@ -3538,14 +3604,18 @@ function detectOperationType(text, amount, symbol, quantity, price) {
   const value = normalize(text);
   if (/^(total|profit\/loss|profit loss|saldo|suma)$/.test(value)) return "other";
   if (/(tax|podatek)/.test(value)) return "tax";
+  if (/ike deposit|ikze deposit/.test(value)) return "transfer";
   if (/(dywid|dividend)/.test(value)) return "dividend";
   if (/(odset|interest|coupon)/.test(value)) return "interest";
   if (/(wplat|deposit|cash in|zasil)/.test(value)) return "deposit";
   if (/(wyplat|withdraw|cash out)/.test(value)) return "withdrawal";
-  if (/(transfer|currency conversion|conversion)/.test(value) && !symbol) return "transfer";
+  if (/(transfer|currency conversion|conversion|subaccount transfer|konwersja|przelew miedzy|przelew)/.test(value) && !symbol) {
+    return "transfer";
+  }
+  if (/^(divident|dywidenda)\b/.test(value)) return "dividend";
   if (/(prowiz|commission|fee|charge)/.test(value) && !symbol) return "fee";
   if (/(stock sell|sprzed|sell|market sell|close buy|close sell)/.test(value)) return "sell";
-  if (/(stock purchase|purchase|kup|buy|market buy|open buy|open sell)/.test(value)) return "buy";
+  if (/(stock purchase|purchase|kup|buy|market buy|open buy)/.test(value)) return "buy";
   if (symbol && quantity && price) return amount > 0 ? "sell" : "buy";
   if (!symbol && amount < 0) return "withdrawal";
   if (!symbol && amount > 0) return "deposit";
@@ -3576,7 +3646,9 @@ function commitImport() {
   });
   state.transactions.push(...accepted);
   importPreview = [];
-  dom.importStatus.innerHTML = `<strong>${escapeHtml(t("import.saved", { count: accepted.length }))}</strong><small>${escapeHtml(t("import.savedHint"))}</small>`;
+  const scope = calculateScope();
+  const cashNote = scope.hasCashOperations ? `<small>${escapeHtml(formatCashBreakdown(scope, scope.baseCurrency))}</small>` : "";
+  dom.importStatus.innerHTML = `<strong>${escapeHtml(t("import.saved", { count: accepted.length }))}</strong><small>${escapeHtml(t("import.savedHint"))}</small>${cashNote}`;
   saveState();
   render();
 }
@@ -4750,13 +4822,21 @@ function detectCurrency(text) {
 function inferCurrencyFromSource(sourceName = "") {
   const fileName = String(sourceName).split(/[\\/]/).pop() || "";
   const prefix = fileName.match(/^([A-Z]{3})[_-]/i);
-  return prefix ? cleanCurrency(prefix[1]) : cleanCurrency(fileName);
+  if (prefix) return cleanCurrency(prefix[1]);
+  if (/^IKE[_-]/i.test(fileName) || /^IKZE[_-]/i.test(fileName)) return "PLN";
+  const embedded = fileName.match(/[_-](PLN|EUR|USD|GBP|CHF)[_-]/i);
+  if (embedded) return cleanCurrency(embedded[1]);
+  return cleanCurrency(fileName);
 }
 
 function inferAccountFromSource(sourceName = "") {
-  const text = String(sourceName);
-  const fileMatch = text.match(/(?:^|[\\/_-])(\d{6,})(?:[\\/_-]|$)/);
-  return fileMatch ? fileMatch[1] : "";
+  const fileName = String(sourceName).split(/[\\/]/).pop() || "";
+  const typedPrefix = fileName.match(/^(?:PLN|EUR|USD|GBP|CHF|IKE|IKZE)_(\d{6,})/i);
+  if (typedPrefix) return typedPrefix[1];
+  const leading = fileName.match(/^(\d{6,})[_-]/);
+  if (leading) return leading[1];
+  const embedded = fileName.match(/[_-](\d{6,})[_-]/);
+  return embedded ? embedded[1] : "";
 }
 
 function normalize(value) {
