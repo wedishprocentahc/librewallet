@@ -30,7 +30,7 @@ const server = http.createServer(async (request, response) => {
       return;
     }
     if (url.pathname === "/api/health") {
-      sendJson(response, 200, { ok: true, service: "torba", version: process.env.TORBA_VERSION || "1.0.0" });
+      sendJson(response, 200, { ok: true, service: "librewallet", version: process.env.LIBREWALLET_VERSION || "1.0.0" });
       return;
     }
     serveStatic(url.pathname, response);
@@ -39,25 +39,25 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-function startTorba(options = {}) {
-  const port = Number(options.port || process.env.TORBA_PORT || process.env.PORT || PORT);
-  const host = options.host || process.env.TORBA_HOST || process.env.HOST || HOST;
+function startLibreWallet(options = {}) {
+  const port = Number(options.port || process.env.LIBREWALLET_PORT || process.env.PORT || PORT);
+  const host = options.host || process.env.LIBREWALLET_HOST || process.env.HOST || HOST;
   const openHost = host === "0.0.0.0" ? "127.0.0.1" : host;
   return new Promise((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, host, () => {
       const url = `http://${openHost}:${port}/`;
-      console.log(`Torba działa na ${url}`);
+      console.log(`LibreWallet działa na ${url}`);
       console.log("Zamknij to okno, żeby zatrzymać aplikację.");
       resolve({ port, host, url });
     });
   });
 }
 
-module.exports = { startTorba };
+module.exports = { startLibreWallet };
 
 if (require.main === module) {
-  startTorba().catch((error) => {
+  startLibreWallet().catch((error) => {
     console.error(error.message || error);
     process.exit(1);
   });
@@ -223,7 +223,7 @@ async function fetchYahooChartQuote(symbol) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=5d`;
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0 TorbaPortfolio/1.0",
+      "User-Agent": "Mozilla/5.0 LibreWallet/1.0",
       Accept: "application/json",
     },
   });
@@ -298,7 +298,7 @@ async function fetchYahooChart(symbol, from, to) {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?period1=${period1}&period2=${period2}&interval=1d&events=history`;
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Mozilla/5.0 TorbaPortfolio/1.0",
+      "User-Agent": "Mozilla/5.0 LibreWallet/1.0",
       Accept: "application/json",
     },
   });

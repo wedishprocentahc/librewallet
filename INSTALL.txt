@@ -1,16 +1,23 @@
-TORBA — instalacja
-==================
+LIBREWALLET — instalacja
+========================
 
-1. Pobierz program dla swojego systemu:
-   - macOS (Apple Silicon): Torba-1.0.0-mac-arm64
-   - macOS (Intel):        Torba-1.0.0-mac-x64
-   - Windows:              Torba-1.0.0-win.exe
-2. Uruchom plik (dwuklik).
+macOS
+-----
+1. Pobierz instalator dla swojego Maca:
+   - Apple Silicon (M1/M2/M3/M4): LibreWallet-1.0.0-mac-arm64.pkg
+   - Intel:                      LibreWallet-1.0.0-mac-x64.pkg
+2. Dwuklik na plik .pkg — otworzy się instalator macOS.
+3. Przejdź kreator instalacji (Dalej → Zainstaluj).
+4. Po instalacji LibreWallet uruchomi się sam i otworzy przeglądarkę.
+5. Aplikacja jest w: Finder → Aplikacje → LibreWallet.
+
+Przy pierwszym uruchomieniu: jeśli macOS blokuje program, PPM na LibreWallet.app → Otwórz.
+
+Windows
+-------
+1. Pobierz LibreWallet-1.0.0-win.exe
+2. Uruchom dwuklikiem.
 3. Otworzy się przeglądarka z aplikacją.
-4. Nie zamykaj czarnego okna terminala — to serwer lokalny.
-5. Aby zakończyć: zamknij okno terminala lub naciśnij Ctrl+C.
-
-Przy pierwszym uruchomieniu na Macu: PPM na plik → Otwórz (jeśli system blokuje).
 
 Twoje dane
 ----------

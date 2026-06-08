@@ -23,24 +23,41 @@ build_target() {
     --compress GZip
 }
 
-case "$(uname -s)-$(uname -m)" in
-  Darwin-arm64)
-    build_target node18-macos-arm64 "Torba-${VERSION}-mac-arm64"
-    ;;
-  Darwin-x86_64)
-    build_target node18-macos-x64 "Torba-${VERSION}-mac-x64"
-    ;;
-  Linux-*)
-    build_target node18-linux-x64 "Torba-${VERSION}-linux-x64"
-    ;;
-  MINGW*|MSYS*|CYGWIN*)
-    build_target node18-win-x64 "Torba-${VERSION}-win.exe"
-    ;;
-  *)
-    echo "Nieznana platforma. Buduj ręcznie: npx pkg package.json --targets node18-macos-arm64 --output dist/desktop/Torba"
-    exit 1
-    ;;
-esac
+build_macos_pkg() {
+  if [ "$(uname -s)" != "Darwin" ]; then
+    return 0
+  fi
+  bash "$ROOT/scripts/build-macos-pkg.sh" "$1"
+}
+
+if [ "${1:-}" = "all" ]; then
+  build_target node18-macos-arm64 "LibreWallet-${VERSION}-mac-arm64"
+  build_macos_pkg arm64
+  build_target node18-macos-x64 "LibreWallet-${VERSION}-mac-x64"
+  build_macos_pkg x64
+  build_target node18-win-x64 "LibreWallet-${VERSION}-win.exe"
+else
+  case "$(uname -s)-$(uname -m)" in
+    Darwin-arm64)
+      build_target node18-macos-arm64 "LibreWallet-${VERSION}-mac-arm64"
+      build_macos_pkg arm64
+      ;;
+    Darwin-x86_64)
+      build_target node18-macos-x64 "LibreWallet-${VERSION}-mac-x64"
+      build_macos_pkg x64
+      ;;
+    Linux-*)
+      build_target node18-linux-x64 "LibreWallet-${VERSION}-linux-x64"
+      ;;
+    MINGW*|MSYS*|CYGWIN*)
+      build_target node18-win-x64 "LibreWallet-${VERSION}-win.exe"
+      ;;
+    *)
+      echo "Nieznana platforma. Buduj ręcznie: npx pkg package.json --targets node18-macos-arm64 --output dist/desktop/LibreWallet"
+      exit 1
+      ;;
+  esac
+fi
 
 cp "$ROOT/INSTALL.txt" "$DIST/"
 echo "Gotowe w: $DIST"

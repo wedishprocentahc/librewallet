@@ -1,5 +1,5 @@
 {
-  "name": "torba",
+  "name": "librewallet",
   "version": "1.0.0",
   "description": "Lokalny tracker portfela inwestycyjnego z importem XTB",
   "license": "MIT",
@@ -8,7 +8,7 @@
     "node": ">=18"
   },
   "bin": {
-    "torba": "bin/torba.js"
+    "librewallet": "bin/librewallet.js"
   },
   "pkg": {
     "assets": [
@@ -31,9 +31,10 @@
     "README.md"
   ],
   "scripts": {
-    "start": "node bin/torba.js",
+    "start": "node bin/librewallet.js",
     "server": "node server.js",
-    "build:desktop": "bash scripts/build-desktop.sh"
+    "build:desktop": "bash scripts/build-desktop.sh",
+    "build:desktop:all": "bash scripts/build-desktop.sh all"
   },
   "keywords": [
     "portfolio",

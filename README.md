@@ -6,14 +6,19 @@ Aplikacja działa **wyłącznie na Twoim komputerze**. Dane portfela są w przeg
 
 | System | Plik |
 |--------|------|
-| macOS (Apple Silicon) | `Torba-1.0.0-mac-arm64` |
-| macOS (Intel) | `Torba-1.0.0-mac-x64` |
-| Windows | `Torba-1.0.0-win.exe` |
+| macOS (Apple Silicon) | `LibreWallet-1.0.0-mac-arm64.pkg` |
+| macOS (Intel) | `LibreWallet-1.0.0-mac-x64.pkg` |
+| Windows | `LibreWallet-1.0.0-win.exe` |
 
-1. Pobierz plik dla swojego systemu (z GitHub Releases).
-2. Uruchom dwuklikiem.
-3. Otworzy się przeglądarka pod `http://127.0.0.1:8787`.
-4. **Nie zamykaj** okna terminala — to lokalny serwer aplikacji.
+### macOS
+1. Pobierz plik `.pkg` dla swojego Maca (z GitHub Releases).
+2. Dwuklik — otworzy się instalator macOS.
+3. Po instalacji aplikacja trafia do **Aplikacje** i uruchamia się automatycznie.
+4. Przeglądarka otworzy się pod `http://127.0.0.1:8787`.
+
+### Windows
+1. Pobierz `LibreWallet-1.0.0-win.exe`.
+2. Uruchom dwuklikiem — otworzy się przeglądarka.
 
 Szczegóły w pliku **`INSTALL.txt`**.
 
@@ -23,7 +28,7 @@ Szczegóły w pliku **`INSTALL.txt`**.
 
 ```bash
 npm start              # uruchomienie z kodu źródłowego
-npm run build:desktop  # zbuduj binarkę do dystrybucji
+npm run build:desktop  # zbuduj instalatory do dystrybucji
 ```
 
 Wynik buildu w `dist/desktop/`.
@@ -47,7 +52,7 @@ Wynik buildu w `dist/desktop/`.
 
 ## Wymagania
 
-- System operacyjny: macOS lub Windows.
+- macOS 11+ lub Windows 10+.
 - Przeglądarka: Chrome, Firefox, Safari lub Edge.
 
 ## Import XTB

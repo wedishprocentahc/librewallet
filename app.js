@@ -1,7 +1,7 @@
 "use strict";
 
-const STORAGE_KEY = "torba-investment-tracker-v1";
-const BACKUP_FORMAT = "torba-backup";
+const STORAGE_KEY = "librewallet-investment-tracker-v1";
+const BACKUP_FORMAT = "librewallet-backup";
 const BACKUP_FORMAT_VERSION = 1;
 const ASSET_TYPES = {
   etf: "ETF",
@@ -3712,7 +3712,7 @@ function buildBackupPayload() {
     format: BACKUP_FORMAT,
     formatVersion: BACKUP_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
-    app: "torba-investment-tracker",
+    app: "librewallet-investment-tracker",
     data: { ...state },
   };
 }
@@ -3736,7 +3736,7 @@ function parseBackupPayload(raw) {
   if (parsed?.version === 1 && Array.isArray(parsed.transactions)) {
     return { exportedAt: "", state: normalizeStoredState(parsed) };
   }
-  throw new Error("Nie rozpoznano formatu kopii zapasowej Torby.");
+  throw new Error("Nie rozpoznano formatu kopii zapasowej LibreWallet.");
 }
 
 function backupSummary(snapshot) {
@@ -3755,7 +3755,7 @@ function exportBackup() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `torba-backup-${toDateInput(new Date())}.json`;
+  anchor.download = `librewallet-backup-${toDateInput(new Date())}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
   if (dom.backupStatus) {
@@ -3825,7 +3825,7 @@ function exportTransactions() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `torba-portfel-${toDateInput(new Date())}.csv`;
+  anchor.download = `librewallet-portfel-${toDateInput(new Date())}.csv`;
   anchor.click();
   URL.revokeObjectURL(url);
 }
