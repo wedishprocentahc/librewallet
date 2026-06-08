@@ -1,4 +1,4 @@
-# Torba — lokalny tracker portfela
+# LibreWallet — lokalny tracker portfela
 
 Aplikacja działa **wyłącznie na Twoim komputerze**. Dane portfela są w przeglądarce (`localStorage`) — nic nie wysyłasz na cudzy serwer. Do pobierania cen z internetu używany jest tylko lokalny proxy (Yahoo Finance).
 
