@@ -4,18 +4,19 @@ LIBREWALLET — instalacja
 macOS
 -----
 1. Pobierz instalator dla swojego Maca:
-   - Apple Silicon (M1/M2/M3/M4): LibreWallet-1.0.0-mac-arm64.pkg
-   - Intel:                      LibreWallet-1.0.0-mac-x64.pkg
+   - Apple Silicon (M1/M2/M3/M4): LibreWallet-1.1.0-mac-arm64.pkg
+   - Intel:                      LibreWallet-1.1.0-mac-x64.pkg
 2. Dwuklik na plik .pkg — otworzy się instalator macOS.
 3. Przejdź kreator instalacji (Dalej → Zainstaluj).
-4. Po instalacji LibreWallet uruchomi się sam i otworzy przeglądarkę.
-5. Aplikacja jest w: Finder → Aplikacje → LibreWallet.
+4. Po instalacji wybierz język (Polski / English).
+5. LibreWallet uruchomi się sam i otworzy przeglądarkę.
+6. Aplikacja jest w: Finder → Aplikacje → LibreWallet.
 
 Przy pierwszym uruchomieniu: jeśli macOS blokuje program, PPM na LibreWallet.app → Otwórz.
 
 Windows
 -------
-1. Pobierz LibreWallet-1.0.0-win.exe
+1. Pobierz LibreWallet-1.1.0-win.exe
 2. Uruchom dwuklikiem.
 3. Otworzy się przeglądarka z aplikacją.
 

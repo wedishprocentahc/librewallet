@@ -1233,6 +1233,58 @@ tr:last-child td {
   }
 }
 
+.language-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: rgba(18, 24, 22, 0.72);
+  backdrop-filter: blur(6px);
+  padding: 24px;
+}
+
+.language-modal.hidden {
+  display: none;
+}
+
+.language-modal-card {
+  width: min(420px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+}
+
+.language-options,
+.language-settings {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.language-option {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 14px 16px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.language-option.active,
+.language-option:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+
+.language-panel .language-settings {
+  max-width: 360px;
+}
+
 @media (max-width: 720px) {
   .workspace,
   .sidebar {

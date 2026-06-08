@@ -68,6 +68,14 @@ SCRIPTS="$WORK/scripts"
 mkdir -p "$SCRIPTS"
 cat > "$SCRIPTS/postinstall" <<'EOF'
 #!/bin/bash
+RESOURCES="/Applications/LibreWallet.app/Contents/Resources"
+mkdir -p "$RESOURCES"
+LANG_CHOICE=$(osascript -e 'display dialog "Choose language / Wybierz język:" buttons {"Polski", "English"} default button "Polski" with title "LibreWallet"' -e 'button returned of result' 2>/dev/null || echo "Polski")
+if [ "$LANG_CHOICE" = "English" ]; then
+  echo "en" > "$RESOURCES/default-locale"
+else
+  echo "pl" > "$RESOURCES/default-locale"
+fi
 open -a "/Applications/LibreWallet.app" || true
 exit 0
 EOF
@@ -106,17 +114,18 @@ cat > "$WORK/welcome.html" <<EOF
 <!DOCTYPE html>
 <html><body>
   <h1>LibreWallet</h1>
-  <p>Lokalny tracker portfela inwestycyjnego. Dane zostają na Twoim komputerze.</p>
-  <p>Instalator skopiuje LibreWallet do folderu Aplikacje.</p>
+  <p><strong>PL:</strong> Lokalny tracker portfela. Dane zostają na Twoim komputerze.</p>
+  <p><strong>EN:</strong> Local portfolio tracker. Your data stays on your computer.</p>
+  <p>Po instalacji wybierzesz język / You will choose the language after install.</p>
 </body></html>
 EOF
 
 cat > "$WORK/conclusion.html" <<EOF
 <!DOCTYPE html>
 <html><body>
-  <h1>Gotowe</h1>
-  <p>LibreWallet został zainstalowany w folderze Aplikacje i uruchomi się automatycznie.</p>
-  <p>Aby otworzyć ponownie: Finder → Aplikacje → LibreWallet.</p>
+  <h1>Gotowe / Done</h1>
+  <p>LibreWallet trafi do folderu Aplikacje i uruchomi się automatycznie.</p>
+  <p>LibreWallet will be installed to Applications and launch automatically.</p>
 </body></html>
 EOF
 

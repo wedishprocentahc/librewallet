@@ -1,15 +1,21 @@
 "use strict";
 
+const t = (key, params) => window.LW_I18N.t(key, params);
+
 const STORAGE_KEY = "librewallet-investment-tracker-v1";
 const BACKUP_FORMAT = "librewallet-backup";
 const BACKUP_FORMAT_VERSION = 1;
-const ASSET_TYPES = {
-  etf: "ETF",
-  stock: "Akcje",
-  bond: "Obligacje",
-  cash: "Gotówka",
-  other: "Inne",
-};
+function assetTypeLabel(type) {
+  return t(`assetType.${type || "other"}`);
+}
+
+function getAssetTypeKeys() {
+  return ["etf", "stock", "bond", "cash", "other"];
+}
+
+function getAssetTypeEntries() {
+  return getAssetTypeKeys().map((key) => [key, assetTypeLabel(key)]);
+}
 const TYPE_COLORS = {
   etf: "#176b4d",
   stock: "#22577a",
@@ -37,20 +43,21 @@ const BOND_PRESETS = {
   ROS: { name: "ROS – 6-letnie rodzinne (inflacja)", termMonths: 72, firstYearRate: 6.2, margin: 2.0, indexation: "cpi", capitalization: true, earlyRedemptionFee: 0.7 },
   ROD: { name: "ROD – 12-letnie rodzinne (inflacja)", termMonths: 144, firstYearRate: 6.5, margin: 2.5, indexation: "cpi", capitalization: true, earlyRedemptionFee: 2.0 },
 };
-const BENCHMARK_OPTIONS = [
-  { id: "", label: "Bez benchmarku", symbol: "", currency: "PLN", color: "" },
-  // Yahoo nie publikuje dziennej historii dla ^WIG — szeroki rynek symulujemy z ETF-ów WIG20 TR + mWIG40 TR.
-  { id: "wig", label: "WIG (szeroki rynek)", composite: ["ETFBW20TR.WA", "ETFBM40TR.WA"], currency: "PLN", color: "#22577a" },
-  { id: "wig20", label: "WIG20 TR", symbol: "ETFBW20TR.WA", currency: "PLN", color: "#3d6f9b" },
-  { id: "mwig40", label: "mWIG40 TR", symbol: "ETFBM40TR.WA", currency: "PLN", color: "#5c4f82" },
-  { id: "sp500", label: "S&P 500", symbol: "^GSPC", currency: "USD", color: "#686b6f" },
-  { id: "vwce", label: "VWCE (świat)", symbol: "VWCE.DE", currency: "EUR", color: "#4a6741" },
-];
+function getBenchmarkOptions() {
+  return [
+    { id: "", label: t("benchmark.none"), symbol: "", currency: "PLN", color: "" },
+    { id: "wig", label: t("benchmark.wig"), composite: ["ETFBW20TR.WA", "ETFBM40TR.WA"], currency: "PLN", color: "#22577a" },
+    { id: "wig20", label: t("benchmark.wig20"), symbol: "ETFBW20TR.WA", currency: "PLN", color: "#3d6f9b" },
+    { id: "mwig40", label: t("benchmark.mwig40"), symbol: "ETFBM40TR.WA", currency: "PLN", color: "#5c4f82" },
+    { id: "sp500", label: t("benchmark.sp500"), symbol: "^GSPC", currency: "USD", color: "#686b6f" },
+    { id: "vwce", label: t("benchmark.vwce"), symbol: "VWCE.DE", currency: "EUR", color: "#4a6741" },
+  ];
+}
 const RETURN_PERIODS = [
   { id: "1m", label: "1M", months: 1 },
   { id: "3m", label: "3M", months: 3 },
   { id: "6m", label: "6M", months: 6 },
-  { id: "1y", label: "1R", months: 12 },
+  { id: "1y", labelKey: "period.1y", months: 12 },
   { id: "ytd", label: "YTD", ytd: true },
 ];
 const OPERATION_MARKER_COLORS = {
@@ -81,12 +88,14 @@ const SIGNIFICANT_MARKER_TYPES = new Set(["deposit", "withdrawal", "buy", "sell"
 const MARKER_STRIP_HEIGHT = 32;
 const MARKER_LANE_HEIGHT = 11;
 const MARKER_MAX_LANES = 3;
-const ASSET_SCOPES = [
-  { id: "asset:etf", assetType: "etf", name: "Portfel ETF", label: "Typ aktywów", color: TYPE_COLORS.etf },
-  { id: "asset:stock", assetType: "stock", name: "Portfel akcji", label: "Typ aktywów", color: TYPE_COLORS.stock },
-  { id: "asset:bond", assetType: "bond", name: "Portfel obligacji", label: "Typ aktywów", color: TYPE_COLORS.bond },
-  { id: "asset:other", assetType: "other", name: "Portfel inne", label: "Typ aktywów", color: TYPE_COLORS.other },
-];
+function getAssetScopes() {
+  return [
+    { id: "asset:etf", assetType: "etf", name: `${t("app.portfolio")} ETF`, label: t("holdings.group.assetType"), color: TYPE_COLORS.etf },
+    { id: "asset:stock", assetType: "stock", name: `${t("app.portfolio")} ${t("assetType.stock")}`, label: t("holdings.group.assetType"), color: TYPE_COLORS.stock },
+    { id: "asset:bond", assetType: "bond", name: `${t("app.portfolio")} ${t("assetType.bond")}`, label: t("holdings.group.assetType"), color: TYPE_COLORS.bond },
+    { id: "asset:other", assetType: "other", name: `${t("app.portfolio")} ${t("assetType.other")}`, label: t("holdings.group.assetType"), color: TYPE_COLORS.other },
+  ];
+}
 
 const dom = {};
 let state = loadState();
@@ -99,13 +108,53 @@ let benchmarkFetchToken = 0;
 let benchmarkFetchInFlight = false;
 const benchmarkFetchState = { key: "", failed: false };
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   cacheDom();
   bindEvents();
+  if (state.locale) {
+    window.LW_I18N.setLocale(state.locale);
+    finishBoot();
+    return;
+  }
+  const installerLocale = await window.LW_I18N.detectDefaultLocale();
+  showLanguageModal(installerLocale);
+});
+
+function finishBoot() {
   ensurePortfolio();
   migratePortfolioGroups();
   render();
-});
+}
+
+function showLanguageModal(presetLocale) {
+  const modal = document.getElementById("languageModal");
+  if (!modal) {
+    finishBoot();
+    return;
+  }
+  let selected = presetLocale || window.LW_I18N.getLocale();
+  modal.classList.remove("hidden");
+  const options = modal.querySelectorAll(".language-option");
+  const sync = () => {
+    options.forEach((button) => button.classList.toggle("active", button.dataset.locale === selected));
+    window.LW_I18N.setLocale(selected);
+    window.LW_I18N.applyI18n(modal);
+  };
+  options.forEach((button) => {
+    button.addEventListener("click", () => {
+      selected = button.dataset.locale;
+      sync();
+    });
+  });
+  sync();
+  document.getElementById("languageConfirmButton").addEventListener("click", () => {
+    state.locale = selected;
+    window.LW_I18N.setLocale(selected);
+    saveState();
+    modal.classList.add("hidden");
+    finishBoot();
+  });
+}
 
 function cacheDom() {
   [
@@ -118,7 +167,6 @@ function cacheDom() {
     "exportButton",
     "fileInput",
     "quoteStatus",
-    "seedDemoButton",
     "clearDataButton",
     "metricValue",
     "metricCashMode",
@@ -215,11 +263,12 @@ function bindEvents() {
     if (result.merged) {
       render();
       window.alert(
-        `Połączono ${result.accountCount} rachunków w grupę „${result.groupName}”.${result.removedCount ? ` Usunięto ${result.removedCount} pustych portfeli.` : ""}`,
+        t("alert.xtbMerged", { count: result.accountCount, name: result.groupName }) +
+          (result.removedCount ? t("alert.xtbRemoved", { count: result.removedCount }) : ""),
       );
       return;
     }
-    window.alert(result.message || "Nie znaleziono portfeli XTB do połączenia.");
+    window.alert(result.message || t("alert.xtbNone"));
   });
 
   dom.portfolioGroupForm?.addEventListener("submit", (event) => {
@@ -243,8 +292,8 @@ function bindEvents() {
   dom.commitImportButton.addEventListener("click", commitImport);
   dom.refreshPricesButton.addEventListener("click", refreshLivePrices);
   dom.exportButton.addEventListener("click", exportTransactions);
-  dom.seedDemoButton.addEventListener("click", seedDemoData);
   dom.clearDataButton.addEventListener("click", clearData);
+  window.addEventListener("librewallet:locale", () => render());
   dom.backupButton.addEventListener("click", exportBackup);
   dom.backupInput.addEventListener("change", async (event) => {
     const file = event.target.files?.[0];
@@ -347,6 +396,7 @@ function defaultState() {
     benchmarkHistory: {},
     showHistoryMarkers: true,
     portfolioGroups: [],
+    locale: "",
   };
 }
 
@@ -373,6 +423,7 @@ function normalizeStoredState(stored) {
     selectedBenchmark: stored.selectedBenchmark || "",
     showHistoryMarkers: stored.showHistoryMarkers !== false,
     portfolioGroups: Array.isArray(stored.portfolioGroups) ? stored.portfolioGroups : [],
+    locale: stored.locale || "",
     assetTypes: stored.assetTypes || {},
     targets: { ...DEFAULT_TARGETS, ...(stored.targets || {}) },
     fxRates: { ...DEFAULT_FX, ...(stored.fxRates || {}) },
@@ -396,7 +447,7 @@ function ensurePortfolio() {
   if (state.portfolios.length) return;
   const portfolio = {
     id: createId("portfolio"),
-    name: "XTB główny",
+    name: t("defaults.xtbMain"),
     baseCurrency: "PLN",
     color: "#176b4d",
     createdAt: new Date().toISOString(),
@@ -406,9 +457,31 @@ function ensurePortfolio() {
   saveState();
 }
 
+function renderLanguageSettings() {
+  const panel = document.getElementById("languageSettings");
+  if (!panel) return;
+  panel.innerHTML = window.LW_I18N.SUPPORTED.map(
+    (locale) => `
+      <button class="language-option ${state.locale === locale ? "active" : ""}" type="button" data-locale="${locale}">
+        ${locale === "pl" ? t("language.polish") : t("language.english")}
+      </button>
+    `,
+  ).join("");
+  panel.querySelectorAll("[data-locale]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.locale = button.dataset.locale;
+      window.LW_I18N.setLocale(state.locale);
+      saveState();
+      render();
+    });
+  });
+}
+
 function render() {
+  if (state.locale) window.LW_I18N.applyI18n();
   ensurePortfolio();
   updateTabAvailability();
+  renderLanguageSettings();
   renderPortfolioNav();
   renderImportPortfolioSelect();
   renderManualPortfolioSelect();
@@ -459,7 +532,7 @@ function renderPortfolioNav() {
   );
   dom.portfolioList.innerHTML = "";
   if (state.portfolios.length) {
-    dom.portfolioList.appendChild(portfolioGroupTitle("Rachunki i portfele"));
+    dom.portfolioList.appendChild(portfolioGroupTitle(t("nav.accountsAndPortfolios")));
   }
   const groupedIds = new Set();
   (state.portfolioGroups || []).forEach((group) => {
@@ -480,8 +553,8 @@ function renderPortfolioNav() {
     .forEach((portfolio) => {
       dom.portfolioList.appendChild(portfolioButton(portfolio.id, portfolio.name, portfolio.color));
     });
-  dom.portfolioList.appendChild(portfolioGroupTitle("Typy instrumentów"));
-  ASSET_SCOPES.forEach((scope) => {
+  dom.portfolioList.appendChild(portfolioGroupTitle(t("nav.instrumentTypes")));
+  getAssetScopes().forEach((scope) => {
     dom.portfolioList.appendChild(portfolioButton(scope.id, scope.name, scope.color));
   });
 }
@@ -519,7 +592,7 @@ function portfolioGroupButton(group, scopeId, isActive, childActive, memberCount
     <span class="scope-dot group-dot" style="background:${escapeAttr(group.color)}"></span>
     <span class="portfolio-group-label">
       <span>${escapeHtml(group.name)}</span>
-      <small>${memberCount} ${memberCount === 1 ? "rachunek" : memberCount < 5 ? "rachunki" : "rachunków"}</small>
+      <small>${memberCount} ${window.LW_I18N.pluralAccounts(memberCount)}</small>
     </span>
   `;
   button.addEventListener("click", () => {
@@ -563,7 +636,7 @@ function renderBondPortfolioSelect() {
   const options = buildPortfolioSelectOptions(resolveFormPortfolioId());
   // Obligacje często leżą na osobnym koncie (np. Pekao SA), które nie pochodzi z importu XTB.
   // Pozwalamy utworzyć takie konto wprost z formularza.
-  select.innerHTML = `${options}<option value="__new__">➕ Nowe konto…</option>`;
+  select.innerHTML = `${options}<option value="__new__">${escapeHtml(t("bond.newAccount"))}</option>`;
   dom.bondForm.elements.date.value ||= toDateInput(new Date());
   applyBondPreset({ keepRates: true });
 }
@@ -572,7 +645,7 @@ function renderBondPortfolioSelect() {
 function handleBondPortfolioSelect(event) {
   const select = event.target;
   if (select.value !== "__new__") return;
-  const name = (window.prompt("Nazwa nowego konta (np. Pekao SA obligacje):", "Pekao SA obligacje") || "").trim();
+  const name = (window.prompt(t("prompt.newAccount"), t("prompt.newAccountDefault")) || "").trim();
   if (!name) {
     renderBondPortfolioSelect();
     return;
@@ -606,7 +679,7 @@ function daysUntilDate(dateText) {
 
 function formatDaysUntil(days) {
   if (days == null || !Number.isFinite(days)) return "—";
-  if (days === 0) return "dziś";
+  if (days === 0) return t("date.today");
   if (days > 0) return `za ${days} dni`;
   return `${Math.abs(days)} dni temu`;
 }
@@ -668,7 +741,7 @@ function renderBondMaturityCalendar() {
   const entries = getScopedBondMaturities(state.selectedPortfolioId);
   if (!entries.length) {
     dom.bondMaturitySummary.innerHTML = "";
-    dom.bondMaturityCalendar.innerHTML = `<p class="muted bond-calendar-empty">Brak otwartych obligacji w tym widoku. Dodaj je w zakładce Operacje.</p>`;
+    dom.bondMaturityCalendar.innerHTML = `<p class="muted bond-calendar-empty">${escapeHtml(t("bond.noOpenInView"))}</p>`;
     return;
   }
 
@@ -863,16 +936,16 @@ function addRedemption(event) {
   const els = dom.redemptionForm.elements;
   const entry = getHeldBondPositions().find((item) => item.key === els.bondKey.value);
   if (!entry) {
-    window.alert("Brak obligacji do wykupu.");
+    window.alert(t("bond.noBondsRedeem"));
     return;
   }
   const quantity = Math.abs(parseNumber(els.quantity.value));
   if (!quantity) {
-    window.alert("Podaj liczbę obligacji do wykupu.");
+    window.alert(t("bond.enterRedemptionQty"));
     return;
   }
   if (quantity > entry.qty + 0.0000001) {
-    window.alert(`Masz tylko ${formatNumber(entry.qty)} szt. tej obligacji.`);
+    window.alert(t("bond.insufficientQty", { qty: formatNumber(entry.qty) }));
     return;
   }
   const price = parseNumber(els.price.value) || bondCurrentPrice(entry.bond);
@@ -933,13 +1006,13 @@ function renderSummary() {
   dom.scopeLabel.textContent = scopeMeta.label;
   dom.scopeTitle.textContent = title;
   dom.metricValue.textContent = formatMoney(total, baseCurrency);
-  dom.metricCashMode.textContent = scope.hasCashOperations ? "z gotówką" : "bez gotówki";
+  dom.metricCashMode.textContent = scope.hasCashOperations ? t("metric.withCash") : t("metric.withoutCash");
   dom.metricProfit.textContent = formatMoney(scope.totalProfitBase, baseCurrency);
   dom.metricProfit.className = profitClass;
-  dom.metricProfitPct.textContent = `${formatPercent(scope.returnPct)} zwrotu`;
+  dom.metricProfitPct.textContent = t("metric.returnPct", { pct: formatPercent(scope.returnPct) });
   dom.metricProfitPct.className = profitClass;
   dom.metricInvested.textContent = formatMoney(scope.netInvestedBase, baseCurrency);
-  dom.metricTxCount.textContent = `${scope.transactions.length} operacji`;
+  dom.metricTxCount.textContent = t("metric.txCount", { count: scope.transactions.length });
   dom.metricAssets.textContent = String(scope.openPositions.length);
   dom.metricCurrencies.textContent = scope.currencies.join(", ") || baseCurrency;
 
@@ -960,17 +1033,15 @@ function renderQuoteStatus(message = "", tone = "") {
     if (state.lastHistoryUpdate) parts.push(`historia dzienna: ${formatDateTime(state.lastHistoryUpdate)}`);
     dom.quoteStatus.textContent = `Ostatnia aktualizacja: ${parts.join(" • ")}`;
   } else {
-    dom.quoteStatus.textContent = "Ceny są z importu lub wpisane ręcznie.";
+    dom.quoteStatus.textContent = t("quotes.manual");
   }
 }
 
 function renderHistoryBenchmarkSelect() {
   if (!dom.historyBenchmark) return;
-  if (!dom.historyBenchmark.options.length) {
-    dom.historyBenchmark.innerHTML = BENCHMARK_OPTIONS.map((option) => {
-      return `<option value="${escapeAttr(option.id)}">${escapeHtml(option.label)}</option>`;
-    }).join("");
-  }
+  dom.historyBenchmark.innerHTML = getBenchmarkOptions()
+    .map((option) => `<option value="${escapeAttr(option.id)}">${escapeHtml(option.label)}</option>`)
+    .join("");
   dom.historyBenchmark.value = state.selectedBenchmark || "";
 }
 
@@ -980,7 +1051,7 @@ function renderHistoryMarkerToggle() {
 }
 
 function getBenchmarkConfig(benchmarkId) {
-  return BENCHMARK_OPTIONS.find((option) => option.id === benchmarkId && option.id) || null;
+  return getBenchmarkOptions().find((option) => option.id === benchmarkId && option.id) || null;
 }
 
 function blendCompositePrices(priceMaps) {
@@ -1191,7 +1262,7 @@ function renderCharts(scope, baseCurrency) {
   }
   renderHistoryWarning(scope, baseCurrency);
   const typeItems = Object.entries(scope.allocationByType).map(([key, value]) => ({
-    label: ASSET_TYPES[key] || key,
+    label: assetTypeLabel(key),
     value,
     color: TYPE_COLORS[key] || TYPE_COLORS.other,
   }));
@@ -1220,8 +1291,8 @@ function renderCharts(scope, baseCurrency) {
     options: {
       primaryKey: "value",
       secondaryKey: "invested",
-      primaryLabel: "Wartość portfela",
-      secondaryLabel: "Wkład własny",
+      primaryLabel: t("chart.portfolioValue"),
+      secondaryLabel: t("chart.ownContribution"),
       tertiaryKey: hasBenchmarkSeries ? "benchmark" : "",
       tertiaryLabel: hasBenchmarkSeries ? `${benchmark.label} (wg wpłat)` : "",
       tertiaryColor: benchmark?.color || "#22577a",
@@ -1242,8 +1313,8 @@ function renderCharts(scope, baseCurrency) {
     });
     renderHistoryRangeLabel(filteredHistory);
     const legendItems = [
-      { label: "Wartość portfela", color: "#176b4d" },
-      { label: "Wkład własny", color: "#a56b13" },
+      { label: t("chart.portfolioValue"), color: "#176b4d" },
+      { label: t("chart.ownContribution"), color: "#a56b13" },
     ];
     if (hasBenchmarkSeries) {
       legendItems.push({ label: `${benchmark.label} (wg wpłat)`, color: benchmark.color, dashed: true });
@@ -1305,10 +1376,10 @@ function renderSeriesLegend(container, items, markerCount = 0, markerFiltered = 
 
 function renderOperationMarkerLegendItems() {
   const items = [
-    { type: "deposit", label: "Wpłata" },
-    { type: "withdrawal", label: "Wypłata" },
-    { type: "buy", label: "Kupno" },
-    { type: "sell", label: "Sprzedaż" },
+    { type: "deposit", label: t("tx.deposit") },
+    { type: "withdrawal", label: t("tx.withdrawal") },
+    { type: "buy", label: t("tx.buy") },
+    { type: "sell", label: t("tx.sell") },
   ];
   return items
     .map(
@@ -1641,7 +1712,7 @@ function handleHistoryMouseMove(event) {
       ${chartTooltipRow(runtime.options.secondaryLabel, formatMoney(row.invested, runtime.currency), "#a56b13")}
       ${chartTooltipRow("Zysk", formatMoney(profit, runtime.currency), profit >= 0 ? "#176b4d" : "#af3636")}
       ${chartTooltipRow("Pozycje", formatMoney(row.positions, runtime.currency))}
-      ${chartTooltipRow("Gotówka", formatMoney(row.cash, runtime.currency))}
+      ${chartTooltipRow(t("chart.cash"), formatMoney(row.cash, runtime.currency))}
       ${
         runtime.options.tertiaryKey && Number.isFinite(row.benchmark) && row.benchmark > 0
           ? chartTooltipRow(runtime.options.tertiaryLabel, formatMoney(row.benchmark, runtime.currency), runtime.options.tertiaryColor)
@@ -1697,8 +1768,8 @@ function handleDoughnutMouseMove(chartKey, canvas, event) {
     event.clientY,
     `
       <strong>${escapeHtml(item.label)}</strong>
-      ${chartTooltipRow("Wartość", formatMoney(item.value, runtime.currency), item.color)}
-      ${chartTooltipRow("Udział", formatPercent(share))}
+      ${chartTooltipRow(t("chart.value"), formatMoney(item.value, runtime.currency), item.color)}
+      ${chartTooltipRow(t("chart.share"), formatPercent(share))}
     `,
   );
 }
@@ -1742,7 +1813,7 @@ function renderChartLegend(container, items, currency) {
   if (!container) return;
   const filtered = items.filter((item) => item.value > 0);
   if (!filtered.length) {
-    container.innerHTML = `<p class="muted">Brak danych.</p>`;
+    container.innerHTML = `<p class="muted">${escapeHtml(t("chart.noData"))}</p>`;
     return;
   }
   const total = filtered.reduce((sum, item) => sum + item.value, 0);
@@ -1800,7 +1871,7 @@ function portfoliosForComparison() {
 
 function renderPortfolioComparison(baseCurrency) {
   if (!state.portfolios.length) {
-    dom.portfolioComparison.innerHTML = `<p class="muted">Brak portfeli.</p>`;
+    dom.portfolioComparison.innerHTML = `<p class="muted">${escapeHtml(t("portfolio.none"))}</p>`;
     return;
   }
   const items = portfoliosForComparison();
@@ -1929,7 +2000,7 @@ function renderHoldings() {
         state.priceMeta[input.dataset.priceKey] = {
           provider: "manual",
           fetchedAt: new Date().toISOString(),
-          label: "ręcznie",
+          label: t("priceSource.manual"),
         };
       } else {
         delete state.priceOverrides[input.dataset.priceKey];
@@ -2101,7 +2172,7 @@ function applyDailyHistory(data) {
 function priceMetaLabel(key) {
   const meta = state.priceMeta?.[key];
   if (!meta) return "z importu";
-  if (meta.provider === "manual") return "ręcznie";
+  if (meta.provider === "manual") return t("priceSource.manual");
   const provider = providerLabel(meta.provider);
   const symbol = meta.quoteSymbol ? ` ${meta.quoteSymbol}` : "";
   const currency = meta.quoteCurrency && meta.quoteCurrency !== meta.positionCurrency ? ` ${meta.quoteCurrency}→${meta.positionCurrency}` : "";
@@ -2118,7 +2189,7 @@ function providerLabel(provider) {
   return {
     yahoo: "Yahoo",
     stooq: "Stooq",
-    manual: "ręcznie",
+    manual: t("priceSource.manual"),
   }[provider] || provider || "";
 }
 
@@ -2177,7 +2248,7 @@ function renderTransactions() {
           <td>${transaction.fee ? formatMoney(transaction.fee, transaction.currency) : "-"}</td>
           <td>
             <div class="row-actions">
-              <button class="text-button" data-delete-transaction="${escapeAttr(transaction.id)}" type="button">Usuń</button>
+              <button class="text-button" data-delete-transaction="${escapeAttr(transaction.id)}" type="button">${escapeHtml(t("action.delete"))}</button>
             </div>
           </td>
         </tr>
@@ -2196,7 +2267,7 @@ function renderTransactions() {
 
 function renderTargets() {
   const scope = calculateScope();
-  dom.targetsForm.innerHTML = Object.entries(ASSET_TYPES)
+  dom.targetsForm.innerHTML = getAssetTypeEntries()
     .map(([key, label]) => {
       const value = state.targets[key] ?? 0;
       return `
@@ -2225,21 +2296,21 @@ function renderTargets() {
 function renderRebalance(scope = calculateScope()) {
   const total = Math.max(scope.totalValueBase, 0.01);
   const actual = scope.allocationByType;
-  dom.rebalanceTable.innerHTML = Object.entries(ASSET_TYPES)
+  dom.rebalanceTable.innerHTML = getAssetTypeEntries()
     .map(([key, label]) => {
       const actualValue = actual[key] || 0;
       const actualPct = (actualValue / total) * 100;
       const targetPct = state.targets[key] || 0;
       const deltaPct = targetPct - actualPct;
       const deltaValue = (deltaPct / 100) * total;
-      const action = Math.abs(deltaValue) < 1 ? "OK" : deltaValue > 0 ? "Dokup" : "Zredukuj";
+      const action = Math.abs(deltaValue) < 1 ? "OK" : deltaValue > 0 ? t("rebalance.buyMore") : t("rebalance.reduce");
       const actionClass = Math.abs(deltaValue) < 1 ? "ok" : deltaValue > 0 ? "buy" : "reduce";
       return `
         <div class="rebalance-row">
           <span class="pill ${key}">${escapeHtml(label)}</span>
           <div>
             <div class="progress"><span style="width:${Math.min(100, actualPct)}%;background:${TYPE_COLORS[key]}"></span></div>
-            <small>Teraz ${formatPercent(actualPct)} / cel ${formatPercent(targetPct)}</small>
+            <small>${escapeHtml(t("rebalance.nowTarget", { actual: formatPercent(actualPct), target: formatPercent(targetPct) }))}</small>
           </div>
           <strong class="rebalance-action ${actionClass}">${action} ${formatMoney(Math.abs(deltaValue), scope.baseCurrency)}</strong>
         </div>
@@ -2654,8 +2725,8 @@ function holdingsReturnsHint(positions) {
   const marketPositions = positions.filter((position) => position.symbol && position.quantity > 0 && !position.bond);
   if (!marketPositions.length) return "";
   const missingHistory = marketPositions.some((position) => !Object.keys(state.quoteHistory?.[priceKey(position)]?.prices || {}).length);
-  if (!missingHistory) return "Zwroty liczone ze zmiany ceny waloru w danym okresie (na podstawie historii dziennej).";
-  return "Zwroty wymagają historii cen — użyj przycisku „Aktualizuj ceny”.";
+  if (!missingHistory) return t("holdings.returnsHint");
+  return t("holdings.returnsNeedHistory");
 }
 
 function formatPeriodReturn(value) {
@@ -2681,7 +2752,7 @@ function getScopedTransactions(scopeId = state.selectedPortfolioId) {
 
 function getScopeMeta(scopeId = state.selectedPortfolioId) {
   if (scopeId === "all") {
-    return { id: "all", name: "Wszystkie inwestycje", label: "Widok zbiorczy", baseCurrency: "PLN" };
+    return { id: "all", name: t("scope.allInvestments"), label: t("scope.aggregateView"), baseCurrency: "PLN" };
   }
   const assetScope = getAssetScope(scopeId);
   if (assetScope) {
@@ -2691,11 +2762,11 @@ function getScopeMeta(scopeId = state.selectedPortfolioId) {
     const group = getPortfolioGroup(getGroupIdFromScope(scopeId));
     const members = portfoliosInGroup(group?.id);
     const memberLabel =
-      members.length === 1 ? "1 rachunek" : `${members.length} ${members.length < 5 ? "rachunki" : "rachunków"}`;
+      members.length === 1 ? t("scope.oneAccount") : `${members.length} ${window.LW_I18N.pluralAccounts(members.length)}`;
     return {
       id: scopeId,
-      name: group?.name || "Grupa",
-      label: `Grupa rachunków · ${memberLabel}`,
+      name: group?.name || t("scope.group"),
+      label: t("scope.accountGroup", { label: memberLabel }),
       baseCurrency: "PLN",
       groupId: group?.id,
     };
@@ -2707,14 +2778,14 @@ function getScopeMeta(scopeId = state.selectedPortfolioId) {
     return {
       ...portfolio,
       name: group ? `${prefix}${portfolio.name}` : portfolio.name,
-      label: portfolio.kind === "account" ? "Podkonto walutowe" : "Portfel",
+      label: portfolio.kind === "account" ? t("scope.currencySubaccount") : t("scope.portfolio"),
     };
   }
-  return { id: "all", name: "Wszystkie inwestycje", label: "Widok zbiorczy", baseCurrency: "PLN" };
+  return { id: "all", name: t("scope.allInvestments"), label: t("scope.aggregateView"), baseCurrency: "PLN" };
 }
 
 function getAssetScope(scopeId) {
-  return ASSET_SCOPES.find((scope) => scope.id === scopeId) || null;
+  return getAssetScopes().find((scope) => scope.id === scopeId) || null;
 }
 
 function isRealPortfolioId(id) {
@@ -3017,12 +3088,12 @@ function buildPortfolioSelectOptions(selectedId) {
 function renderPortfolioGroupsPanel() {
   if (!dom.portfolioGroupsPanel) return;
   if (!state.portfolios.length) {
-    dom.portfolioGroupsPanel.innerHTML = `<p class="muted">Dodaj portfel lub zaimportuj XTB, żeby zarządzać grupami.</p>`;
+    dom.portfolioGroupsPanel.innerHTML = `<p class="muted">${escapeHtml(t("groups.empty"))}</p>`;
     return;
   }
   const groupOptions = (selectedGroupId = "") => {
     const noneSelected = selectedGroupId ? "" : "selected";
-    const options = [`<option value="" ${noneSelected}>Bez grupy</option>`];
+    const options = [`<option value="" ${noneSelected}>${escapeHtml(t("groups.noGroup"))}</option>`];
     (state.portfolioGroups || []).forEach((group) => {
       const isSelected = group.id === selectedGroupId ? "selected" : "";
       options.push(`<option value="${escapeAttr(group.id)}" ${isSelected}>${escapeHtml(group.name)}</option>`);
@@ -3030,28 +3101,26 @@ function renderPortfolioGroupsPanel() {
     return options.join("");
   };
   dom.portfolioGroupsPanel.innerHTML = `
-    <p class="muted portfolio-groups-copy">
-      Import XTB tworzy jedną grupę (np. XTB) z podkontami PLN/EUR/USD. Masz stare, osobne portfele XTB? Użyj przycisku poniżej.
-    </p>
+    <p class="muted portfolio-groups-copy">${escapeHtml(t("groups.xtbHint"))}</p>
     <div class="portfolio-groups-actions">
       <button id="consolidateXtbButton" class="secondary-button" type="button">
         <span aria-hidden="true">↺</span>
-        Połącz rachunki XTB w jedną grupę
+        ${escapeHtml(t("groups.consolidateXtb"))}
       </button>
     </div>
     <div class="table-wrap portfolio-groups-table">
       <table>
         <thead>
           <tr>
-            <th>Rachunek / portfel</th>
-            <th>Grupa</th>
+            <th>${escapeHtml(t("groups.accountCol"))}</th>
+            <th>${escapeHtml(t("groups.groupCol"))}</th>
           </tr>
         </thead>
         <tbody>
           ${state.portfolios
             .map((portfolio) => {
               const group = portfolio.groupId ? getPortfolioGroup(portfolio.groupId) : null;
-              const kindLabel = portfolio.kind === "account" ? "Podkonto" : "Portfel";
+              const kindLabel = portfolio.kind === "account" ? t("groups.subaccount") : t("scope.portfolio");
               return `
                 <tr>
                   <td>
@@ -3128,7 +3197,7 @@ async function handleFiles(files) {
     setTab("import");
   } catch (error) {
     importPreview = [];
-    dom.importStatus.innerHTML = `<strong>Błąd importu</strong><small>${escapeHtml(error.message)}</small>`;
+    dom.importStatus.innerHTML = `<strong>${escapeHtml(t("import.error"))}</strong><small>${escapeHtml(error.message)}</small>`;
     renderImportPreview();
   }
 }
@@ -3511,7 +3580,7 @@ function commitImport() {
   });
   state.transactions.push(...accepted);
   importPreview = [];
-  dom.importStatus.innerHTML = `<strong>Zapisano ${accepted.length} operacji</strong><small>Dane są w localStorage tej przeglądarki.</small>`;
+  dom.importStatus.innerHTML = `<strong>${escapeHtml(t("import.saved", { count: accepted.length }))}</strong><small>${escapeHtml(t("import.savedHint"))}</small>`;
   saveState();
   render();
 }
@@ -3556,7 +3625,7 @@ function addBondTransaction(event) {
   if (!preset) return;
   const quantity = Math.abs(parseNumber(form.get("quantity")));
   if (!quantity) {
-    window.alert("Podaj liczbę obligacji.");
+    window.alert(t("bond.enterQuantity"));
     return;
   }
   const purchaseDate = form.get("date") || toDateInput(new Date());
@@ -3637,73 +3706,16 @@ function bondCurrentPrice(bond, asOf = new Date()) {
   return nominal * (1 + rate * fractionOfYear);
 }
 
-function seedDemoData() {
-  if (state.transactions.length && !window.confirm("Dodać przykładowe operacje do obecnych danych?")) return;
-  const main = state.portfolios[0] || {
-    id: createId("portfolio"),
-    name: "XTB główny",
-    baseCurrency: "PLN",
-    color: "#176b4d",
-    createdAt: new Date().toISOString(),
-  };
-  if (!state.portfolios.some((portfolio) => portfolio.id === main.id)) state.portfolios.push(main);
-  const second =
-    state.portfolios.find((portfolio) => portfolio.name === "IKE obligacje") ||
-    {
-      id: createId("portfolio"),
-      name: "IKE obligacje",
-      baseCurrency: "PLN",
-      color: "#a56b13",
-      createdAt: new Date().toISOString(),
-    };
-  if (!state.portfolios.some((portfolio) => portfolio.id === second.id)) state.portfolios.push(second);
-
-  const demo = [
-    tx(main.id, "2024-01-15", "deposit", "", "Wpłata", 0, 0, 18000, 0, "PLN"),
-    tx(main.id, "2024-01-16", "buy", "VWCE.DE", "Vanguard FTSE All-World UCITS ETF", 8, 106.2, 849.6, 1.5, "EUR"),
-    tx(main.id, "2024-03-11", "buy", "CSPX.UK", "iShares Core S&P 500 UCITS ETF", 2, 485.4, 970.8, 1.5, "USD"),
-    tx(main.id, "2024-09-02", "buy", "PKN.PL", "Orlen SA", 30, 62.4, 1872, 5, "PLN"),
-    tx(main.id, "2025-02-18", "sell", "PKN.PL", "Orlen SA", 10, 71.2, 712, 5, "PLN"),
-    tx(main.id, "2025-05-21", "dividend", "PKN.PL", "Orlen SA", 0, 0, 55, 0, "PLN"),
-    tx(second.id, "2024-02-01", "deposit", "", "Wpłata", 0, 0, 12000, 0, "PLN"),
-    tx(second.id, "2024-02-02", "buy", "EDO0434", "Obligacje skarbowe EDO", 100, 100, 10000, 0, "PLN"),
-    tx(second.id, "2025-04-02", "interest", "EDO0434", "Obligacje skarbowe EDO", 0, 0, 620, 0, "PLN"),
-  ];
-  state.transactions.push(...demo);
-  state.priceOverrides[assetKeyFor("VWCE.DE", "EUR")] = 121.5;
-  state.priceOverrides[assetKeyFor("CSPX.UK", "USD")] = 562.2;
-  state.priceOverrides[assetKeyFor("PKN.PL", "PLN")] = 68.9;
-  state.priceOverrides[assetKeyFor("EDO0434", "PLN")] = 106.2;
-  saveState();
-  render();
-}
-
-function tx(portfolioId, date, type, symbol, name, quantity, price, gross, fee, currency) {
-  return {
-    id: createId("demo"),
-    portfolioId,
-    date,
-    type,
-    symbol,
-    name,
-    assetType: detectAssetType(symbol, name),
-    quantity,
-    price,
-    gross,
-    fee,
-    currency,
-    source: "demo",
-    notes: "",
-  };
-}
-
 function clearData() {
-  if (!window.confirm("Usunąć wszystkie portfele, operacje i ustawienia?")) return;
+  if (!window.confirm(t("confirm.clearAll"))) return;
+  const locale = state.locale;
   localStorage.removeItem(STORAGE_KEY);
   state = loadState();
+  state.locale = locale;
   importPreview = [];
   historyZoom = null;
   ensurePortfolio();
+  saveState();
   render();
 }
 
@@ -3722,7 +3734,7 @@ function parseBackupPayload(raw) {
   try {
     parsed = JSON.parse(raw);
   } catch {
-    throw new Error("Plik nie jest poprawnym JSON.");
+    throw new Error(t("error.invalidJson"));
   }
   if (parsed?.format === BACKUP_FORMAT) {
     if (parsed.formatVersion !== BACKUP_FORMAT_VERSION) {
@@ -3736,7 +3748,7 @@ function parseBackupPayload(raw) {
   if (parsed?.version === 1 && Array.isArray(parsed.transactions)) {
     return { exportedAt: "", state: normalizeStoredState(parsed) };
   }
-  throw new Error("Nie rozpoznano formatu kopii zapasowej LibreWallet.");
+  throw new Error(t("error.backupFormat"));
 }
 
 function backupSummary(snapshot) {
@@ -3759,7 +3771,7 @@ function exportBackup() {
   anchor.click();
   URL.revokeObjectURL(url);
   if (dom.backupStatus) {
-    dom.backupStatus.innerHTML = `<strong>Kopia pobrana</strong><small> ${escapeHtml(backupSummary(state))}</small>`;
+    dom.backupStatus.innerHTML = `<strong>${escapeHtml(t("backup.downloaded"))}</strong><small> ${escapeHtml(backupSummary(state))}</small>`;
   }
 }
 
@@ -3772,7 +3784,7 @@ async function restoreBackup(file) {
     const exportedLabel = exportedAt ? formatDateTime(exportedAt) : "nieznana data";
     const message = `Przywrócić kopię z ${exportedLabel}?\n\nZastąpi to obecne dane: ${backupSummary(state)}.\n\nNowa kopia: ${backupSummary(restored)}.`;
     if (!window.confirm(message)) {
-      dom.backupStatus.innerHTML = `<strong>Przywracanie anulowane</strong>`;
+      dom.backupStatus.innerHTML = `<strong>${escapeHtml(t("backup.cancelled"))}</strong>`;
       return;
     }
     state = restored;
@@ -3783,9 +3795,9 @@ async function restoreBackup(file) {
     migratePortfolioGroups();
     render();
     setTab("import");
-    dom.backupStatus.innerHTML = `<strong>Przywrócono kopię</strong><small> ${escapeHtml(backupSummary(state))}</small>`;
+    dom.backupStatus.innerHTML = `<strong>${escapeHtml(t("backup.restored"))}</strong><small> ${escapeHtml(backupSummary(state))}</small>`;
   } catch (error) {
-    dom.backupStatus.innerHTML = `<strong>Błąd przywracania</strong><small> ${escapeHtml(error instanceof Error ? error.message : "Nie udało się wczytać pliku.")}</small>`;
+    dom.backupStatus.innerHTML = `<strong>${escapeHtml(t("backup.error"))}</strong><small> ${escapeHtml(error instanceof Error ? error.message : t("error.loadFile"))}</small>`;
   }
 }
 
@@ -4550,29 +4562,19 @@ function filterHistory(rows, mode) {
 function groupValue(position, groupBy) {
   if (groupBy === "currency") return position.currency;
   if (groupBy === "portfolio") return position.portfoliosLabel || "";
-  return ASSET_TYPES[position.assetType] || position.assetType;
+  return assetTypeLabel(position.assetType);
 }
 
 function assetTypeOptions(selected) {
-  return Object.entries(ASSET_TYPES)
+  return getAssetTypeEntries()
     .filter(([key]) => key !== "cash")
     .map(([key, label]) => `<option value="${key}" ${key === selected ? "selected" : ""}>${label}</option>`)
     .join("");
 }
 
 function operationLabel(type) {
-  return {
-    buy: "Kupno",
-    sell: "Sprzedaż",
-    dividend: "Dywidenda",
-    deposit: "Wpłata",
-    withdrawal: "Wypłata",
-    transfer: "Transfer",
-    fee: "Prowizja",
-    tax: "Podatek",
-    interest: "Odsetki",
-    other: "Inne",
-  }[type || "other"];
+  const key = type && t(`tx.${type}`) !== `tx.${type}` ? type : "other";
+  return t(`tx.${key}`);
 }
 
 function assetKeyFor(symbol, currency) {
@@ -4754,7 +4756,7 @@ function normalize(value) {
 }
 
 function formatMoney(value, currency = "PLN") {
-  const formatter = new Intl.NumberFormat("pl-PL", {
+  const formatter = new Intl.NumberFormat(window.LW_I18N.intlLocale(), {
     style: "currency",
     currency,
     maximumFractionDigits: Math.abs(value) >= 1000 ? 0 : 2,
@@ -4764,23 +4766,23 @@ function formatMoney(value, currency = "PLN") {
 
 function compactMoney(value, currency = "PLN") {
   const abs = Math.abs(value || 0);
-  const suffix = abs >= 1_000_000 ? " mln" : abs >= 1_000 ? " tys." : "";
+  const suffix = abs >= 1_000_000 ? t("number.million") : abs >= 1_000 ? t("number.thousand") : "";
   const scaled = abs >= 1_000_000 ? value / 1_000_000 : abs >= 1_000 ? value / 1_000 : value;
-  return `${new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 1 }).format(scaled)}${suffix} ${currency}`;
+  return `${new Intl.NumberFormat(window.LW_I18N.intlLocale(), { maximumFractionDigits: 1 }).format(scaled)}${suffix} ${currency}`;
 }
 
 function formatNumber(value) {
-  return new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 4 }).format(value || 0);
+  return new Intl.NumberFormat(window.LW_I18N.intlLocale(), { maximumFractionDigits: 4 }).format(value || 0);
 }
 
 function formatPercent(value) {
-  return `${new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 1 }).format(value || 0)}%`;
+  return `${new Intl.NumberFormat(window.LW_I18N.intlLocale(), { maximumFractionDigits: 1 }).format(value || 0)}%`;
 }
 
 function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.valueOf())) return String(value || "");
-  return new Intl.DateTimeFormat("pl-PL", {
+  return new Intl.DateTimeFormat(window.LW_I18N.intlLocale(), {
     dateStyle: "short",
     timeStyle: "short",
   }).format(date);
@@ -4789,7 +4791,7 @@ function formatDateTime(value) {
 function formatAxisDate(value) {
   const date = new Date(value);
   if (Number.isNaN(date.valueOf())) return "";
-  return new Intl.DateTimeFormat("pl-PL", {
+  return new Intl.DateTimeFormat(window.LW_I18N.intlLocale(), {
     day: "2-digit",
     month: "2-digit",
     year: "2-digit",
@@ -4801,7 +4803,7 @@ function roundInput(value) {
 }
 
 function emptyRow(colspan) {
-  return `<tr><td colspan="${colspan}" class="empty-state">Brak danych dla tego widoku.</td></tr>`;
+  return `<tr><td colspan="${colspan}" class="empty-state">${escapeHtml(t("empty.noData"))}</td></tr>`;
 }
 
 function escapeHtml(value) {

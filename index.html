@@ -7,46 +7,55 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="languageModal" class="language-modal hidden" role="dialog" aria-modal="true" aria-labelledby="languageModalTitle">
+      <div class="language-modal-card">
+        <p class="eyebrow">LibreWallet</p>
+        <h2 id="languageModalTitle" data-i18n="language.choose">Wybierz język</h2>
+        <p class="muted" data-i18n="language.chooseSubtitle">Możesz zmienić język później w Import i ustawienia.</p>
+        <div class="language-options">
+          <button class="language-option active" type="button" data-locale="pl" data-i18n="language.polish">Polski</button>
+          <button class="language-option" type="button" data-locale="en" data-i18n="language.english">English</button>
+        </div>
+        <button id="languageConfirmButton" class="primary-button" type="button" data-i18n="language.save">Kontynuuj</button>
+      </div>
+    </div>
+
     <div class="app-shell">
       <aside class="sidebar" aria-label="Nawigacja portfeli">
         <div class="brand">
-          <div class="brand-mark" aria-hidden="true">T</div>
+          <div class="brand-mark" aria-hidden="true">L</div>
           <div>
-            <p class="eyebrow">LibreWallet</p>
-            <h1>Portfel</h1>
+            <p class="eyebrow" data-i18n="app.name">LibreWallet</p>
+            <h1 data-i18n="app.portfolio">Portfel</h1>
           </div>
         </div>
 
         <button class="scope-button active" data-portfolio-id="all" type="button">
           <span class="scope-dot aggregate"></span>
-          <span>Wszystkie inwestycje</span>
+          <span data-i18n="nav.allInvestments">Wszystkie inwestycje</span>
         </button>
         <div id="portfolioList" class="portfolio-list"></div>
 
         <form id="portfolioForm" class="compact-form">
-          <label for="portfolioName">Nowy portfel</label>
+          <label for="portfolioName" data-i18n="form.newPortfolio">Nowy portfel</label>
           <div class="inline-controls">
-            <input id="portfolioName" name="portfolioName" autocomplete="off" placeholder="np. IKE ETF" />
-            <button class="icon-button" type="submit" aria-label="Dodaj portfel" title="Dodaj portfel">+</button>
+            <input id="portfolioName" name="portfolioName" autocomplete="off" data-i18n-placeholder="form.newPortfolioPlaceholder" placeholder="np. IKE ETF" />
+            <button class="icon-button" type="submit" data-i18n-aria="form.addPortfolio" data-i18n-title="form.addPortfolio" aria-label="Dodaj portfel" title="Dodaj portfel">+</button>
           </div>
         </form>
 
         <form id="portfolioGroupForm" class="compact-form">
-          <label for="portfolioGroupName">Nowa grupa</label>
+          <label for="portfolioGroupName" data-i18n="form.newGroup">Nowa grupa</label>
           <div class="inline-controls">
-            <input id="portfolioGroupName" name="portfolioGroupName" autocomplete="off" placeholder="np. XTB" />
-            <button class="icon-button" type="submit" aria-label="Dodaj grupę" title="Dodaj grupę">+</button>
+            <input id="portfolioGroupName" name="portfolioGroupName" autocomplete="off" data-i18n-placeholder="form.newGroupPlaceholder" placeholder="np. XTB" />
+            <button class="icon-button" type="submit" data-i18n-aria="form.addGroup" data-i18n-title="form.addGroup" aria-label="Dodaj grupę" title="Dodaj grupę">+</button>
           </div>
         </form>
 
         <div class="sidebar-footer">
-          <button id="seedDemoButton" class="ghost-button" type="button">
-            <span aria-hidden="true">+</span>
-            Dane demo
-          </button>
           <button id="clearDataButton" class="ghost-button danger" type="button">
             <span aria-hidden="true">x</span>
-            Wyczyść
+            <span data-i18n="action.clear">Wyczyść</span>
           </button>
         </div>
       </aside>
@@ -54,21 +63,21 @@
       <main class="workspace">
         <header class="topbar">
           <div>
-            <p id="scopeLabel" class="eyebrow">Widok zbiorczy</p>
-            <h2 id="scopeTitle">Wszystkie inwestycje</h2>
+            <p id="scopeLabel" class="eyebrow" data-i18n="scope.aggregateView">Widok zbiorczy</p>
+            <h2 id="scopeTitle" data-i18n="scope.allInvestments">Wszystkie inwestycje</h2>
           </div>
           <div class="topbar-actions">
             <button id="refreshPricesButton" class="secondary-button" type="button">
               <span aria-hidden="true">↻</span>
-              Aktualizuj ceny
+              <span data-i18n="action.refreshPrices">Aktualizuj ceny</span>
             </button>
             <button id="exportButton" class="secondary-button" type="button">
               <span aria-hidden="true">↓</span>
-              Eksport CSV
+              <span data-i18n="action.exportCsv">Eksport CSV</span>
             </button>
             <label class="primary-button file-action" for="fileInput">
               <span aria-hidden="true">↑</span>
-              Import XTB
+              <span data-i18n="action.importXtb">Import XTB</span>
             </label>
             <input id="fileInput" class="sr-only" type="file" accept=".csv,.xlsx,.xls,.zip,text/csv" multiple />
           </div>
@@ -77,33 +86,33 @@
 
         <section class="kpi-grid" aria-label="Podsumowanie portfela">
           <article class="metric">
-            <span>Wartość</span>
+            <span data-i18n="metric.value">Wartość</span>
             <strong id="metricValue">0 PLN</strong>
-            <small id="metricCashMode">bez gotówki</small>
+            <small id="metricCashMode" data-i18n="metric.withoutCash">bez gotówki</small>
           </article>
           <article class="metric">
-            <span>Zysk</span>
+            <span data-i18n="metric.profit">Zysk</span>
             <strong id="metricProfit">0 PLN</strong>
             <small id="metricProfitPct">0%</small>
           </article>
           <article class="metric">
-            <span>Wkład</span>
+            <span data-i18n="metric.invested">Wkład</span>
             <strong id="metricInvested">0 PLN</strong>
             <small id="metricTxCount">0 operacji</small>
           </article>
           <article class="metric">
-            <span>Walory</span>
+            <span data-i18n="metric.assets">Walory</span>
             <strong id="metricAssets">0</strong>
             <small id="metricCurrencies">PLN</small>
           </article>
         </section>
 
         <nav class="tabs" aria-label="Sekcje aplikacji">
-          <button class="tab active" data-tab="dashboard" type="button">Kokpit</button>
-          <button class="tab" data-tab="holdings" type="button">Pozycje</button>
-          <button class="tab" data-tab="transactions" type="button">Operacje</button>
-          <button class="tab" data-tab="allocation" type="button">Alokacja</button>
-          <button class="tab" data-tab="import" type="button">Import i ustawienia</button>
+          <button class="tab active" data-tab="dashboard" type="button" data-i18n="tab.dashboard">Kokpit</button>
+          <button class="tab" data-tab="holdings" type="button" data-i18n="tab.holdings">Pozycje</button>
+          <button class="tab" data-tab="transactions" type="button" data-i18n="tab.transactions">Operacje</button>
+          <button class="tab" data-tab="allocation" type="button" data-i18n="tab.allocation">Alokacja</button>
+          <button class="tab" data-tab="import" type="button" data-i18n="tab.import">Import i ustawienia</button>
         </nav>
 
         <section id="dashboard" class="tab-panel active">
@@ -111,25 +120,25 @@
             <section class="panel chart-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">W czasie</p>
-                  <h3>Wartość portfela i kapitał dziennie</h3>
+                  <p class="eyebrow" data-i18n="chart.overTime">W czasie</p>
+                  <h3 data-i18n="chart.portfolioValueDaily">Wartość portfela i kapitał dziennie</h3>
                 </div>
                 <div class="chart-toolbar">
-                  <select id="historyMode" aria-label="Zakres wykresu historii">
-                    <option value="all">Całość</option>
-                    <option value="year">Ostatni rok</option>
-                    <option value="quarter">Kwartał</option>
+                  <select id="historyMode" data-i18n-aria="chart.overTime" aria-label="Zakres wykresu historii">
+                    <option value="all" data-i18n="chart.rangeAll">Całość</option>
+                    <option value="year" data-i18n="chart.rangeYear">Ostatni rok</option>
+                    <option value="quarter" data-i18n="chart.rangeQuarter">Kwartał</option>
                   </select>
-                  <select id="historyBenchmark" aria-label="Benchmark na wykresie"></select>
+                  <select id="historyBenchmark" aria-label="Benchmark"></select>
                   <label class="chart-toggle" for="historyMarkers">
                     <input id="historyMarkers" type="checkbox" checked />
-                    Operacje
+                    <span data-i18n="chart.operations">Operacje</span>
                   </label>
                   <div class="zoom-controls">
                     <span id="historyRangeLabel" class="chart-range-label"></span>
-                    <button id="historyZoomOut" class="icon-button" type="button" aria-label="Oddal wykres" title="Oddal">−</button>
-                    <button id="historyZoomIn" class="icon-button" type="button" aria-label="Przybliż wykres" title="Przybliż">+</button>
-                    <button id="historyZoomReset" class="icon-button" type="button" aria-label="Resetuj zakres wykresu" title="Resetuj zakres">↺</button>
+                    <button id="historyZoomOut" class="icon-button" type="button" data-i18n-aria="chart.zoomOut" data-i18n-title="chart.zoomOut" aria-label="Oddal wykres" title="Oddal">−</button>
+                    <button id="historyZoomIn" class="icon-button" type="button" data-i18n-aria="chart.zoomIn" data-i18n-title="chart.zoomIn" aria-label="Przybliż wykres" title="Przybliż">+</button>
+                    <button id="historyZoomReset" class="icon-button" type="button" data-i18n-aria="chart.zoomReset" data-i18n-title="chart.zoomReset" aria-label="Resetuj zakres wykresu" title="Resetuj zakres">↺</button>
                   </div>
                 </div>
               </div>
@@ -141,8 +150,8 @@
             <section class="panel chart-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Struktura</p>
-                  <h3>Typy aktywów</h3>
+                  <p class="eyebrow" data-i18n="chart.structure">Struktura</p>
+                  <h3 data-i18n="chart.assetTypes">Typy aktywów</h3>
                 </div>
               </div>
               <div class="doughnut-layout">
@@ -157,8 +166,8 @@
             <section class="panel chart-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Wynik</p>
-                  <h3>Zysk per walor</h3>
+                  <p class="eyebrow" data-i18n="chart.performance">Wynik</p>
+                  <h3 data-i18n="chart.profitPerAsset">Zysk per walor</h3>
                 </div>
               </div>
               <canvas id="profitChart" height="260"></canvas>
@@ -167,8 +176,8 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Portfele</p>
-                  <h3>Porównanie</h3>
+                  <p class="eyebrow" data-i18n="chart.portfolios">Portfele</p>
+                  <h3 data-i18n="chart.comparison">Porównanie</h3>
                 </div>
               </div>
               <div id="portfolioComparison" class="portfolio-comparison"></div>
@@ -180,15 +189,15 @@
           <div class="panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Skład i struktura</p>
-                <h3>Otwarte pozycje</h3>
+                <p class="eyebrow" data-i18n="holdings.composition">Skład i struktura</p>
+                <h3 data-i18n="holdings.openPositions">Otwarte pozycje</h3>
               </div>
               <div class="inline-controls right">
-                <input id="holdingSearch" type="search" placeholder="Szukaj waloru" />
-                <select id="holdingGroup" aria-label="Grupowanie pozycji">
-                  <option value="assetType">Typ</option>
-                  <option value="currency">Waluta</option>
-                  <option value="portfolio">Portfel</option>
+                <input id="holdingSearch" type="search" data-i18n-placeholder="holdings.search" placeholder="Szukaj waloru" />
+                <select id="holdingGroup" data-i18n-aria="holdings.group.assetType" aria-label="Grupowanie pozycji">
+                  <option value="assetType" data-i18n="holdings.group.assetType">Typ</option>
+                  <option value="currency" data-i18n="holdings.group.currency">Waluta</option>
+                  <option value="portfolio" data-i18n="holdings.group.portfolio">Portfel</option>
                 </select>
               </div>
             </div>
@@ -197,20 +206,20 @@
               <table class="holdings-table">
                 <thead>
                   <tr>
-                    <th>Walor</th>
-                    <th>Typ</th>
-                    <th>Ilość</th>
-                    <th>Śr. cena</th>
-                    <th>Cena teraz</th>
-                    <th>Wartość</th>
-                    <th>Udział</th>
-                    <th>Zysk</th>
-                    <th class="period-col" title="Zwrot ceny waloru w ostatnim miesiącu">1M</th>
-                    <th class="period-col" title="Zwrot ceny waloru w ostatnich 3 miesiącach">3M</th>
-                    <th class="period-col" title="Zwrot ceny waloru w ostatnich 6 miesiącach">6M</th>
-                    <th class="period-col" title="Zwrot ceny waloru w ostatnim roku">1R</th>
-                    <th class="period-col" title="Zwrot ceny waloru od początku roku">YTD</th>
-                    <th>Portfele</th>
+                    <th data-i18n="table.instrument">Walor</th>
+                    <th data-i18n="table.type">Typ</th>
+                    <th data-i18n="table.quantity">Ilość</th>
+                    <th data-i18n="table.avgPrice">Śr. cena</th>
+                    <th data-i18n="table.currentPrice">Cena teraz</th>
+                    <th data-i18n="table.value">Wartość</th>
+                    <th data-i18n="table.share">Udział</th>
+                    <th data-i18n="table.profit">Zysk</th>
+                    <th class="period-col">1M</th>
+                    <th class="period-col">3M</th>
+                    <th class="period-col">6M</th>
+                    <th class="period-col" data-i18n="period.1y">1R</th>
+                    <th class="period-col">YTD</th>
+                    <th data-i18n="table.portfolios">Portfele</th>
                   </tr>
                 </thead>
                 <tbody id="holdingsTable"></tbody>
@@ -223,39 +232,39 @@
           <div class="panel">
             <div class="panel-heading">
               <div>
-                <p class="eyebrow">Historia</p>
-                <h3>Operacje</h3>
+                <p class="eyebrow" data-i18n="history.title">Historia</p>
+                <h3 data-i18n="tab.transactions">Operacje</h3>
               </div>
               <div class="inline-controls right">
-                <input id="transactionSearch" type="search" placeholder="Szukaj operacji" />
+                <input id="transactionSearch" type="search" data-i18n-placeholder="tx.search" placeholder="Szukaj operacji" />
                 <button id="manualToggle" class="secondary-button" type="button">
                   <span aria-hidden="true">+</span>
-                  Dodaj
+                  <span data-i18n="tx.add">Dodaj</span>
                 </button>
                 <button id="bondToggle" class="secondary-button" type="button">
                   <span aria-hidden="true">+</span>
-                  Obligacja
+                  <span data-i18n="tx.bond">Obligacja</span>
                 </button>
                 <button id="redemptionToggle" class="secondary-button" type="button">
                   <span aria-hidden="true">↩</span>
-                  Wykup
+                  <span data-i18n="tx.redemption">Wykup</span>
                 </button>
               </div>
             </div>
 
             <form id="redemptionForm" class="manual-form hidden">
-              <select name="bondKey" id="redemptionBond" aria-label="Obligacja do wykupu"></select>
-              <input name="date" type="date" required aria-label="Data wykupu" title="Data wykupu" />
-              <input name="quantity" type="number" step="1" min="1" placeholder="Ilość szt." required />
-              <input name="price" type="number" step="0.01" placeholder="Kwota wykupu / szt." title="Kwota wykupu za 1 szt. (nominał + odsetki)" />
-              <input name="fee" type="number" step="0.01" placeholder="Opłata za wykup" title="Łączna opłata za przedterminowy wykup" />
-              <button class="primary-button" type="submit">Zapisz wykup</button>
+              <select name="bondKey" id="redemptionBond" data-i18n-aria="tx.bond" aria-label="Obligacja do wykupu"></select>
+              <input name="date" type="date" required data-i18n-aria="table.date" aria-label="Data wykupu" title="Data wykupu" />
+              <input name="quantity" type="number" step="1" min="1" data-i18n-placeholder="form.redemptionQty" placeholder="Ilość szt." required />
+              <input name="price" type="number" step="0.01" data-i18n-placeholder="form.redemptionPrice" placeholder="Kwota wykupu / szt." />
+              <input name="fee" type="number" step="0.01" data-i18n-placeholder="form.redemptionFee" placeholder="Opłata za wykup" />
+              <button class="primary-button" type="submit" data-i18n="tx.saveRedemption">Zapisz wykup</button>
               <p id="redemptionHint" class="bond-hint"></p>
             </form>
 
             <form id="bondForm" class="manual-form hidden">
-              <select name="portfolioId" aria-label="Portfel"></select>
-              <select name="bondType" id="bondType" aria-label="Typ obligacji">
+              <select name="portfolioId" data-i18n-aria="table.portfolio" aria-label="Portfel"></select>
+              <select name="bondType" id="bondType" data-i18n-aria="tx.bond" aria-label="Typ obligacji">
                 <option value="OTS">OTS – 3 mies.</option>
                 <option value="ROR">ROR – 1 rok</option>
                 <option value="DOR">DOR – 2 lata</option>
@@ -265,54 +274,54 @@
                 <option value="ROS">ROS – 6 lat (rodzinne)</option>
                 <option value="ROD">ROD – 12 lat (rodzinne)</option>
               </select>
-              <input name="date" type="date" required aria-label="Data zakupu" title="Data zakupu" />
-              <input name="quantity" type="number" step="1" min="1" placeholder="Ilość szt." required />
-              <input name="maturity" type="date" aria-label="Data wykupu" title="Data wykupu" />
-              <input name="firstYearRate" type="number" step="0.01" placeholder="Oproc. I roku %" title="Oprocentowanie I roku (%)" />
-              <input name="margin" type="number" step="0.01" placeholder="Marża %" title="Marża ponad inflację/stopę NBP (%)" />
-              <input name="series" placeholder="Seria (opcj.)" title="Kod serii, np. EDO0434 – uzupełni się sam" />
-              <button class="primary-button" type="submit">Dodaj obligację</button>
+              <input name="date" type="date" required data-i18n-aria="table.date" aria-label="Data zakupu" title="Data zakupu" />
+              <input name="quantity" type="number" step="1" min="1" data-i18n-placeholder="form.quantity" placeholder="Ilość szt." required />
+              <input name="maturity" type="date" data-i18n-aria="tx.redemption" aria-label="Data wykupu" title="Data wykupu" />
+              <input name="firstYearRate" type="number" step="0.01" data-i18n-placeholder="form.firstYearRate" placeholder="Oproc. I roku %" />
+              <input name="margin" type="number" step="0.01" data-i18n-placeholder="form.margin" placeholder="Marża %" />
+              <input name="series" data-i18n-placeholder="form.bondSeries" placeholder="Seria (opcj.)" />
+              <button class="primary-button" type="submit" data-i18n="tx.addBond">Dodaj obligację</button>
               <p id="bondHint" class="bond-hint"></p>
             </form>
 
             <form id="manualForm" class="manual-form hidden">
-              <select name="portfolioId" aria-label="Portfel"></select>
+              <select name="portfolioId" data-i18n-aria="table.portfolio" aria-label="Portfel"></select>
               <input name="date" type="date" required />
-              <select name="type" aria-label="Typ operacji">
-                <option value="buy">Kupno</option>
-                <option value="sell">Sprzedaż</option>
-                <option value="dividend">Dywidenda</option>
-                <option value="deposit">Wpłata</option>
-                <option value="withdrawal">Wypłata</option>
-                <option value="fee">Prowizja</option>
+              <select name="type" data-i18n-aria="table.type" aria-label="Typ operacji">
+                <option value="buy" data-i18n="tx.buy">Kupno</option>
+                <option value="sell" data-i18n="tx.sell">Sprzedaż</option>
+                <option value="dividend" data-i18n="tx.dividend">Dywidenda</option>
+                <option value="deposit" data-i18n="tx.deposit">Wpłata</option>
+                <option value="withdrawal" data-i18n="tx.withdrawal">Wypłata</option>
+                <option value="fee" data-i18n="tx.fee">Prowizja</option>
               </select>
-              <input name="symbol" placeholder="Ticker" />
-              <input name="quantity" type="number" step="0.0001" placeholder="Ilość" />
-              <input name="price" type="number" step="0.0001" placeholder="Cena" />
-              <input name="gross" type="number" step="0.01" placeholder="Kwota" />
-              <input name="fee" type="number" step="0.01" placeholder="Prowizja" />
-              <select name="currency" aria-label="Waluta">
+              <input name="symbol" data-i18n-placeholder="form.ticker" placeholder="Ticker" />
+              <input name="quantity" type="number" step="0.0001" data-i18n-placeholder="form.quantity" placeholder="Ilość" />
+              <input name="price" type="number" step="0.0001" data-i18n-placeholder="form.price" placeholder="Cena" />
+              <input name="gross" type="number" step="0.01" data-i18n-placeholder="form.amount" placeholder="Kwota" />
+              <input name="fee" type="number" step="0.01" data-i18n-placeholder="table.fee" placeholder="Prowizja" />
+              <select name="currency" data-i18n-aria="form.currency" aria-label="Waluta">
                 <option>PLN</option>
                 <option>EUR</option>
                 <option>USD</option>
                 <option>GBP</option>
                 <option>CHF</option>
               </select>
-              <button class="primary-button" type="submit">Zapisz</button>
+              <button class="primary-button" type="submit" data-i18n="tx.save">Zapisz</button>
             </form>
 
             <div class="table-wrap">
               <table>
                 <thead>
                   <tr>
-                    <th>Data</th>
-                    <th>Portfel</th>
-                    <th>Typ</th>
-                    <th>Walor</th>
-                    <th>Ilość</th>
-                    <th>Cena</th>
-                    <th>Kwota</th>
-                    <th>Prowizja</th>
+                    <th data-i18n="table.date">Data</th>
+                    <th data-i18n="table.portfolio">Portfel</th>
+                    <th data-i18n="table.type">Typ</th>
+                    <th data-i18n="table.instrument">Walor</th>
+                    <th data-i18n="table.quantity">Ilość</th>
+                    <th data-i18n="table.price">Cena</th>
+                    <th data-i18n="table.amount">Kwota</th>
+                    <th data-i18n="table.fee">Prowizja</th>
                     <th></th>
                   </tr>
                 </thead>
@@ -327,8 +336,8 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Waluty</p>
-                  <h3>Ekspozycja walutowa</h3>
+                  <p class="eyebrow" data-i18n="allocation.currencies">Waluty</p>
+                  <h3 data-i18n="allocation.currencyExposure">Ekspozycja walutowa</h3>
                 </div>
               </div>
               <div class="doughnut-layout">
@@ -343,8 +352,8 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Portfel wzorcowy</p>
-                  <h3>Rebalancing</h3>
+                  <p class="eyebrow" data-i18n="allocation.modelPortfolio">Portfel wzorcowy</p>
+                  <h3 data-i18n="allocation.rebalancing">Rebalancing</h3>
                 </div>
               </div>
               <div id="targetsForm" class="targets-form"></div>
@@ -354,11 +363,11 @@
             <section class="panel bond-calendar-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Obligacje</p>
-                  <h3>Kalendarz wygasania</h3>
+                  <p class="eyebrow" data-i18n="allocation.bonds">Obligacje</p>
+                  <h3 data-i18n="allocation.maturityCalendar">Kalendarz wygasania</h3>
                 </div>
               </div>
-              <p class="muted bond-calendar-copy">Szacowana kwota wykupu (nominał + narosłe odsetki) wg danych z formularza obligacji. Obligacje indeksowane inflacją są przybliżone.</p>
+              <p class="muted bond-calendar-copy" data-i18n="allocation.maturityCopy">Szacowana kwota wykupu (nominał + narosłe odsetki) wg danych z formularza obligacji. Obligacje indeksowane inflacją są przybliżone.</p>
               <div id="bondMaturitySummary" class="bond-maturity-summary"></div>
               <div id="bondMaturityCalendar" class="bond-maturity-calendar"></div>
             </section>
@@ -367,30 +376,40 @@
 
         <section id="import" class="tab-panel">
           <div class="settings-grid">
+            <section class="panel language-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow" data-i18n="language.settings">Ustawienia językowe</p>
+                  <h3 data-i18n="language.title">Język</h3>
+                </div>
+              </div>
+              <div id="languageSettings" class="language-settings"></div>
+            </section>
+
             <section class="panel import-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">XTB</p>
-                  <h3>Import CSV/XLSX</h3>
+                  <p class="eyebrow" data-i18n="import.xtb">XTB</p>
+                  <h3 data-i18n="import.title">Import CSV/XLSX</h3>
                 </div>
-                <select id="importPortfolio" aria-label="Portfel docelowy"></select>
+                <select id="importPortfolio" data-i18n-aria="import.targetPortfolio" aria-label="Portfel docelowy"></select>
               </div>
               <label class="dropzone" for="fileInput">
                 <span aria-hidden="true">↑</span>
-                <strong>Wybierz plik transakcji</strong>
-                <small>.csv, .xlsx, .xls lub .zip z XTB</small>
+                <strong data-i18n="import.chooseFile">Wybierz plik transakcji</strong>
+                <small data-i18n="import.fileTypes">.csv, .xlsx, .xls lub .zip z XTB</small>
               </label>
               <div id="importStatus" class="import-status"></div>
               <div class="table-wrap preview-wrap">
                 <table>
                   <thead>
                     <tr>
-                      <th>Data</th>
-                      <th>Typ</th>
-                      <th>Walor</th>
-                      <th>Ilość</th>
-                      <th>Cena</th>
-                      <th>Kwota</th>
+                      <th data-i18n="table.date">Data</th>
+                      <th data-i18n="table.type">Typ</th>
+                      <th data-i18n="table.instrument">Walor</th>
+                      <th data-i18n="table.quantity">Ilość</th>
+                      <th data-i18n="table.price">Cena</th>
+                      <th data-i18n="table.amount">Kwota</th>
                     </tr>
                   </thead>
                   <tbody id="importPreview"></tbody>
@@ -399,7 +418,7 @@
               <div class="import-actions">
                 <button id="commitImportButton" class="primary-button" type="button" disabled>
                   <span aria-hidden="true">✓</span>
-                  Zapisz import
+                  <span data-i18n="import.save">Zapisz import</span>
                 </button>
               </div>
             </section>
@@ -407,8 +426,8 @@
             <section class="panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Wycena</p>
-                  <h3>Kursy FX</h3>
+                  <p class="eyebrow" data-i18n="pricing.title">Wycena</p>
+                  <h3 data-i18n="pricing.fx">Kursy FX</h3>
                 </div>
               </div>
               <div id="fxForm" class="fx-grid"></div>
@@ -417,8 +436,8 @@
             <section class="panel portfolio-groups-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Organizacja</p>
-                  <h3>Grupy rachunków</h3>
+                  <p class="eyebrow" data-i18n="groups.organization">Organizacja</p>
+                  <h3 data-i18n="groups.title">Grupy rachunków</h3>
                 </div>
               </div>
               <div id="portfolioGroupsPanel"></div>
@@ -427,21 +446,21 @@
             <section class="panel backup-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow">Bezpieczeństwo</p>
-                  <h3>Kopia zapasowa</h3>
+                  <p class="eyebrow" data-i18n="backup.security">Bezpieczeństwo</p>
+                  <h3 data-i18n="backup.title">Kopia zapasowa</h3>
                 </div>
               </div>
-              <p class="muted backup-copy">
+              <p class="muted backup-copy" data-i18n="backup.copy">
                 Pobierz pełną kopię portfeli, operacji, cen, historii notowań i ustawień. Przywrócenie zastępuje wszystkie dane w tej przeglądarce.
               </p>
               <div class="backup-actions">
                 <button id="backupButton" class="secondary-button" type="button">
                   <span aria-hidden="true">↓</span>
-                  Pobierz kopię JSON
+                  <span data-i18n="backup.download">Pobierz kopię JSON</span>
                 </button>
                 <label class="secondary-button file-action" for="backupInput">
                   <span aria-hidden="true">↑</span>
-                  Przywróć z pliku
+                  <span data-i18n="backup.restore">Przywróć z pliku</span>
                 </label>
                 <input id="backupInput" class="sr-only" type="file" accept=".json,application/json" />
               </div>
@@ -454,12 +473,13 @@
 
     <template id="emptyTemplate">
       <tr>
-        <td colspan="9" class="empty-state">Brak danych dla tego widoku.</td>
+        <td colspan="9" class="empty-state" data-i18n="empty.noData">Brak danych dla tego widoku.</td>
       </tr>
     </template>
 
     <script src="vendor/xlsx.full.min.js"></script>
     <script src="vendor/jszip.min.js"></script>
+    <script src="i18n.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>

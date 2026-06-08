@@ -30,7 +30,11 @@ const server = http.createServer(async (request, response) => {
       return;
     }
     if (url.pathname === "/api/health") {
-      sendJson(response, 200, { ok: true, service: "librewallet", version: process.env.LIBREWALLET_VERSION || "1.0.0" });
+      sendJson(response, 200, { ok: true, service: "librewallet", version: process.env.LIBREWALLET_VERSION || "1.1.0" });
+      return;
+    }
+    if (url.pathname === "/api/default-locale") {
+      sendJson(response, 200, { locale: readDefaultLocale() });
       return;
     }
     serveStatic(url.pathname, response);
@@ -38,6 +42,28 @@ const server = http.createServer(async (request, response) => {
     sendJson(response, 500, { error: error.message || "Server error" });
   }
 });
+
+function readDefaultLocale() {
+  const candidates = [];
+  if (process.platform === "darwin") {
+    candidates.push("/Applications/LibreWallet.app/Contents/Resources/default-locale");
+  }
+  if (process.execPath) {
+    candidates.push(path.join(path.dirname(process.execPath), "default-locale"));
+    if (process.platform === "darwin") {
+      candidates.push(path.join(path.dirname(process.execPath), "..", "Resources", "default-locale"));
+    }
+  }
+  for (const candidate of candidates) {
+    try {
+      const locale = fs.readFileSync(candidate, "utf8").trim();
+      if (locale === "pl" || locale === "en") return locale;
+    } catch {
+      // ignore missing file
+    }
+  }
+  return null;
+}
 
 function startLibreWallet(options = {}) {
   const port = Number(options.port || process.env.LIBREWALLET_PORT || process.env.PORT || PORT);

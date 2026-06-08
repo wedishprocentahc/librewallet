@@ -6,18 +6,19 @@ Aplikacja działa **wyłącznie na Twoim komputerze**. Dane portfela są w przeg
 
 | System | Plik |
 |--------|------|
-| macOS (Apple Silicon) | `LibreWallet-1.0.0-mac-arm64.pkg` |
-| macOS (Intel) | `LibreWallet-1.0.0-mac-x64.pkg` |
-| Windows | `LibreWallet-1.0.0-win.exe` |
+| macOS (Apple Silicon) | `LibreWallet-1.1.0-mac-arm64.pkg` |
+| macOS (Intel) | `LibreWallet-1.1.0-mac-x64.pkg` |
+| Windows | `LibreWallet-1.1.0-win.exe` |
 
 ### macOS
 1. Pobierz plik `.pkg` dla swojego Maca (z GitHub Releases).
 2. Dwuklik — otworzy się instalator macOS.
-3. Po instalacji aplikacja trafia do **Aplikacje** i uruchamia się automatycznie.
-4. Przeglądarka otworzy się pod `http://127.0.0.1:8787`.
+3. Po instalacji wybierz język (Polski / English).
+4. Aplikacja trafia do **Aplikacje** i uruchamia się automatycznie.
+5. Przeglądarka otworzy się pod `http://127.0.0.1:8787`.
 
 ### Windows
-1. Pobierz `LibreWallet-1.0.0-win.exe`.
+1. Pobierz `LibreWallet-1.1.0-win.exe`.
 2. Uruchom dwuklikiem — otworzy się przeglądarka.
 
 Szczegóły w pliku **`INSTALL.txt`**.
