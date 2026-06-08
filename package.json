@@ -1,0 +1,44 @@
+{
+  "name": "torba",
+  "version": "1.0.0",
+  "description": "Lokalny tracker portfela inwestycyjnego z importem XTB",
+  "license": "MIT",
+  "private": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "bin": {
+    "torba": "bin/torba.js"
+  },
+  "pkg": {
+    "assets": [
+      "server.js",
+      "app.js",
+      "index.html",
+      "styles.css",
+      "vendor/**/*"
+    ],
+    "outputPath": "dist/desktop"
+  },
+  "files": [
+    "bin",
+    "server.js",
+    "app.js",
+    "index.html",
+    "styles.css",
+    "vendor",
+    "INSTALL.txt",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node bin/torba.js",
+    "server": "node server.js",
+    "build:desktop": "bash scripts/build-desktop.sh"
+  },
+  "keywords": [
+    "portfolio",
+    "xtb",
+    "investment",
+    "tracker"
+  ]
+}

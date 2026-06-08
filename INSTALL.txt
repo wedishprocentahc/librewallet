@@ -1,0 +1,23 @@
+TORBA — instalacja
+==================
+
+1. Pobierz program dla swojego systemu:
+   - macOS (Apple Silicon): Torba-1.0.0-mac-arm64
+   - macOS (Intel):        Torba-1.0.0-mac-x64
+   - Windows:              Torba-1.0.0-win.exe
+2. Uruchom plik (dwuklik).
+3. Otworzy się przeglądarka z aplikacją.
+4. Nie zamykaj czarnego okna terminala — to serwer lokalny.
+5. Aby zakończyć: zamknij okno terminala lub naciśnij Ctrl+C.
+
+Przy pierwszym uruchomieniu na Macu: PPM na plik → Otwórz (jeśli system blokuje).
+
+Twoje dane
+----------
+Wszystko zostaje w przeglądarce na tym komputerze (localStorage).
+Rób kopię zapasową JSON w: Import i ustawienia → Kopia zapasowa.
+
+Pomoc
+-----
+Aplikacja działa pod adresem: http://127.0.0.1:8787
+Nie wymaga internetu do przeglądania danych; do aktualizacji cen potrzebny jest internet.
