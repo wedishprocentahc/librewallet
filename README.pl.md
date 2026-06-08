@@ -8,8 +8,6 @@
 
 *Przykładowe, fikcyjne dane — Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, Meta i inne.*
 
-![LibreWallet — podsumowanie portfela](docs/screenshots/dashboard.png)
-
 ![LibreWallet — wykresy i wyniki](docs/screenshots/dashboard-charts.png)
 
 ![LibreWallet — otwarte pozycje](docs/screenshots/holdings.png)

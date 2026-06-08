@@ -8,8 +8,6 @@ Track your investments on your computer. **Your data never leaves your machine**
 
 *Fictional example data — Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, Meta, and more.*
 
-![LibreWallet — portfolio overview](docs/screenshots/dashboard.png)
-
 ![LibreWallet — charts and performance](docs/screenshots/dashboard-charts.png)
 
 ![LibreWallet — holdings](docs/screenshots/holdings.png)

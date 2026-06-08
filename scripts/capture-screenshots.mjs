@@ -13,10 +13,7 @@ const MIME = {
   ".ico": "image/x-icon",
 };
 
-const shots = [
-  { html: "dashboard.html", out: "dashboard.png", width: 1280, height: 800 },
-  { html: "holdings.html", out: "holdings.png", width: 1280, height: 800 },
-];
+const shots = [{ html: "holdings.html", out: "holdings.png", width: 1280, height: 800 }];
 
 function startServer() {
   return new Promise((resolve) => {
