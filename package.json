@@ -1,6 +1,6 @@
 {
   "name": "librewallet",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Lokalny tracker portfela inwestycyjnego z importem XTB",
   "license": "MIT",
   "private": false,
@@ -17,6 +17,8 @@
       "app.js",
       "index.html",
       "styles.css",
+      "favicon.ico",
+      "assets/**/*",
       "vendor/**/*"
     ],
     "outputPath": "dist/desktop"
@@ -28,6 +30,8 @@
     "app.js",
     "index.html",
     "styles.css",
+    "favicon.ico",
+    "assets",
     "vendor",
     "INSTALL.txt",
     "README.md"

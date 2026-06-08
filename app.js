@@ -134,9 +134,13 @@ function showLanguageModal(presetLocale) {
   }
   let selected = presetLocale || window.LW_I18N.getLocale();
   modal.classList.remove("hidden");
-  const options = modal.querySelectorAll(".language-option");
+  const options = modal.querySelectorAll(".language-card");
   const sync = () => {
-    options.forEach((button) => button.classList.toggle("active", button.dataset.locale === selected));
+    options.forEach((button) => {
+      const isActive = button.dataset.locale === selected;
+      button.classList.toggle("active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
     window.LW_I18N.setLocale(selected);
     window.LW_I18N.applyI18n(modal);
   };
@@ -255,20 +259,6 @@ function bindEvents() {
     dom.portfolioName.value = "";
     saveState();
     render();
-  });
-
-  dom.portfolioGroupsPanel?.addEventListener("click", (event) => {
-    if (!event.target.closest("#consolidateXtbButton")) return;
-    const result = consolidateXtbPortfolios();
-    if (result.merged) {
-      render();
-      window.alert(
-        t("alert.xtbMerged", { count: result.accountCount, name: result.groupName }) +
-          (result.removedCount ? t("alert.xtbRemoved", { count: result.removedCount }) : ""),
-      );
-      return;
-    }
-    window.alert(result.message || t("alert.xtbNone"));
   });
 
   dom.portfolioGroupForm?.addEventListener("submit", (event) => {
@@ -457,15 +447,27 @@ function ensurePortfolio() {
   saveState();
 }
 
+function languageCardMarkup(locale, isActive) {
+  const label = locale === "pl" ? t("language.polish") : t("language.english");
+  const code = locale.toUpperCase();
+  const flag = locale === "pl" ? "🇵🇱" : "🇬🇧";
+  return `
+    <button class="language-card ${isActive ? "active" : ""}" type="button" data-locale="${locale}" aria-pressed="${isActive}">
+      <span class="language-card-flag" aria-hidden="true">${flag}</span>
+      <span class="language-card-text">
+        <strong class="language-card-label">${escapeHtml(label)}</strong>
+        <span class="language-card-code">${code}</span>
+      </span>
+      <span class="language-card-check" aria-hidden="true">✓</span>
+    </button>
+  `;
+}
+
 function renderLanguageSettings() {
   const panel = document.getElementById("languageSettings");
   if (!panel) return;
-  panel.innerHTML = window.LW_I18N.SUPPORTED.map(
-    (locale) => `
-      <button class="language-option ${state.locale === locale ? "active" : ""}" type="button" data-locale="${locale}">
-        ${locale === "pl" ? t("language.polish") : t("language.english")}
-      </button>
-    `,
+  panel.innerHTML = window.LW_I18N.SUPPORTED.map((locale) =>
+    languageCardMarkup(locale, state.locale === locale),
   ).join("");
   panel.querySelectorAll("[data-locale]").forEach((button) => {
     button.addEventListener("click", () => {
@@ -3101,13 +3103,7 @@ function renderPortfolioGroupsPanel() {
     return options.join("");
   };
   dom.portfolioGroupsPanel.innerHTML = `
-    <p class="muted portfolio-groups-copy">${escapeHtml(t("groups.xtbHint"))}</p>
-    <div class="portfolio-groups-actions">
-      <button id="consolidateXtbButton" class="secondary-button" type="button">
-        <span aria-hidden="true">↺</span>
-        ${escapeHtml(t("groups.consolidateXtb"))}
-      </button>
-    </div>
+    <p class="muted portfolio-groups-copy">${escapeHtml(t("groups.description"))}</p>
     <div class="table-wrap portfolio-groups-table">
       <table>
         <thead>

@@ -16,6 +16,8 @@ const MIME_TYPES = {
   ".zip": "application/zip",
   ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ".xls": "application/vnd.ms-excel",
+  ".png": "image/png",
+  ".ico": "image/x-icon",
 };
 
 const server = http.createServer(async (request, response) => {

@@ -75,9 +75,16 @@ label.file-action {
   width: 42px;
   height: 42px;
   border-radius: var(--radius);
-  background: var(--ink);
-  color: #fff;
-  font-weight: 800;
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(32, 33, 36, 0.12);
+}
+
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .brand h1,
@@ -208,16 +215,42 @@ label.file-action {
 }
 
 .portfolio-groups-copy {
-  margin: 0 0 12px;
+  margin: 0 0 16px;
+  max-width: 52ch;
+  line-height: 1.5;
 }
 
-.portfolio-groups-actions {
-  margin-bottom: 12px;
+.portfolio-groups-table {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.portfolio-groups-table table {
+  margin: 0;
+}
+
+.portfolio-groups-table th {
+  background: var(--surface-2);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.portfolio-groups-table td strong {
+  display: block;
+  margin-bottom: 2px;
 }
 
 .portfolio-groups-table select {
   width: 100%;
   min-width: 140px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--surface);
 }
 
 .comparison-row-nested strong {
@@ -1249,12 +1282,37 @@ tr:last-child td {
 }
 
 .language-modal-card {
-  width: min(420px, 100%);
-  background: var(--panel);
-  border: 1px solid var(--border);
+  width: min(440px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 28px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.language-modal-brand {
+  display: grid;
+  place-items: center;
+  margin-bottom: 14px;
+}
+
+.language-modal-brand img {
+  display: block;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(32, 33, 36, 0.14);
+}
+
+.language-modal-card .eyebrow,
+.language-modal-card h2,
+.language-modal-card .muted {
+  text-align: center;
+}
+
+.language-modal-card h2 {
+  margin-top: 4px;
 }
 
 .language-options,
@@ -1262,27 +1320,96 @@ tr:last-child td {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin: 20px 0;
+  margin: 22px 0;
 }
 
-.language-option {
-  border: 1px solid var(--border);
+.language-card {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--line);
   background: var(--surface);
-  color: var(--text);
+  color: var(--ink);
   border-radius: 12px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   font: inherit;
   cursor: pointer;
+  text-align: left;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
-.language-option.active,
-.language-option:hover {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+.language-card-flag {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.language-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.language-card-label {
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
+.language-card-code {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.language-card-check {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: transparent;
+  font-size: 0.75rem;
+  font-weight: 700;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.language-card:hover {
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+  background: color-mix(in srgb, var(--green-soft) 35%, var(--surface));
+}
+
+.language-card.active {
+  border-color: var(--green);
+  background: var(--green-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--green) 18%, transparent);
+}
+
+.language-card.active .language-card-check {
+  border-color: var(--green);
+  background: var(--green);
+  color: #fff;
+}
+
+.language-panel-copy {
+  margin: 8px 0 0;
+  max-width: 42ch;
 }
 
 .language-panel .language-settings {
-  max-width: 360px;
+  max-width: 420px;
+}
+
+.language-modal-card .primary-button {
+  width: 100%;
 }
 
 @media (max-width: 720px) {
@@ -1355,5 +1482,10 @@ tr:last-child td {
 
   .tab {
     flex: 0 0 auto;
+  }
+
+  .language-options,
+  .language-settings {
+    grid-template-columns: 1fr;
   }
 }

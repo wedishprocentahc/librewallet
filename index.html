@@ -4,17 +4,36 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>LibreWallet | Portfel inwestycyjny</title>
+    <link rel="icon" href="favicon.ico" sizes="any" />
+    <link rel="apple-touch-icon" href="assets/app-icon.png" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div id="languageModal" class="language-modal hidden" role="dialog" aria-modal="true" aria-labelledby="languageModalTitle">
       <div class="language-modal-card">
+        <div class="language-modal-brand">
+          <img src="assets/app-icon.png" alt="" width="56" height="56" />
+        </div>
         <p class="eyebrow">LibreWallet</p>
         <h2 id="languageModalTitle" data-i18n="language.choose">Wybierz język</h2>
         <p class="muted" data-i18n="language.chooseSubtitle">Możesz zmienić język później w Import i ustawienia.</p>
         <div class="language-options">
-          <button class="language-option active" type="button" data-locale="pl" data-i18n="language.polish">Polski</button>
-          <button class="language-option" type="button" data-locale="en" data-i18n="language.english">English</button>
+          <button class="language-card active" type="button" data-locale="pl" aria-pressed="true">
+            <span class="language-card-flag" aria-hidden="true">🇵🇱</span>
+            <span class="language-card-text">
+              <strong class="language-card-label" data-i18n="language.polish">Polski</strong>
+              <span class="language-card-code">PL</span>
+            </span>
+            <span class="language-card-check" aria-hidden="true">✓</span>
+          </button>
+          <button class="language-card" type="button" data-locale="en" aria-pressed="false">
+            <span class="language-card-flag" aria-hidden="true">🇬🇧</span>
+            <span class="language-card-text">
+              <strong class="language-card-label" data-i18n="language.english">English</strong>
+              <span class="language-card-code">EN</span>
+            </span>
+            <span class="language-card-check" aria-hidden="true">✓</span>
+          </button>
         </div>
         <button id="languageConfirmButton" class="primary-button" type="button" data-i18n="language.save">Kontynuuj</button>
       </div>
@@ -23,7 +42,9 @@
     <div class="app-shell">
       <aside class="sidebar" aria-label="Nawigacja portfeli">
         <div class="brand">
-          <div class="brand-mark" aria-hidden="true">L</div>
+          <div class="brand-mark" aria-hidden="true">
+            <img src="assets/app-icon.png" alt="" width="42" height="42" />
+          </div>
           <div>
             <p class="eyebrow" data-i18n="app.name">LibreWallet</p>
             <h1 data-i18n="app.portfolio">Portfel</h1>
@@ -381,6 +402,7 @@
                 <div>
                   <p class="eyebrow" data-i18n="language.settings">Ustawienia językowe</p>
                   <h3 data-i18n="language.title">Język</h3>
+                  <p class="muted language-panel-copy" data-i18n="language.description">Wybierz język interfejsu LibreWallet.</p>
                 </div>
               </div>
               <div id="languageSettings" class="language-settings"></div>

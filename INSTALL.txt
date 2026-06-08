@@ -1,31 +1,69 @@
 LIBREWALLET — instalacja
 ========================
 
-macOS
------
-1. Pobierz instalator dla swojego Maca:
-   - Apple Silicon (M1/M2/M3/M4): LibreWallet-1.1.0-mac-arm64.pkg
-   - Intel:                      LibreWallet-1.1.0-mac-x64.pkg
-2. Dwuklik na plik .pkg — otworzy się instalator macOS.
-3. Przejdź kreator instalacji (Dalej → Zainstaluj).
-4. Po instalacji wybierz język (Polski / English).
-5. LibreWallet uruchomi się sam i otworzy przeglądarkę.
-6. Aplikacja jest w: Finder → Aplikacje → LibreWallet.
+Pobierz najnowszą wersję:
+https://github.com/wedishprocentahc/librewallet/releases
 
-Przy pierwszym uruchomieniu: jeśli macOS blokuje program, PPM na LibreWallet.app → Otwórz.
+
+macOS — Apple Silicon (M1 / M2 / M3 / M4)
+-----------------------------------------
+
+Plik: LibreWallet-1.1.1-mac-arm64.pkg
+
+KROK 1 — Sprawdź Mac
+  Menu  → Informacje o tym Macu → Chip: Apple M1/M2/M3/M4
+
+KROK 2 — Pobierz
+  Releases → Assets → LibreWallet-1.1.1-mac-arm64.pkg
+  Plik ląduje w folderze Pobrane.
+
+KROK 3 — Uruchom instalator (macOS może zablokować!)
+  LibreWallet nie jest z App Store — zwykły dwuklik często NIE działa.
+
+  Najłatwiej:
+    Finder → Pobrane → PRAWY przycisk na pliku .pkg → Otwórz → Otwórz
+
+  Jeśli nadal blokada:
+    1. Spróbuj dwukliknąć .pkg (pojawi się komunikat o blokadzie)
+    2. Ustawienia systemowe → Prywatność i ochrona
+    3. Na dole: Bezpieczeństwo → „Otwórz mimo to” przy LibreWallet
+    4. Podaj hasło administratora
+    5. Uruchom .pkg ponownie
+
+KROK 4 — Instalacja
+  Kontynuuj → Zainstaluj → czekaj na „Instalacja zakończona pomyślnie”
+
+KROK 5 — Język
+  Wybierz Polski lub English (zmiana później: Import i ustawienia → Język)
+
+KROK 6 — Uruchomienie
+  Aplikacja: Finder → Aplikacje → LibreWallet
+  Otwiera przeglądarkę: http://127.0.0.1:8787
+
+  Jeśli macOS blokuje APLIKACJĘ (nie instalator):
+    Aplikacje → PRAWY przycisk na LibreWallet → Otwórz → Otwórz
+    LUB: Ustawienia systemowe → Prywatność i ochrona → Otwórz mimo to
+
+
+macOS — Intel
+-------------
+Plik: LibreWallet-1.1.1-mac-x64.pkg
+Te same kroki co powyżej (prawy przycisk → Otwórz, ewentualnie Ustawienia systemowe).
+
 
 Windows
 -------
-1. Pobierz LibreWallet-1.1.0-win.exe
+1. Pobierz LibreWallet-1.1.1-win.exe
 2. Uruchom dwuklikiem.
 3. Otworzy się przeglądarka z aplikacją.
+
 
 Twoje dane
 ----------
 Wszystko zostaje w przeglądarce na tym komputerze (localStorage).
-Rób kopię zapasową JSON w: Import i ustawienia → Kopia zapasowa.
+Kopia zapasowa JSON: Import i ustawienia → Kopia zapasowa.
 
 Pomoc
 -----
-Aplikacja działa pod adresem: http://127.0.0.1:8787
-Nie wymaga internetu do przeglądania danych; do aktualizacji cen potrzebny jest internet.
+Aplikacja: http://127.0.0.1:8787
+Internet potrzebny głównie do aktualizacji cen.
