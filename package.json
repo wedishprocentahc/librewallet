@@ -42,7 +42,7 @@
     "server": "node server.js",
     "build:desktop": "bash scripts/build-desktop.sh",
     "build:desktop:all": "bash scripts/build-desktop.sh all",
-    "screenshots": "node scripts/capture-screenshots.mjs"
+    "demo-data": "node scripts/build-demo-xtb-export.mjs"
   },
   "keywords": [
     "portfolio",

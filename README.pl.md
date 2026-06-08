@@ -10,8 +10,6 @@
 
 ![LibreWallet — wykresy i wyniki](docs/screenshots/dashboard-charts.png)
 
-![LibreWallet — otwarte pozycje](docs/screenshots/holdings.png)
-
 ![LibreWallet — alokacja i rebalancing](docs/screenshots/allocation.png)
 
 ## Pobierz

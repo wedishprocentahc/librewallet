@@ -10,8 +10,6 @@ Track your investments on your computer. **Your data never leaves your machine**
 
 ![LibreWallet — charts and performance](docs/screenshots/dashboard-charts.png)
 
-![LibreWallet — holdings](docs/screenshots/holdings.png)
-
 ![LibreWallet — allocation and rebalancing](docs/screenshots/allocation.png)
 
 ## Download
