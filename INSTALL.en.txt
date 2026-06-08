@@ -1,0 +1,71 @@
+LIBREWALLET — installation
+============================
+
+Language: English (this file) · Polski (INSTALL.txt)
+
+Download the latest release:
+https://github.com/wedishprocentahc/librewallet/releases
+
+
+macOS — Apple Silicon (M1 / M2 / M3 / M4)
+-----------------------------------------
+
+File: LibreWallet-1.1.1-mac-arm64.pkg
+
+STEP 1 — Check your Mac
+   menu → About This Mac → Chip: Apple M1/M2/M3/M4
+
+STEP 2 — Download
+  Releases → Assets → LibreWallet-1.1.1-mac-arm64.pkg
+  The file goes to your Downloads folder.
+
+STEP 3 — Run the installer (macOS may block it!)
+  LibreWallet is not from the App Store — a normal double-click often does NOT work.
+
+  Easiest way:
+    Finder → Downloads → RIGHT-click the .pkg file → Open → Open
+
+  If still blocked:
+    1. Try double-clicking the .pkg (you will see a block message)
+    2. System Settings → Privacy & Security
+    3. At the bottom: Security → “Open Anyway” for LibreWallet
+    4. Enter your administrator password
+    5. Run the .pkg again
+
+STEP 4 — Install
+  Continue → Install → wait for “The installation was successful”
+
+STEP 5 — Language
+  Choose Polski or English (change later: Import & settings → Language)
+
+STEP 6 — Launch
+  App: Finder → Applications → LibreWallet
+  Opens the browser at: http://127.0.0.1:8787
+
+  If macOS blocks the APP (not the installer):
+    Applications → RIGHT-click LibreWallet → Open → Open
+    OR: System Settings → Privacy & Security → Open Anyway
+
+
+macOS — Intel
+-------------
+File: LibreWallet-1.1.1-mac-x64.pkg
+Same steps as above (right-click → Open, or System Settings if needed).
+
+
+Windows
+-------
+1. Download LibreWallet-1.1.1-win.exe
+2. Double-click to run.
+3. Your browser will open with the app.
+
+
+Your data
+---------
+Everything stays in the browser on this computer (localStorage).
+JSON backup: Import & settings → Backup.
+
+Help
+----
+App URL: http://127.0.0.1:8787
+Internet is mainly needed to refresh live prices.

@@ -1,6 +1,6 @@
 # LibreWallet — lokalny tracker portfela
 
-**Język:** [Polski](README.pl.md) · [English](README.en.md)
+**Język:** **Polski** · [English](README.md)
 
 Aplikacja działa **wyłącznie na Twoim komputerze**. Dane portfela są w przeglądarce (`localStorage`) — nic nie wysyłasz na cudzy serwer. Do pobierania cen z internetu używany jest tylko lokalny proxy (Yahoo Finance).
 
@@ -90,7 +90,7 @@ LibreWallet nie pochodzi z App Store i nie ma podpisu Apple — **przy pierwszym
 1. Pobierz `LibreWallet-1.1.1-win.exe` z [Releases](https://github.com/wedishprocentahc/librewallet/releases).
 2. Uruchom dwuklikiem — otworzy się przeglądarka.
 
-Więcej w pliku **`INSTALL.txt`**.
+Więcej w plikach **`INSTALL.txt`** i **`INSTALL.en.txt`**.
 
 ---
 

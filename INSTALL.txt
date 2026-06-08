@@ -1,6 +1,8 @@
 LIBREWALLET — instalacja
 ========================
 
+Język: Polski (ten plik) · English (INSTALL.en.txt)
+
 Pobierz najnowszą wersję:
 https://github.com/wedishprocentahc/librewallet/releases
 

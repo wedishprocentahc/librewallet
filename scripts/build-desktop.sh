@@ -59,5 +59,5 @@ else
   esac
 fi
 
-cp "$ROOT/INSTALL.txt" "$DIST/"
+cp "$ROOT/INSTALL.txt" "$ROOT/INSTALL.en.txt" "$DIST/"
 echo "Gotowe w: $DIST"
