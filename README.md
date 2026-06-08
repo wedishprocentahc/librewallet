@@ -6,11 +6,15 @@ Track your investments on your computer. **Your data never leaves your machine**
 
 ## Screenshots
 
-*Fictional example data.*
+*Fictional example data — Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, Meta, and more.*
 
-![LibreWallet dashboard — portfolio overview, charts, and KPIs](docs/screenshots/dashboard.png)
+![LibreWallet — portfolio overview](docs/screenshots/dashboard.png)
 
-![LibreWallet holdings — open positions with returns](docs/screenshots/holdings.png)
+![LibreWallet — charts and performance](docs/screenshots/dashboard-charts.png)
+
+![LibreWallet — holdings](docs/screenshots/holdings.png)
+
+![LibreWallet — allocation and rebalancing](docs/screenshots/allocation.png)
 
 ## Download
 

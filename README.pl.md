@@ -6,11 +6,15 @@
 
 ## Zrzuty ekranu
 
-*Przykładowe, fikcyjne dane.*
+*Przykładowe, fikcyjne dane — Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, Meta i inne.*
 
-![LibreWallet — kokpit z wykresami i podsumowaniem portfela](docs/screenshots/dashboard.png)
+![LibreWallet — podsumowanie portfela](docs/screenshots/dashboard.png)
 
-![LibreWallet — otwarte pozycje i zwroty](docs/screenshots/holdings.png)
+![LibreWallet — wykresy i wyniki](docs/screenshots/dashboard-charts.png)
+
+![LibreWallet — otwarte pozycje](docs/screenshots/holdings.png)
+
+![LibreWallet — alokacja i rebalancing](docs/screenshots/allocation.png)
 
 ## Pobierz
 
