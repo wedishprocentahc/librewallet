@@ -2,11 +2,11 @@
 
 **Language:** [Polski](README.pl.md) · **English**
 
-The app runs **only on your computer**. Portfolio data stays in your browser (`localStorage`) — nothing is sent to a third-party server. Live prices use a local proxy (Yahoo Finance) on your machine.
+Track your investments on your computer. **Your data never leaves your machine** — no cloud account, no third-party server.
 
 ## Download
 
-Get the latest build from **[Releases](https://github.com/wedishprocentahc/librewallet/releases).
+Get the latest version from **[Releases](https://github.com/wedishprocentahc/librewallet/releases).
 
 | System | File |
 |--------|------|
@@ -18,74 +18,70 @@ Get the latest build from **[Releases](https://github.com/wedishprocentahc/libre
 
 ## Install on Mac (Apple Silicon) — step by step
 
-This guide is for Macs with **Apple Silicon** (M1, M2, M3, M4). No technical background required.
+For Macs with **Apple Silicon** (M1, M2, M3, M4).
 
-### Step 0 — check you have the right Mac
+### Step 1 — check you have the right Mac
 
 1. Click the **** menu (top-left).
 2. Choose **About This Mac**.
 3. Under **Chip**, you should see *Apple M1*, *Apple M2*, *Apple M3*, or *Apple M4*.
 4. If you see **Intel**, download `mac-x64.pkg`, not `mac-arm64.pkg`.
 
-### Step 1 — download the installer
+### Step 2 — download the installer
 
-1. Go to: https://github.com/wedishprocentahc/librewallet/releases
-2. Open the latest release (e.g. **v1.1.1**).
-3. Under **Assets**, download **`LibreWallet-1.1.1-mac-arm64.pkg`**.
+1. Go to [Releases](https://github.com/wedishprocentahc/librewallet/releases).
+2. Open the latest version (e.g. **v1.1.1**).
+3. Download **`LibreWallet-1.1.1-mac-arm64.pkg`**.
 4. The file goes to your **Downloads** folder.
 
-### Step 2 — run the installer (macOS may block the file)
+### Step 3 — run the installer (macOS may block the file)
 
-LibreWallet is not from the App Store and is not signed by Apple — **macOS often refuses a normal double-click on first launch**. That is expected. Do this:
+LibreWallet is not from the App Store — **a normal double-click often does not work the first time**. That is normal.
 
-**Method A — right-click and “Open” (easiest):**
+**Easiest way — right-click and Open:**
 
 1. Open **Finder** → **Downloads**.
 2. Find `LibreWallet-…-mac-arm64.pkg`.
 3. **Right-click** the file (not left-click).
-4. Choose **Open** from the menu.
-5. In the warning dialog, click **Open** again (not “Cancel”).
+4. Choose **Open**.
+5. In the warning dialog, click **Open** again.
 
-**Method B — if it still does not work, use System Settings:**
+**If it still does not work — System Settings:**
 
-1. Try double-clicking the `.pkg` — macOS will say it cannot be opened.
-2. Open **System Settings** (gear icon in the Dock or from the  menu).
-3. Go to **Privacy & Security**.
-4. Scroll down to the **Security** section.
-5. You should see a message about LibreWallet being blocked — click **Open Anyway**.
-6. Enter your Mac administrator password if prompted.
-7. Go back to **Downloads** and run the installer again (double-click or right-click → Open).
+1. Try double-clicking the `.pkg` — macOS will show a block message.
+2. Open **System Settings** → **Privacy & Security**.
+3. Scroll down to **Security**.
+4. Click **Open Anyway** next to the LibreWallet message.
+5. Enter your Mac password if asked.
+6. Run the installer again from **Downloads**.
 
-### Step 3 — complete the installer
+### Step 4 — complete the installer
 
-1. The macOS installer opens.
-2. Click **Continue** through the steps.
-3. At the end, click **Install** and enter your Mac password if asked.
-4. Wait until you see **The installation was successful**.
+1. Click **Continue** through the steps.
+2. Click **Install** and enter your Mac password if asked.
+3. Wait until you see **The installation was successful**.
 
-### Step 4 — choose language
+### Step 5 — choose language
 
-1. After install, a small dialog appears: **Polski** or **English**.
-2. Pick your language — you can change it later in the app (**Import & settings → Language**).
+After install, pick **Polski** or **English**. You can change this later in **Import & settings → Language**.
 
-### Step 5 — first launch
+### Step 6 — first launch
 
-1. LibreWallet is installed to **Applications**.
-2. It should launch automatically and open your browser at `http://127.0.0.1:8787`.
-3. If macOS **blocks the app itself** (not the installer, but LibreWallet in Applications):
-   - Open **Finder** → **Applications** → **LibreWallet**.
-   - **Right-click** → **Open** → click **Open** in the dialog.
-   - Or: **System Settings** → **Privacy & Security** → **Open Anyway** (same as step 2).
+1. LibreWallet is in **Applications** and should open your browser automatically.
+2. If macOS **blocks the app** (not the installer):
+   - **Finder** → **Applications** → **LibreWallet**
+   - **Right-click** → **Open** → **Open**
+   - Or: **System Settings** → **Privacy & Security** → **Open Anyway**
 
-### Step 6 — done
+### Step 7 — done
 
-- The app runs in your browser (Safari, Chrome, or Firefox).
-- Data stays **only on your computer**.
-- Backup: **Import & settings → Backup** (JSON file).
+- Use Safari, Chrome, or Firefox.
+- Your portfolio data stays **only on this computer**.
+- Back up anytime: **Import & settings → Backup**.
 
 ---
 
-## Windows (short)
+## Windows
 
 1. Download `LibreWallet-1.1.1-win.exe` from [Releases](https://github.com/wedishprocentahc/librewallet/releases).
 2. Double-click to run — your browser will open.
@@ -94,38 +90,16 @@ More details in **`INSTALL.en.txt`** ([Polish](INSTALL.txt)).
 
 ---
 
-## Development
+## What LibreWallet does
 
-```bash
-npm start              # run from source
-npm run build:desktop  # build desktop installers
-```
+- track portfolios and XTB accounts (PLN, EUR, USD),
+- import trades from XTB exports,
+- show live prices, charts, and benchmarks,
+- manage bonds, targets, and rebalancing,
+- Polish and English interface.
 
-Build output: `dist/desktop/`.
+## Your data
 
----
+Everything stays on your computer. Make regular backups in **Import & settings → Backup**. Internet is only needed to refresh stock prices.
 
-## Features
-
-- portfolios and XTB account groups (PLN/EUR/USD),
-- XTB import from CSV/XLSX/ZIP,
-- live prices and price history,
-- charts, benchmarks, trade markers,
-- bonds, JSON backup,
-- rebalancing and allocation,
-- Polish and English UI.
-
-## Privacy
-
-- Trades and portfolios: **localStorage** in your browser.
-- The local server only sends ticker symbols outward (for prices).
-- Back up JSON via **Import & settings → Backup**.
-
-## Requirements
-
-- macOS 11+ or Windows 10+.
-- Browser: Chrome, Firefox, Safari, or Edge.
-
-## XTB import
-
-Use the `Cash Operations` sheet. Best practice: import the full ZIP with PLN + EUR + USD accounts at once.
+**XTB tip:** import the full ZIP export with all your accounts (PLN + EUR + USD) at once.
