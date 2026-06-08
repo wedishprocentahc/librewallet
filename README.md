@@ -4,6 +4,14 @@
 
 Track your investments on your computer. **Your data never leaves your machine** — no cloud account, no third-party server.
 
+## Screenshots
+
+*Fictional example data.*
+
+![LibreWallet dashboard — portfolio overview, charts, and KPIs](docs/screenshots/dashboard.png)
+
+![LibreWallet holdings — open positions with returns](docs/screenshots/holdings.png)
+
 ## Download
 
 Get the latest version from **[Releases](https://github.com/wedishprocentahc/librewallet/releases).

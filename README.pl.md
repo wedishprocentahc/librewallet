@@ -4,6 +4,14 @@
 
 Śledź swoje inwestycje na komputerze. **Dane nie wychodzą poza Twój Mac** — bez konta w chmurze, bez zewnętrznego serwera.
 
+## Zrzuty ekranu
+
+*Przykładowe, fikcyjne dane.*
+
+![LibreWallet — kokpit z wykresami i podsumowaniem portfela](docs/screenshots/dashboard.png)
+
+![LibreWallet — otwarte pozycje i zwroty](docs/screenshots/holdings.png)
+
 ## Pobierz
 
 Najnowszą wersję znajdziesz w **[Releases](https://github.com/wedishprocentahc/librewallet/releases)**.

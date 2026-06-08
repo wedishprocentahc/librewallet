@@ -41,7 +41,8 @@
     "start": "node bin/librewallet.js",
     "server": "node server.js",
     "build:desktop": "bash scripts/build-desktop.sh",
-    "build:desktop:all": "bash scripts/build-desktop.sh all"
+    "build:desktop:all": "bash scripts/build-desktop.sh all",
+    "screenshots": "node scripts/capture-screenshots.mjs"
   },
   "keywords": [
     "portfolio",

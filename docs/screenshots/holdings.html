@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <title>LibreWallet screenshot — holdings</title>
+    <link rel="stylesheet" href="../../styles.css" />
+    <style>
+      body { min-height: auto; }
+      .screenshot-root { width: 1280px; min-height: 800px; }
+    </style>
+  </head>
+  <body>
+    <div class="screenshot-root app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"><img src="../../assets/app-icon.png" alt="" width="42" height="42" /></div>
+          <div>
+            <p class="eyebrow">LibreWallet</p>
+            <h1>Portfel</h1>
+          </div>
+        </div>
+        <button class="scope-button active" type="button">
+          <span class="scope-dot aggregate"></span>
+          <span>Wszystkie inwestycje</span>
+        </button>
+        <div class="portfolio-list">
+          <button class="portfolio-button" type="button">
+            <span class="scope-dot group-dot" style="background:#176b4d"></span>
+            <span>XTB</span>
+          </button>
+          <button class="portfolio-sub-button" type="button">
+            <span class="scope-dot" style="background:#22577a"></span>
+            <span>PLN</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Widok zbiorczy</p>
+            <h2>Wszystkie inwestycje</h2>
+          </div>
+        </header>
+
+        <section class="kpi-grid">
+          <article class="metric"><span>Wartość</span><strong>284 560 PLN</strong><small>bez gotówki</small></article>
+          <article class="metric"><span>Zysk</span><strong class="positive">+42 180 PLN</strong><small class="positive">+17,4%</small></article>
+          <article class="metric"><span>Wkład</span><strong>242 380 PLN</strong><small>186 operacji</small></article>
+          <article class="metric"><span>Walory</span><strong>12</strong><small>PLN, EUR, USD</small></article>
+        </section>
+
+        <nav class="tabs">
+          <button class="tab" type="button">Kokpit</button>
+          <button class="tab active" type="button">Pozycje</button>
+          <button class="tab" type="button">Operacje</button>
+          <button class="tab" type="button">Alokacja</button>
+          <button class="tab" type="button">Import i ustawienia</button>
+        </nav>
+
+        <section class="tab-panel active">
+          <div class="panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">Skład i struktura</p>
+                <h3>Otwarte pozycje</h3>
+              </div>
+            </div>
+            <div class="table-wrap holdings-table-wrap">
+              <table class="holdings-table">
+                <thead>
+                  <tr>
+                    <th>Walor</th>
+                    <th>Typ</th>
+                    <th>Ilość</th>
+                    <th>Śr. cena</th>
+                    <th>Cena teraz</th>
+                    <th>Wartość</th>
+                    <th>Udział</th>
+                    <th>Zysk</th>
+                    <th class="period-col">1M</th>
+                    <th class="period-col">3M</th>
+                    <th class="period-col">1R</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>VWCE</strong><br><small class="muted">Vanguard FTSE All-World</small></td>
+                    <td>ETF</td>
+                    <td>42</td>
+                    <td>98,40 EUR</td>
+                    <td>112,15 EUR</td>
+                    <td>98 240 PLN</td>
+                    <td>34,5%</td>
+                    <td class="positive">+18 420 PLN</td>
+                    <td class="positive">+2,1%</td>
+                    <td class="positive">+6,8%</td>
+                    <td class="positive">+14,2%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>AAPL</strong><br><small class="muted">Apple Inc.</small></td>
+                    <td>Akcja</td>
+                    <td>18</td>
+                    <td>168,20 USD</td>
+                    <td>214,80 USD</td>
+                    <td>15 680 PLN</td>
+                    <td>5,5%</td>
+                    <td class="positive">+3 940 PLN</td>
+                    <td class="positive">+4,6%</td>
+                    <td class="positive">+11,2%</td>
+                    <td class="positive">+22,8%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>EDO0429</strong><br><small class="muted">Obligacja 4,29%</small></td>
+                    <td>Obligacja</td>
+                    <td>120</td>
+                    <td>100 PLN</td>
+                    <td>101,20 PLN</td>
+                    <td>12 144 PLN</td>
+                    <td>4,3%</td>
+                    <td class="positive">+144 PLN</td>
+                    <td class="positive">+0,4%</td>
+                    <td class="positive">+1,1%</td>
+                    <td class="positive">+1,2%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>MSFT</strong><br><small class="muted">Microsoft Corp.</small></td>
+                    <td>Akcja</td>
+                    <td>9</td>
+                    <td>352,00 USD</td>
+                    <td>428,50 USD</td>
+                    <td>15 420 PLN</td>
+                    <td>5,4%</td>
+                    <td class="positive">+2 760 PLN</td>
+                    <td class="negative">-1,2%</td>
+                    <td class="positive">+8,4%</td>
+                    <td class="positive">+19,6%</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Gotówka PLN</strong></td>
+                    <td>Gotówka</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>38 200 PLN</td>
+                    <td>13,4%</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td>—</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>

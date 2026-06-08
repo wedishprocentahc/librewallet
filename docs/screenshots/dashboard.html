@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <title>LibreWallet screenshot — dashboard</title>
+    <link rel="stylesheet" href="../../styles.css" />
+    <style>
+      body { min-height: auto; }
+      .screenshot-root { width: 1280px; min-height: 800px; }
+      .mock-chart {
+        width: 100%;
+        height: 270px;
+        display: block;
+        border-radius: 6px;
+        background: linear-gradient(180deg, #faf9f6 0%, #fff 100%);
+      }
+      .mock-doughnut-wrap {
+        position: relative;
+        display: grid;
+        place-items: center;
+        min-height: 260px;
+      }
+      .mock-doughnut-total {
+        position: absolute;
+        font-size: 1.1rem;
+      }
+      .chart-legend-list { display: grid; gap: 8px; }
+      .legend-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.92rem;
+      }
+      .legend-swatch {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
+        flex-shrink: 0;
+      }
+      .legend-label { display: flex; align-items: center; gap: 8px; min-width: 0; }
+      .portfolio-comparison { display: grid; gap: 10px; }
+      .comparison-row {
+        display: grid;
+        grid-template-columns: 1fr auto auto;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .comparison-row:last-child { border-bottom: 0; }
+      .comparison-bar {
+        height: 8px;
+        border-radius: 999px;
+        background: var(--surface-2);
+        overflow: hidden;
+        margin-top: 6px;
+      }
+      .comparison-bar > span {
+        display: block;
+        height: 100%;
+        border-radius: inherit;
+        background: var(--green);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="screenshot-root app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark"><img src="../../assets/app-icon.png" alt="" width="42" height="42" /></div>
+          <div>
+            <p class="eyebrow">LibreWallet</p>
+            <h1>Portfel</h1>
+          </div>
+        </div>
+        <button class="scope-button active" type="button">
+          <span class="scope-dot aggregate"></span>
+          <span>Wszystkie inwestycje</span>
+        </button>
+        <div class="portfolio-list">
+          <button class="portfolio-button" type="button">
+            <span class="scope-dot group-dot" style="background:#176b4d"></span>
+            <span>XTB</span>
+          </button>
+          <button class="portfolio-sub-button" type="button">
+            <span class="scope-dot" style="background:#22577a"></span>
+            <span>PLN</span>
+          </button>
+          <button class="portfolio-sub-button" type="button">
+            <span class="scope-dot" style="background:#a56b13"></span>
+            <span>EUR</span>
+          </button>
+          <button class="portfolio-button" type="button">
+            <span class="scope-dot" style="background:#5c4f82"></span>
+            <span>IKE ETF</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Widok zbiorczy</p>
+            <h2>Wszystkie inwestycje</h2>
+          </div>
+          <div class="topbar-actions">
+            <button class="secondary-button" type="button"><span>↻</span><span>Aktualizuj ceny</span></button>
+            <button class="secondary-button" type="button"><span>↓</span><span>Eksport CSV</span></button>
+            <button class="primary-button" type="button"><span>↑</span><span>Import XTB</span></button>
+          </div>
+        </header>
+
+        <section class="kpi-grid">
+          <article class="metric">
+            <span>Wartość</span>
+            <strong>284 560 PLN</strong>
+            <small>bez gotówki</small>
+          </article>
+          <article class="metric">
+            <span>Zysk</span>
+            <strong class="positive">+42 180 PLN</strong>
+            <small class="positive">+17,4%</small>
+          </article>
+          <article class="metric">
+            <span>Wkład</span>
+            <strong>242 380 PLN</strong>
+            <small>186 operacji</small>
+          </article>
+          <article class="metric">
+            <span>Walory</span>
+            <strong>12</strong>
+            <small>PLN, EUR, USD</small>
+          </article>
+        </section>
+
+        <nav class="tabs">
+          <button class="tab active" type="button">Kokpit</button>
+          <button class="tab" type="button">Pozycje</button>
+          <button class="tab" type="button">Operacje</button>
+          <button class="tab" type="button">Alokacja</button>
+          <button class="tab" type="button">Import i ustawienia</button>
+        </nav>
+
+        <section class="tab-panel active">
+          <div class="dashboard-grid">
+            <section class="panel chart-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">W czasie</p>
+                  <h3>Wartość portfela i kapitał dziennie</h3>
+                </div>
+              </div>
+              <svg class="mock-chart" viewBox="0 0 760 270" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <defs>
+                  <linearGradient id="fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#176b4d" stop-opacity="0.18"/>
+                    <stop offset="100%" stop-color="#176b4d" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <line x1="40" y1="220" x2="740" y2="220" stroke="#dedbd2"/>
+                <line x1="40" y1="170" x2="740" y2="170" stroke="#f0eee6"/>
+                <line x1="40" y1="120" x2="740" y2="120" stroke="#f0eee6"/>
+                <line x1="40" y1="70" x2="740" y2="70" stroke="#f0eee6"/>
+                <path d="M40,205 C120,198 180,185 250,170 S400,130 500,118 S650,95 740,72 L740,220 L40,220 Z" fill="url(#fill)"/>
+                <path d="M40,205 C120,198 180,185 250,170 S400,130 500,118 S650,95 740,72" fill="none" stroke="#176b4d" stroke-width="3"/>
+                <path d="M40,215 C160,210 280,205 400,200 S620,192 740,188" fill="none" stroke="#22577a" stroke-width="2" stroke-dasharray="6 4"/>
+                <circle cx="500" cy="118" r="4" fill="#176b4d"/>
+                <circle cx="620" cy="98" r="4" fill="#176b4d"/>
+              </svg>
+            </section>
+
+            <section class="panel chart-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow">Struktura</p>
+                  <h3>Typy aktywów</h3>
+                </div>
+              </div>
+              <div class="doughnut-layout">
+                <div class="doughnut-figure mock-doughnut-wrap">
+                  <svg width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
+                    <circle cx="110" cy="110" r="78" fill="none" stroke="#f0eee6" stroke-width="28"/>
+                    <circle cx="110" cy="110" r="78" fill="none" stroke="#176b4d" stroke-width="28" stroke-dasharray="245 490" transform="rotate(-90 110 110)"/>
+                    <circle cx="110" cy="110" r="78" fill="none" stroke="#22577a" stroke-width="28" stroke-dasharray="120 490" stroke-dashoffset="-245" transform="rotate(-90 110 110)"/>
+                    <circle cx="110" cy="110" r="78" fill="none" stroke="#a56b13" stroke-width="28" stroke-dasharray="70 490" stroke-dashoffset="-365" transform="rotate(-90 110 110)"/>
+                    <circle cx="110" cy="110" r="78" fill="none" stroke="#5c4f82" stroke-width="28" stroke-dasharray="55 490" stroke-dashoffset="-435" transform="rotate(-90 110 110)"/>
+                  </svg>
+                  <strong class="mock-doughnut-total">284 560 PLN</strong>
+                </div>
+                <div class="chart-legend-list">
+                  <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#176b4d"></span>ETF / akcje</span><strong>50%</strong></div>
+                  <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#22577a"></span>Obligacje</span><strong>24%</strong></div>
+                  <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#a56b13"></span>Gotówka</span><strong>14%</strong></div>
+                  <div class="legend-row"><span class="legend-label"><span class="legend-swatch" style="background:#5c4f82"></span>Inne</span><strong>12%</strong></div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+  </body>
+</html>
