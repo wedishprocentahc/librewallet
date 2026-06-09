@@ -24,6 +24,10 @@ function openBrowser(url) {
 
 startLibreWallet({ port, host })
   .then(({ url }) => {
+    if (process.env.LIBREWALLET_NO_BROWSER === "1") {
+      console.log(`LibreWallet serwer: ${url}`);
+      return;
+    }
     console.log(`Otwieram przeglądarkę: ${url}`);
     openBrowser(url);
   })

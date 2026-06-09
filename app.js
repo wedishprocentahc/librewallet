@@ -123,7 +123,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 function finishBoot() {
   ensurePortfolio();
   migratePortfolioGroups();
+  setupDesktopHint();
   render();
+}
+
+function setupDesktopHint() {
+  if (!dom.desktopHint) return;
+  const local = /^(127\.0\.0\.1|localhost)$/.test(window.location.hostname);
+  dom.desktopHint.classList.toggle("hidden", !local);
 }
 
 function showLanguageModal(presetLocale) {
@@ -171,6 +178,7 @@ function cacheDom() {
     "exportButton",
     "fileInput",
     "quoteStatus",
+    "desktopHint",
     "clearDataButton",
     "metricValue",
     "metricCashMode",

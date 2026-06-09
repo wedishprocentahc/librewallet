@@ -34,7 +34,9 @@ APP_PATH="$WORK/Applications/LibreWallet.app"
 mkdir -p "$APP_PATH/Contents/MacOS"
 mkdir -p "$APP_PATH/Contents/Resources"
 
-cp "$BINARY" "$APP_PATH/Contents/MacOS/LibreWallet"
+cp "$BINARY" "$APP_PATH/Contents/MacOS/librewallet-server"
+chmod +x "$APP_PATH/Contents/MacOS/librewallet-server"
+cp "$ROOT/scripts/macos-app-launcher.sh" "$APP_PATH/Contents/MacOS/LibreWallet"
 chmod +x "$APP_PATH/Contents/MacOS/LibreWallet"
 
 ICON_SRC="$ROOT/assets/app-icon.png"
@@ -76,6 +78,8 @@ cat > "$APP_PATH/Contents/Info.plist" <<EOF
   <true/>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
+  <key>LSMultipleInstancesProhibited</key>
+  <true/>
 </dict>
 </plist>
 EOF

@@ -389,6 +389,17 @@ button:focus-visible,
   color: var(--red);
 }
 
+.desktop-hint {
+  margin: -6px 0 14px;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: rgba(34, 87, 122, 0.08);
+  border: 1px solid rgba(34, 87, 122, 0.14);
+  color: var(--ink);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
 .file-action {
   text-decoration: none;
 }
