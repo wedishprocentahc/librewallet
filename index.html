@@ -9,6 +9,67 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="importModal" class="import-modal hidden" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+      <div class="import-modal-card">
+        <button
+          id="closeImportModalButton"
+          class="import-modal-close"
+          type="button"
+          data-i18n-aria="import.modal.close"
+          aria-label="Zamknij"
+        >
+          ×
+        </button>
+        <p class="eyebrow" data-i18n="import.modal.eyebrow">Operacje</p>
+        <h2 id="importModalTitle" data-i18n="import.modal.title">Import operacji</h2>
+        <p class="muted import-modal-copy" data-i18n="import.modal.subtitle">
+          Wybierz źródło importu i plik z operacjami. Podgląd i zapis pojawią się w zakładce Import i ustawienia.
+        </p>
+        <label class="import-modal-portfolio">
+          <span data-i18n="import.targetPortfolio">Portfel docelowy</span>
+          <select id="importPortfolio" data-i18n-aria="import.targetPortfolio" aria-label="Portfel docelowy"></select>
+        </label>
+        <div class="import-modal-options">
+          <article class="import-option-card">
+            <p class="eyebrow" data-i18n="import.xtb">XTB</p>
+            <h3 data-i18n="import.title">Import ZIP</h3>
+            <p class="muted" data-i18n="import.modal.xtbDescription">Eksport historii operacji z platformy XTB.</p>
+            <label class="secondary-button file-action" for="fileInput">
+              <span aria-hidden="true">↑</span>
+              <span data-i18n="import.chooseFile">Wybierz plik transakcji</span>
+            </label>
+            <small class="import-option-hint" data-i18n="import.fileTypes">Plik .zip z eksportu XTB</small>
+          </article>
+          <article class="import-option-card">
+            <p class="eyebrow" data-i18n="import.universal.eyebrow">Uniwersalny</p>
+            <h3 data-i18n="import.universal.title">Import z szablonu</h3>
+            <p class="muted" data-i18n="import.universal.description">
+              Przygotuj plik CSV lub XLSX według szablonu LibreWallet. Szablon zawiera przykładowy wiersz dla każdego typu operacji (bez obligacji).
+            </p>
+            <div class="import-option-actions">
+              <button id="downloadUniversalTemplateButton" class="secondary-button" type="button">
+                <span aria-hidden="true">↓</span>
+                <span data-i18n="import.universal.downloadTemplate">Pobierz szablon CSV</span>
+              </button>
+              <label class="secondary-button file-action" for="universalFileInput">
+                <span aria-hidden="true">↑</span>
+                <span data-i18n="import.universal.chooseFile">Wybierz plik wg szablonu</span>
+              </label>
+            </div>
+            <small class="import-option-hint" data-i18n="import.universal.fileTypes">.csv, .xlsx lub .xls</small>
+          </article>
+        </div>
+      </div>
+      <input id="fileInput" class="sr-only" type="file" accept=".zip,application/zip" multiple />
+      <input
+        id="universalFileInput"
+        class="sr-only"
+        type="file"
+        accept=".csv,.xlsx,.xls,text/csv"
+        multiple
+      />
+    </div>
+
     <div id="languageModal" class="language-modal hidden" role="dialog" aria-modal="true" aria-labelledby="languageModalTitle">
       <div class="language-modal-card">
         <div class="language-modal-brand">
@@ -96,11 +157,10 @@
               <span aria-hidden="true">↓</span>
               <span data-i18n="action.exportCsv">Eksport CSV</span>
             </button>
-            <label class="primary-button file-action" for="fileInput">
+            <button id="openImportModalButton" class="primary-button" type="button">
               <span aria-hidden="true">↑</span>
-              <span data-i18n="action.importXtb">Import XTB</span>
-            </label>
-            <input id="fileInput" class="sr-only" type="file" accept=".csv,.xlsx,.xls,.zip,text/csv" multiple />
+              <span data-i18n="action.import">Import</span>
+            </button>
           </div>
         </header>
         <div id="quoteStatus" class="quote-status" role="status"></div>
@@ -411,56 +471,24 @@
               <div id="languageSettings" class="language-settings"></div>
             </section>
 
-            <section class="panel import-panel">
-              <div class="panel-heading">
-                <div>
-                  <p class="eyebrow" data-i18n="import.xtb">XTB</p>
-                  <h3 data-i18n="import.title">Import CSV/XLSX</h3>
-                </div>
-                <select id="importPortfolio" data-i18n-aria="import.targetPortfolio" aria-label="Portfel docelowy"></select>
-              </div>
-              <label class="dropzone" for="fileInput">
-                <span aria-hidden="true">↑</span>
-                <strong data-i18n="import.chooseFile">Wybierz plik transakcji</strong>
-                <small data-i18n="import.fileTypes">.csv, .xlsx, .xls lub .zip z XTB</small>
-              </label>
-            </section>
-
             <section class="panel import-panel universal-import-panel">
               <div class="panel-heading">
                 <div>
-                  <p class="eyebrow" data-i18n="import.universal.eyebrow">Uniwersalny</p>
-                  <h3 data-i18n="import.universal.title">Import z szablonu</h3>
-                  <p class="muted import-universal-copy" data-i18n="import.universal.description">
-                    Przygotuj plik CSV lub XLSX według szablonu LibreWallet. Szablon zawiera przykładowy wiersz dla każdego typu operacji (bez obligacji).
+                  <p class="eyebrow" data-i18n="import.modal.eyebrow">Operacje</p>
+                  <h3 data-i18n="import.modal.title">Import operacji</h3>
+                  <p class="muted import-universal-copy" data-i18n="import.settingsHint">
+                    Użyj przycisku Import na górze ekranu, aby wybrać import XTB lub uniwersalny.
                   </p>
                 </div>
-              </div>
-              <div class="import-universal-actions">
-                <button id="downloadUniversalTemplateButton" class="secondary-button" type="button">
-                  <span aria-hidden="true">↓</span>
-                  <span data-i18n="import.universal.downloadTemplate">Pobierz szablon CSV</span>
+                <button id="openImportModalButtonSettings" class="primary-button" type="button">
+                  <span aria-hidden="true">↑</span>
+                  <span data-i18n="action.import">Import</span>
                 </button>
               </div>
               <details class="import-schema-details">
                 <summary data-i18n="import.universal.schemaTitle">Kolumny i typy operacji</summary>
                 <div id="universalImportSchema" class="import-schema-body"></div>
               </details>
-              <p class="muted import-universal-copy" data-i18n="import.universal.portfolioHint">
-                Portfel docelowy wybierz w sekcji XTB powyżej.
-              </p>
-              <label class="dropzone dropzone-compact" for="universalFileInput">
-                <span aria-hidden="true">↑</span>
-                <strong data-i18n="import.universal.chooseFile">Wybierz plik wg szablonu</strong>
-                <small data-i18n="import.universal.fileTypes">.csv, .xlsx lub .xls</small>
-              </label>
-              <input
-                id="universalFileInput"
-                class="sr-only"
-                type="file"
-                accept=".csv,.xlsx,.xls,text/csv"
-                multiple
-              />
               <div id="importStatus" class="import-status"></div>
               <div class="table-wrap preview-wrap">
                 <table>

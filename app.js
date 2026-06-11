@@ -273,6 +273,10 @@ function cacheDom() {
     "transactionsTable",
     "targetsForm",
     "rebalanceTable",
+    "importModal",
+    "openImportModalButton",
+    "openImportModalButtonSettings",
+    "closeImportModalButton",
     "importPortfolio",
     "universalFileInput",
     "downloadUniversalTemplateButton",
@@ -334,16 +338,30 @@ function bindEvents() {
     render();
   });
 
-  dom.fileInput.addEventListener("change", async (event) => {
+  dom.openImportModalButton?.addEventListener("click", openImportModal);
+  dom.openImportModalButtonSettings?.addEventListener("click", openImportModal);
+  dom.closeImportModalButton?.addEventListener("click", closeImportModal);
+  dom.importModal?.addEventListener("click", (event) => {
+    if (event.target === dom.importModal) closeImportModal();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && dom.importModal && !dom.importModal.classList.contains("hidden")) {
+      closeImportModal();
+    }
+  });
+
+  dom.fileInput?.addEventListener("change", async (event) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
-    await handleFiles(files);
+    closeImportModal();
+    await handleFiles(files, { requireZip: true });
     event.target.value = "";
   });
 
   dom.universalFileInput?.addEventListener("change", async (event) => {
     const files = Array.from(event.target.files || []);
     if (!files.length) return;
+    closeImportModal();
     await handleFiles(files, { requireUniversal: true });
     event.target.value = "";
   });
@@ -695,7 +713,20 @@ function portfolioSubButton(id, name, color) {
 }
 
 function renderImportPortfolioSelect() {
+  if (!dom.importPortfolio) return;
   dom.importPortfolio.innerHTML = buildPortfolioSelectOptions(resolveFormPortfolioId());
+}
+
+function openImportModal() {
+  if (!dom.importModal) return;
+  renderImportPortfolioSelect();
+  dom.importModal.classList.remove("hidden");
+  if (state.locale) window.LW_I18N.applyI18n(dom.importModal);
+  dom.closeImportModalButton?.focus();
+}
+
+function closeImportModal() {
+  dom.importModal?.classList.add("hidden");
 }
 
 function renderUniversalImportSchema() {
@@ -3296,7 +3327,11 @@ async function handleFiles(files, options = {}) {
   const label = files.length === 1 ? files[0].name : `${files.length} pliki`;
   dom.importStatus.innerHTML = `<strong>${escapeHtml(label)}</strong><small> ${escapeHtml(t("import.loading"))}</small>`;
   try {
-    const rowGroups = await Promise.all(files.map((file) => readRowsFromFile(file)));
+    if (options.requireZip) {
+      const invalid = files.filter((file) => !file.name.toLowerCase().endsWith(".zip"));
+      if (invalid.length) throw new Error(t("import.xtb.zipOnly"));
+    }
+    const rowGroups = await Promise.all(files.map((file) => readRowsFromFile(file, options)));
     const rows = rowGroups.flat();
     const isUniversal = rows.length > 0 && isUniversalImportFormat(rows);
     if (options.requireUniversal && !isUniversal) {
@@ -3343,11 +3378,11 @@ async function handleFiles(files, options = {}) {
   }
 }
 
-async function readRowsFromFile(file) {
+async function readRowsFromFile(file, options = {}) {
   const name = file.name.toLowerCase();
   if (name.endsWith(".zip")) {
-    if (!window.JSZip) throw new Error("Brakuje parsera ZIP.");
-    if (!window.XLSX) throw new Error("Brakuje parsera XLSX.");
+    if (!window.JSZip) throw new Error(t("error.missingZip"));
+    if (!window.XLSX) throw new Error(t("error.missingXlsx"));
     const zipData = await file.arrayBuffer();
     const archive = await window.JSZip.loadAsync(zipData);
     const entries = Object.values(archive.files).filter((entry) => {
@@ -3360,8 +3395,11 @@ async function readRowsFromFile(file) {
     }
     return rowGroups.flat();
   }
+  if (options.requireZip) {
+    throw new Error(t("import.xtb.zipOnly"));
+  }
   if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
-    if (!window.XLSX) throw new Error("Brakuje parsera XLSX.");
+    if (!window.XLSX) throw new Error(t("error.missingXlsx"));
     const data = await file.arrayBuffer();
     return readRowsFromWorkbook(data, file.name);
   }
