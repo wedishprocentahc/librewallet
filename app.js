@@ -85,6 +85,57 @@ const MARKER_TYPE_PRIORITY = [
   "other",
 ];
 const SIGNIFICANT_MARKER_TYPES = new Set(["deposit", "withdrawal", "buy", "sell", "transfer"]);
+const UNIVERSAL_IMPORT_HEADERS = [
+  "date",
+  "type",
+  "symbol",
+  "name",
+  "quantity",
+  "price",
+  "gross",
+  "fee",
+  "currency",
+  "cash_delta",
+  "external_id",
+  "notes",
+];
+const UNIVERSAL_IMPORT_TYPES = new Set([
+  "buy",
+  "sell",
+  "deposit",
+  "withdrawal",
+  "transfer",
+  "fee",
+  "tax",
+  "interest",
+  "dividend",
+  "other",
+]);
+const UNIVERSAL_TYPE_ALIASES = {
+  buy: "buy",
+  kupno: "buy",
+  zakup: "buy",
+  sell: "sell",
+  sprzedaz: "sell",
+  deposit: "deposit",
+  wplata: "deposit",
+  withdrawal: "withdrawal",
+  wyplata: "withdrawal",
+  transfer: "transfer",
+  przelew: "transfer",
+  konwersja: "transfer",
+  fee: "fee",
+  prowizja: "fee",
+  tax: "tax",
+  podatek: "tax",
+  interest: "interest",
+  odsetki: "interest",
+  dividend: "dividend",
+  dywidenda: "dividend",
+  other: "other",
+  inne: "other",
+};
+const UNIVERSAL_CASH_TYPES = new Set(["deposit", "withdrawal", "transfer", "fee", "tax", "interest", "dividend", "other"]);
 const MARKER_STRIP_HEIGHT = 32;
 const MARKER_LANE_HEIGHT = 11;
 const MARKER_MAX_LANES = 3;
@@ -223,6 +274,9 @@ function cacheDom() {
     "targetsForm",
     "rebalanceTable",
     "importPortfolio",
+    "universalFileInput",
+    "downloadUniversalTemplateButton",
+    "universalImportSchema",
     "importStatus",
     "importPreview",
     "commitImportButton",
@@ -286,6 +340,15 @@ function bindEvents() {
     await handleFiles(files);
     event.target.value = "";
   });
+
+  dom.universalFileInput?.addEventListener("change", async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    await handleFiles(files, { requireUniversal: true });
+    event.target.value = "";
+  });
+
+  dom.downloadUniversalTemplateButton?.addEventListener("click", downloadUniversalImportTemplate);
 
   dom.commitImportButton.addEventListener("click", commitImport);
   dom.refreshPricesButton.addEventListener("click", refreshLivePrices);
@@ -494,6 +557,7 @@ function render() {
   renderLanguageSettings();
   renderPortfolioNav();
   renderImportPortfolioSelect();
+  renderUniversalImportSchema();
   renderManualPortfolioSelect();
   renderBondPortfolioSelect();
   renderRedemptionForm();
@@ -632,6 +696,55 @@ function portfolioSubButton(id, name, color) {
 
 function renderImportPortfolioSelect() {
   dom.importPortfolio.innerHTML = buildPortfolioSelectOptions(resolveFormPortfolioId());
+}
+
+function renderUniversalImportSchema() {
+  if (!dom.universalImportSchema) return;
+  const columnHints = {
+    date: t("import.universal.col.date"),
+    type: t("import.universal.col.type"),
+    symbol: t("import.universal.col.symbol"),
+    name: t("import.universal.col.name"),
+    quantity: t("import.universal.col.quantity"),
+    price: t("import.universal.col.price"),
+    gross: t("import.universal.col.gross"),
+    fee: t("import.universal.col.fee"),
+    currency: t("import.universal.col.currency"),
+    cash_delta: t("import.universal.col.cashDelta"),
+    external_id: t("import.universal.col.externalId"),
+    notes: t("import.universal.col.notes"),
+  };
+  const typeRows = [...UNIVERSAL_IMPORT_TYPES]
+    .map((type) => `<tr><td><code>${escapeHtml(type)}</code></td><td>${escapeHtml(t(`tx.${type}`))}</td></tr>`)
+    .join("");
+  dom.universalImportSchema.innerHTML = `
+    <p class="muted">${escapeHtml(t("import.universal.schemaIntro"))}</p>
+    <div class="table-wrap">
+      <table class="import-schema-table">
+        <thead>
+          <tr>
+            <th>${escapeHtml(t("import.universal.schemaColumn"))}</th>
+            <th>${escapeHtml(t("import.universal.schemaDescription"))}</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${UNIVERSAL_IMPORT_HEADERS.map((column) => `<tr><td><code>${escapeHtml(column)}</code></td><td>${escapeHtml(columnHints[column] || "")}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted">${escapeHtml(t("import.universal.schemaTypesIntro"))}</p>
+    <div class="table-wrap">
+      <table class="import-schema-table">
+        <thead>
+          <tr>
+            <th>${escapeHtml(t("table.type"))}</th>
+            <th>${escapeHtml(t("import.universal.schemaTypeLabel"))}</th>
+          </tr>
+        </thead>
+        <tbody>${typeRows}</tbody>
+      </table>
+    </div>
+  `;
 }
 
 function renderManualPortfolioSelect() {
@@ -3178,15 +3291,23 @@ function effectiveTransactionAssetType(transaction) {
   return state.assetTypes[key] || transaction.assetType || detectAssetType(transaction.symbol, transaction.name);
 }
 
-async function handleFiles(files) {
+async function handleFiles(files, options = {}) {
   const fallbackPortfolioId = dom.importPortfolio.value || state.portfolios[0]?.id;
   const label = files.length === 1 ? files[0].name : `${files.length} pliki`;
-  dom.importStatus.innerHTML = `<strong>${escapeHtml(label)}</strong><small> Wczytywanie...</small>`;
+  dom.importStatus.innerHTML = `<strong>${escapeHtml(label)}</strong><small> ${escapeHtml(t("import.loading"))}</small>`;
   try {
     const rowGroups = await Promise.all(files.map((file) => readRowsFromFile(file)));
     const rows = rowGroups.flat();
+    const isUniversal = rows.length > 0 && isUniversalImportFormat(rows);
+    if (options.requireUniversal && !isUniversal) {
+      throw new Error(t("import.universal.invalidFormat"));
+    }
     const mapped = rows
-      .map((row, index) => mapRowToTransaction(row, resolveImportPortfolioId(row, fallbackPortfolioId), index))
+      .map((row, index) =>
+        isUniversal
+          ? mapUniversalRowToTransaction(row, fallbackPortfolioId, index)
+          : mapRowToTransaction(row, resolveImportPortfolioId(row, fallbackPortfolioId), index),
+      )
       .filter(Boolean);
     const fingerprints = new Set(state.transactions.map(transactionFingerprint));
     const deduped = [];
@@ -3202,8 +3323,15 @@ async function handleFiles(files) {
     importPreview = deduped;
     const skipped = rows.length - mapped.length;
     dom.importStatus.innerHTML = `
-      <strong>${deduped.length} operacji gotowych do zapisu</strong>
-      <small>${rows.length} wierszy z ${files.length} plików, ${skipped} pominiętych, ${duplicates} duplikatów</small>
+      <strong>${escapeHtml(t("import.preview.ready", { count: deduped.length }))}</strong>
+      <small>${escapeHtml(
+        t("import.preview.stats", {
+          rows: rows.length,
+          files: files.length,
+          skipped,
+          duplicates,
+        }),
+      )}</small>
     `;
     saveState();
     render();
@@ -3272,6 +3400,18 @@ function findWorkbookSheetWithCashHeaders(workbook) {
 
 function readRowsFromWorkbook(data, sourceName) {
   const workbook = window.XLSX.read(data, { type: "array", cellDates: true });
+  const firstSheetName = workbook.SheetNames?.[0];
+  if (firstSheetName) {
+    const firstMatrix = window.XLSX.utils.sheet_to_json(workbook.Sheets[firstSheetName], {
+      header: 1,
+      defval: "",
+      raw: false,
+    });
+    const universalRows = matrixToObjects(firstMatrix);
+    if (universalRows.length && isUniversalImportFormat(universalRows)) {
+      return universalRows.map((row) => withImportMetadata(row, sourceName, ""));
+    }
+  }
   const cashSheetName = findCashOperationsSheetName(workbook) || findWorkbookSheetWithCashHeaders(workbook);
   const sheet = workbook.Sheets[cashSheetName];
   if (!sheet) return [];
@@ -3454,6 +3594,241 @@ function detectDelimiter(text) {
   return delimiters
     .map((delimiter) => ({ delimiter, count: (sample.match(new RegExp(escapeRegExp(delimiter), "g")) || []).length }))
     .sort((a, b) => b.count - a.count)[0].delimiter;
+}
+
+function isUniversalImportFormat(rows) {
+  if (!rows.length) return false;
+  const headers = Object.keys(normalizeRow(rows[0]));
+  const required = ["date", "type", "gross", "currency"];
+  if (!required.every((key) => headers.includes(key))) return false;
+  if (headers.includes("amount") && !headers.includes("gross")) return false;
+  if (headers.includes("operacja") || headers.includes("operation type")) return false;
+  if (pick(normalizeRow(rows[0]), ["source sheet"])) return false;
+  return true;
+}
+
+function resolveUniversalOperationType(value = "") {
+  const key = normalize(value);
+  if (/bond|oblig/.test(key)) return "";
+  if (UNIVERSAL_TYPE_ALIASES[key]) return UNIVERSAL_TYPE_ALIASES[key];
+  if (UNIVERSAL_IMPORT_TYPES.has(key)) return key;
+  return "";
+}
+
+function inferUniversalCashDelta(type, gross, cashDeltaRaw) {
+  const parsedCashDelta = parseNumber(cashDeltaRaw);
+  if (String(cashDeltaRaw ?? "").trim() !== "") return parsedCashDelta;
+  const amount = Math.abs(gross);
+  if (["buy", "withdrawal", "fee", "tax"].includes(type)) return -amount;
+  if (["sell", "deposit", "dividend", "interest"].includes(type)) return amount;
+  return 0;
+}
+
+function buildUniversalTemplateRows() {
+  return [
+    {
+      date: "2024-01-15",
+      type: "buy",
+      symbol: "AAPL",
+      name: "Apple Inc.",
+      quantity: "10",
+      price: "150.00",
+      gross: "1500.00",
+      fee: "5.00",
+      currency: "USD",
+      cash_delta: "",
+      external_id: "buy-001",
+      notes: t("import.universal.example.buy"),
+    },
+    {
+      date: "2024-02-20",
+      type: "sell",
+      symbol: "AAPL",
+      name: "Apple Inc.",
+      quantity: "5",
+      price: "160.00",
+      gross: "800.00",
+      fee: "3.00",
+      currency: "USD",
+      cash_delta: "",
+      external_id: "sell-001",
+      notes: t("import.universal.example.sell"),
+    },
+    {
+      date: "2024-03-01",
+      type: "deposit",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "5000.00",
+      fee: "",
+      currency: "PLN",
+      cash_delta: "",
+      external_id: "dep-001",
+      notes: t("import.universal.example.deposit"),
+    },
+    {
+      date: "2024-03-10",
+      type: "withdrawal",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "1000.00",
+      fee: "",
+      currency: "PLN",
+      cash_delta: "",
+      external_id: "wd-001",
+      notes: t("import.universal.example.withdrawal"),
+    },
+    {
+      date: "2024-03-15",
+      type: "transfer",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "500.00",
+      fee: "",
+      currency: "EUR",
+      cash_delta: "500.00",
+      external_id: "tr-001",
+      notes: t("import.universal.example.transfer"),
+    },
+    {
+      date: "2024-04-01",
+      type: "fee",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "10.00",
+      fee: "10.00",
+      currency: "PLN",
+      cash_delta: "",
+      external_id: "fee-001",
+      notes: t("import.universal.example.fee"),
+    },
+    {
+      date: "2024-04-05",
+      type: "tax",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "45.00",
+      fee: "",
+      currency: "PLN",
+      cash_delta: "",
+      external_id: "tax-001",
+      notes: t("import.universal.example.tax"),
+    },
+    {
+      date: "2024-05-01",
+      type: "interest",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "12.50",
+      fee: "",
+      currency: "PLN",
+      cash_delta: "",
+      external_id: "int-001",
+      notes: t("import.universal.example.interest"),
+    },
+    {
+      date: "2024-06-01",
+      type: "dividend",
+      symbol: "VWCE",
+      name: "Vanguard FTSE All-World",
+      quantity: "",
+      price: "",
+      gross: "120.00",
+      fee: "",
+      currency: "EUR",
+      cash_delta: "",
+      external_id: "div-001",
+      notes: t("import.universal.example.dividend"),
+    },
+    {
+      date: "2024-07-01",
+      type: "other",
+      symbol: "",
+      name: "",
+      quantity: "",
+      price: "",
+      gross: "25.00",
+      fee: "",
+      currency: "PLN",
+      cash_delta: "",
+      external_id: "oth-001",
+      notes: t("import.universal.example.other"),
+    },
+  ];
+}
+
+function downloadUniversalImportTemplate() {
+  const rows = buildUniversalTemplateRows();
+  const csv = [
+    UNIVERSAL_IMPORT_HEADERS.join(","),
+    ...rows.map((row) => UNIVERSAL_IMPORT_HEADERS.map((header) => csvEscape(row[header] ?? "")).join(",")),
+  ].join("\n");
+  const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download =
+    window.LW_I18N.getLocale() === "en" ? "librewallet-import-template.csv" : "librewallet-import-szablon.csv";
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
+function mapUniversalRowToTransaction(row, portfolioId, index) {
+  const normalizedRow = normalizeRow(row);
+  const rawType = cleanText(pick(normalizedRow, ["type", "typ"]));
+  if (!rawType) return null;
+  const type = resolveUniversalOperationType(rawType);
+  if (!type) return null;
+
+  const date = parseDateValue(pick(normalizedRow, ["date", "data"]));
+  if (!date) return null;
+
+  const symbol = cleanSymbol(pick(normalizedRow, ["symbol", "ticker", "walor"]));
+  const name = cleanText(pick(normalizedRow, ["name", "nazwa"])) || symbol;
+  const quantity = Math.abs(parseNumber(pick(normalizedRow, ["quantity", "ilosc", "qty"])));
+  const price = Math.abs(parseNumber(pick(normalizedRow, ["price", "cena"])));
+  const grossInput = parseNumber(pick(normalizedRow, ["gross", "kwota", "amount"]));
+  const gross = Math.abs(grossInput) || quantity * price || 0;
+  const fee = Math.abs(parseNumber(pick(normalizedRow, ["fee", "prowizja", "commission"])));
+  const currency = cleanCurrency(pick(normalizedRow, ["currency", "waluta", "ccy"])) || "PLN";
+  const cashDelta = inferUniversalCashDelta(type, gross, pick(normalizedRow, ["cash_delta", "cash delta"]));
+  const notes = cleanText(pick(normalizedRow, ["notes", "notatki", "opis", "comment"]));
+
+  if (!gross && !(quantity && price)) return null;
+  if (!UNIVERSAL_CASH_TYPES.has(type) && !symbol) return null;
+
+  return {
+    id: createId(`import-${index}`),
+    portfolioId,
+    date,
+    timestamp: `${date} 00:00:00`,
+    externalId: cleanText(pick(normalizedRow, ["external_id", "external id", "id"])),
+    account: "",
+    type,
+    symbol,
+    name,
+    assetType: detectAssetType(symbol, name),
+    quantity,
+    price,
+    gross,
+    fee,
+    cashDelta,
+    currency,
+    source: "Universal import",
+    notes,
+  };
 }
 
 function mapRowToTransaction(row, portfolioId, index) {

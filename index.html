@@ -424,6 +424,43 @@
                 <strong data-i18n="import.chooseFile">Wybierz plik transakcji</strong>
                 <small data-i18n="import.fileTypes">.csv, .xlsx, .xls lub .zip z XTB</small>
               </label>
+            </section>
+
+            <section class="panel import-panel universal-import-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow" data-i18n="import.universal.eyebrow">Uniwersalny</p>
+                  <h3 data-i18n="import.universal.title">Import z szablonu</h3>
+                  <p class="muted import-universal-copy" data-i18n="import.universal.description">
+                    Przygotuj plik CSV lub XLSX według szablonu LibreWallet. Szablon zawiera przykładowy wiersz dla każdego typu operacji (bez obligacji).
+                  </p>
+                </div>
+              </div>
+              <div class="import-universal-actions">
+                <button id="downloadUniversalTemplateButton" class="secondary-button" type="button">
+                  <span aria-hidden="true">↓</span>
+                  <span data-i18n="import.universal.downloadTemplate">Pobierz szablon CSV</span>
+                </button>
+              </div>
+              <details class="import-schema-details">
+                <summary data-i18n="import.universal.schemaTitle">Kolumny i typy operacji</summary>
+                <div id="universalImportSchema" class="import-schema-body"></div>
+              </details>
+              <p class="muted import-universal-copy" data-i18n="import.universal.portfolioHint">
+                Portfel docelowy wybierz w sekcji XTB powyżej.
+              </p>
+              <label class="dropzone dropzone-compact" for="universalFileInput">
+                <span aria-hidden="true">↑</span>
+                <strong data-i18n="import.universal.chooseFile">Wybierz plik wg szablonu</strong>
+                <small data-i18n="import.universal.fileTypes">.csv, .xlsx lub .xls</small>
+              </label>
+              <input
+                id="universalFileInput"
+                class="sr-only"
+                type="file"
+                accept=".csv,.xlsx,.xls,text/csv"
+                multiple
+              />
               <div id="importStatus" class="import-status"></div>
               <div class="table-wrap preview-wrap">
                 <table>
