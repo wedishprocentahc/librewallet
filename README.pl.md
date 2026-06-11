@@ -18,9 +18,9 @@ Najnowszą wersję znajdziesz w **[Releases](https://github.com/wedishprocentahc
 
 | System | Plik |
 |--------|------|
-| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.1-mac-arm64.pkg` |
-| macOS (Intel) | `LibreWallet-1.1.1-mac-x64.pkg` |
-| Windows | `LibreWallet-1.1.1-win.exe` |
+| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.5-mac-arm64.pkg` |
+| macOS (Intel) | `LibreWallet-*-mac-x64.pkg` (jeśli dostępny w Releases) |
+| Windows | `LibreWallet-*-win.exe` (jeśli dostępny w Releases) |
 
 ---
 
@@ -38,8 +38,8 @@ Dla Maców z procesorem **Apple Silicon** (M1, M2, M3, M4).
 ### Krok 2 — pobierz instalator
 
 1. Wejdź na [Releases](https://github.com/wedishprocentahc/librewallet/releases).
-2. Kliknij najnowszą wersję (np. **v1.1.1**).
-3. Pobierz **`LibreWallet-1.1.1-mac-arm64.pkg`**.
+2. Kliknij najnowszą wersję (np. **v1.1.5**).
+3. Pobierz **`LibreWallet-1.1.5-mac-arm64.pkg`**.
 4. Plik trafi do folderu **Pobrane**.
 
 ### Krok 3 — uruchom instalator (macOS może zablokować plik)
@@ -90,7 +90,7 @@ Po instalacji wybierz **Polski** lub **English**. Później zmienisz to w **Impo
 
 ## Windows
 
-1. Pobierz `LibreWallet-1.1.1-win.exe` z [Releases](https://github.com/wedishprocentahc/librewallet/releases).
+1. Pobierz `LibreWallet-*-win.exe` z [Releases](https://github.com/wedishprocentahc/librewallet/releases) (jeśli dostępny).
 2. Uruchom dwuklikiem — otworzy się przeglądarka.
 
 Więcej w plikach **`INSTALL.txt`** i **`INSTALL.en.txt`**.
@@ -100,7 +100,7 @@ Więcej w plikach **`INSTALL.txt`** i **`INSTALL.en.txt`**.
 ## Co robi LibreWallet
 
 - śledzi portfele i rachunki XTB (PLN, EUR, USD),
-- importuje operacje z eksportów XTB,
+- importuje operacje z paczki ZIP XTB lub z uniwersalnego szablonu CSV/XLSX,
 - pokazuje ceny, wykresy i benchmarki,
 - obsługuje obligacje, cele i rebalancing,
 - interfejs po polsku i angielsku.
@@ -108,5 +108,7 @@ Więcej w plikach **`INSTALL.txt`** i **`INSTALL.en.txt`**.
 ## Twoje dane
 
 Wszystko zostaje na Twoim komputerze. Rób regularne kopie w **Import i ustawienia → Kopia zapasowa**. Internet jest potrzebny głównie do odświeżania cen.
+
+**Import:** przycisk **Import** w aplikacji — wybierz import XTB (plik `.zip`) lub uniwersalny (szablon CSV do pobrania w modalu).
 
 **Wskazówka XTB:** zaimportuj całą paczkę ZIP ze wszystkimi rachunkami (PLN + EUR + USD) naraz.

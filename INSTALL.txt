@@ -10,13 +10,13 @@ https://github.com/wedishprocentahc/librewallet/releases
 macOS — Apple Silicon (M1 / M2 / M3 / M4)
 -----------------------------------------
 
-Plik: LibreWallet-1.1.1-mac-arm64.pkg
+Plik: LibreWallet-1.1.5-mac-arm64.pkg
 
 KROK 1 — Sprawdź Mac
   Menu  → Informacje o tym Macu → Chip: Apple M1/M2/M3/M4
 
 KROK 2 — Pobierz
-  Releases → Assets → LibreWallet-1.1.1-mac-arm64.pkg
+  Releases → najnowsza wersja → Assets → LibreWallet-1.1.5-mac-arm64.pkg
   Plik ląduje w folderze Pobrane.
 
 KROK 3 — Uruchom instalator (macOS może zablokować!)
@@ -49,15 +49,21 @@ KROK 6 — Uruchomienie
 
 macOS — Intel
 -------------
-Plik: LibreWallet-1.1.1-mac-x64.pkg
+Plik: LibreWallet-*-mac-x64.pkg (jeśli dostępny w Releases)
 Te same kroki co powyżej (prawy przycisk → Otwórz, ewentualnie Ustawienia systemowe).
 
 
 Windows
 -------
-1. Pobierz LibreWallet-1.1.1-win.exe
+1. Pobierz LibreWallet-*-win.exe z Releases (jeśli dostępny).
 2. Uruchom dwuklikiem.
 3. Otworzy się przeglądarka z aplikacją.
+
+
+Import operacji
+---------------
+- XTB: przycisk Import → wybierz import XTB → plik .zip z eksportu platformy
+- Inne źródła: przycisk Import → import uniwersalny → pobierz szablon CSV i przygotuj plik
 
 
 Twoje dane

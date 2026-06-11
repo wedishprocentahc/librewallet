@@ -18,9 +18,9 @@ Get the latest version from **[Releases](https://github.com/wedishprocentahc/lib
 
 | System | File |
 |--------|------|
-| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.1-mac-arm64.pkg` |
-| macOS (Intel) | `LibreWallet-1.1.1-mac-x64.pkg` |
-| Windows | `LibreWallet-1.1.1-win.exe` |
+| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.5-mac-arm64.pkg` |
+| macOS (Intel) | `LibreWallet-*-mac-x64.pkg` (if available in Releases) |
+| Windows | `LibreWallet-*-win.exe` (if available in Releases) |
 
 ---
 
@@ -38,8 +38,8 @@ For Macs with **Apple Silicon** (M1, M2, M3, M4).
 ### Step 2 — download the installer
 
 1. Go to [Releases](https://github.com/wedishprocentahc/librewallet/releases).
-2. Open the latest version (e.g. **v1.1.1**).
-3. Download **`LibreWallet-1.1.1-mac-arm64.pkg`**.
+2. Open the latest version (e.g. **v1.1.5**).
+3. Download **`LibreWallet-1.1.5-mac-arm64.pkg`**.
 4. The file goes to your **Downloads** folder.
 
 ### Step 3 — run the installer (macOS may block the file)
@@ -91,7 +91,7 @@ After install, pick **Polski** or **English**. You can change this later in **Im
 
 ## Windows
 
-1. Download `LibreWallet-1.1.1-win.exe` from [Releases](https://github.com/wedishprocentahc/librewallet/releases).
+1. Download `LibreWallet-*-win.exe` from [Releases](https://github.com/wedishprocentahc/librewallet/releases) (if available).
 2. Double-click to run — your browser will open.
 
 More details in **`INSTALL.en.txt`** ([Polish](INSTALL.txt)).
@@ -101,7 +101,7 @@ More details in **`INSTALL.en.txt`** ([Polish](INSTALL.txt)).
 ## What LibreWallet does
 
 - track portfolios and XTB accounts (PLN, EUR, USD),
-- import trades from XTB exports,
+- import trades from XTB ZIP exports or a universal CSV/XLSX template,
 - show live prices, charts, and benchmarks,
 - manage bonds, targets, and rebalancing,
 - Polish and English interface.
@@ -109,5 +109,7 @@ More details in **`INSTALL.en.txt`** ([Polish](INSTALL.txt)).
 ## Your data
 
 Everything stays on your computer. Make regular backups in **Import & settings → Backup**. Internet is only needed to refresh stock prices.
+
+**Import:** use the **Import** button in the app — choose XTB import (`.zip` file) or universal import (download the CSV template from the modal).
 
 **XTB tip:** import the full ZIP export with all your accounts (PLN + EUR + USD) at once.
