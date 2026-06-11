@@ -1191,16 +1191,27 @@ tr:last-child td {
   line-height: 1.45;
 }
 
+.import-modal-portfolio-block {
+  display: grid;
+  gap: 10px;
+  margin: 18px 0 20px;
+}
+
 .import-modal-portfolio {
   display: grid;
   gap: 6px;
-  margin: 18px 0 20px;
   font-size: 0.9rem;
   font-weight: 650;
 }
 
 .import-modal-portfolio select {
   width: 100%;
+}
+
+.import-modal-portfolio-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .import-modal-options {

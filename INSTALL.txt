@@ -10,13 +10,13 @@ https://github.com/wedishprocentahc/librewallet/releases
 macOS — Apple Silicon (M1 / M2 / M3 / M4)
 -----------------------------------------
 
-Plik: LibreWallet-1.1.5-mac-arm64.pkg
+Plik: LibreWallet-1.1.6-mac-arm64.pkg
 
 KROK 1 — Sprawdź Mac
   Menu  → Informacje o tym Macu → Chip: Apple M1/M2/M3/M4
 
 KROK 2 — Pobierz
-  Releases → najnowsza wersja → Assets → LibreWallet-1.1.5-mac-arm64.pkg
+  Releases → najnowsza wersja → Assets → LibreWallet-1.1.6-mac-arm64.pkg
   Plik ląduje w folderze Pobrane.
 
 KROK 3 — Uruchom instalator (macOS może zablokować!)

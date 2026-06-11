@@ -25,10 +25,22 @@
         <p class="muted import-modal-copy" data-i18n="import.modal.subtitle">
           Wybierz źródło importu i plik z operacjami. Podgląd i zapis pojawią się w zakładce Import i ustawienia.
         </p>
-        <label class="import-modal-portfolio">
-          <span data-i18n="import.targetPortfolio">Portfel docelowy</span>
-          <select id="importPortfolio" data-i18n-aria="import.targetPortfolio" aria-label="Portfel docelowy"></select>
-        </label>
+        <div class="import-modal-portfolio-block">
+          <label class="import-modal-portfolio" for="importPortfolio">
+            <span data-i18n="import.targetPortfolio">Portfel docelowy</span>
+            <select id="importPortfolio" data-i18n-aria="import.targetPortfolio" aria-label="Portfel docelowy"></select>
+          </label>
+          <div class="import-modal-portfolio-actions">
+            <button id="importNewPortfolioButton" class="secondary-button" type="button">
+              <span aria-hidden="true">+</span>
+              <span data-i18n="import.addPortfolio">Nowy portfel</span>
+            </button>
+            <button id="importNewGroupButton" class="secondary-button" type="button">
+              <span aria-hidden="true">+</span>
+              <span data-i18n="import.addGroup">Nowa grupa</span>
+            </button>
+          </div>
+        </div>
         <div class="import-modal-options">
           <article class="import-option-card">
             <p class="eyebrow" data-i18n="import.xtb">XTB</p>

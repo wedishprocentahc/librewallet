@@ -18,7 +18,7 @@ Get the latest version from **[Releases](https://github.com/wedishprocentahc/lib
 
 | System | File |
 |--------|------|
-| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.5-mac-arm64.pkg` |
+| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.6-mac-arm64.pkg` |
 | macOS (Intel) | `LibreWallet-*-mac-x64.pkg` (if available in Releases) |
 | Windows | `LibreWallet-*-win.exe` (if available in Releases) |
 
@@ -38,8 +38,8 @@ For Macs with **Apple Silicon** (M1, M2, M3, M4).
 ### Step 2 — download the installer
 
 1. Go to [Releases](https://github.com/wedishprocentahc/librewallet/releases).
-2. Open the latest version (e.g. **v1.1.5**).
-3. Download **`LibreWallet-1.1.5-mac-arm64.pkg`**.
+2. Open the latest version (e.g. **v1.1.6**).
+3. Download **`LibreWallet-1.1.6-mac-arm64.pkg`**.
 4. The file goes to your **Downloads** folder.
 
 ### Step 3 — run the installer (macOS may block the file)

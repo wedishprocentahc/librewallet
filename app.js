@@ -278,6 +278,8 @@ function cacheDom() {
     "openImportModalButtonSettings",
     "closeImportModalButton",
     "importPortfolio",
+    "importNewPortfolioButton",
+    "importNewGroupButton",
     "universalFileInput",
     "downloadUniversalTemplateButton",
     "universalImportSchema",
@@ -367,6 +369,8 @@ function bindEvents() {
   });
 
   dom.downloadUniversalTemplateButton?.addEventListener("click", downloadUniversalImportTemplate);
+  dom.importNewPortfolioButton?.addEventListener("click", () => addPortfolioFromImportModal());
+  dom.importNewGroupButton?.addEventListener("click", () => addGroupFromImportModal());
 
   dom.commitImportButton.addEventListener("click", commitImport);
   dom.refreshPricesButton.addEventListener("click", refreshLivePrices);
@@ -712,9 +716,50 @@ function portfolioSubButton(id, name, color) {
   return button;
 }
 
-function renderImportPortfolioSelect() {
+function renderImportPortfolioSelect(selectedId = "") {
   if (!dom.importPortfolio) return;
-  dom.importPortfolio.innerHTML = buildPortfolioSelectOptions(resolveFormPortfolioId());
+  const current = selectedId || dom.importPortfolio.value || resolveFormPortfolioId();
+  dom.importPortfolio.innerHTML = buildPortfolioSelectOptions(current);
+  dom.importPortfolio.value = current;
+}
+
+function addPortfolioFromImportModal(groupId = "") {
+  const name = (window.prompt(t("form.newPortfolio"), t("form.newPortfolioPlaceholder")) || "").trim();
+  if (!name) return;
+  const portfolio = {
+    id: createId("portfolio"),
+    name,
+    baseCurrency: "PLN",
+    color: nextPortfolioColor(),
+    groupId: groupId || "",
+    createdAt: new Date().toISOString(),
+  };
+  state.portfolios.push(portfolio);
+  saveState();
+  render();
+  renderImportPortfolioSelect(portfolio.id);
+  dom.importPortfolio?.focus();
+}
+
+function addGroupFromImportModal() {
+  const groupName = (window.prompt(t("form.newGroup"), t("form.newGroupPlaceholder")) || "").trim();
+  if (!groupName) return;
+  const group = createPortfolioGroup(groupName);
+  const portfolioName =
+    (window.prompt(t("import.newGroupPortfolioPrompt", { group: groupName }), groupName) || "").trim() || groupName;
+  const portfolio = {
+    id: createId("portfolio"),
+    name: portfolioName,
+    baseCurrency: "PLN",
+    color: nextPortfolioColor(),
+    groupId: group.id,
+    createdAt: new Date().toISOString(),
+  };
+  state.portfolios.push(portfolio);
+  saveState();
+  render();
+  renderImportPortfolioSelect(portfolio.id);
+  dom.importPortfolio?.focus();
 }
 
 function openImportModal() {
