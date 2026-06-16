@@ -18,7 +18,7 @@ Get the latest version from **[Releases](https://github.com/wedishprocentahc/lib
 
 | System | File |
 |--------|------|
-| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.6-mac-arm64.pkg` |
+| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.7-mac-arm64.pkg` |
 | macOS (Intel) | `LibreWallet-*-mac-x64.pkg` (if available in Releases) |
 | Windows | `LibreWallet-*-win.exe` (if available in Releases) |
 
@@ -38,8 +38,8 @@ For Macs with **Apple Silicon** (M1, M2, M3, M4).
 ### Step 2 — download the installer
 
 1. Go to [Releases](https://github.com/wedishprocentahc/librewallet/releases).
-2. Open the latest version (e.g. **v1.1.6**).
-3. Download **`LibreWallet-1.1.6-mac-arm64.pkg`**.
+2. Open the latest version (e.g. **v1.1.7**).
+3. Download **`LibreWallet-1.1.7-mac-arm64.pkg`**.
 4. The file goes to your **Downloads** folder.
 
 ### Step 3 — run the installer (macOS may block the file)
@@ -113,3 +113,14 @@ Everything stays on your computer. Make regular backups in **Import & settings �
 **Import:** use the **Import** button in the app — choose XTB import (`.zip` file) or universal import (download the CSV template from the modal).
 
 **XTB tip:** import the full ZIP export with all your accounts (PLN + EUR + USD) at once.
+
+## Local API (integrations)
+
+When LibreWallet runs locally (`npm run server` or the desktop app), the embedded server listens on `http://127.0.0.1:8787` by default.
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/holdings` | `POST` | Frontend pushes `{ portfolios, transactions }` after each save |
+| `/api/holdings` | `GET` | Returns cached active instruments for external tools (e.g. Inwestor / OpenClaw) |
+
+The GET response includes symbols, names, and markets — not quantities or purchase prices. Traffic stays on your machine; do not expose the server beyond localhost unless you intend to.

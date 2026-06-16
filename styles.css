@@ -210,6 +210,57 @@ label.file-action {
   flex-basis: 8px;
 }
 
+.portfolio-drop-zone {
+  display: grid;
+  gap: 4px;
+  border-radius: calc(var(--radius) + 2px);
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.portfolio-drop-zone.drop-target-active {
+  background: color-mix(in srgb, var(--green-soft) 65%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--green) 35%, transparent);
+}
+
+.portfolio-group-members {
+  display: grid;
+  gap: 4px;
+}
+
+.portfolio-ungrouped-zone {
+  min-height: 4px;
+}
+
+.portfolio-drop-hint {
+  padding: 8px 10px;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius);
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.portfolio-ungrouped-zone.drop-target-active .portfolio-drop-hint {
+  border-color: color-mix(in srgb, var(--green) 45%, var(--line));
+  color: var(--green);
+  background: color-mix(in srgb, var(--green-soft) 45%, var(--surface));
+}
+
+.portfolio-button.is-dragging {
+  opacity: 0.45;
+}
+
+.portfolio-button[draggable="true"] {
+  cursor: grab;
+}
+
+.portfolio-button[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 .scope-dot.group-dot {
   border-radius: 3px;
 }

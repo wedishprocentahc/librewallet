@@ -1,0 +1,36 @@
+---
+description: Local /api/holdings endpoint for external tool integration (Inwestor/OpenClaw)
+globs: server.js,app.js
+alwaysApply: false
+---
+
+# Holdings API (local integration)
+
+LibreWallet exposes portfolio holdings to **local tools only** via `/api/holdings`.
+
+## Flow
+
+1. Frontend (`app.js`) calls `holdingsSync()` on boot (`finishBoot`) and after every `saveState()`.
+2. `holdingsSync()` POSTs `{ portfolios, transactions }` to `/api/holdings` (debounced 300 ms, `.catch(() => {})`).
+3. `server.js` parses transactions, computes net positions, caches active instruments in memory.
+4. External tools `GET http://127.0.0.1:8787/api/holdings` to read the cache.
+
+## GET response shape
+
+```json
+{
+  "instruments": [
+    { "symbol": "AAPL.US", "name": "Apple", "currency": "USD", "assetType": "stock", "market": "NASDAQ", "portfolioName": "XTB PLN" }
+  ],
+  "updatedAt": "2026-06-16T12:00:00.000Z",
+  "portfolioCount": 2
+}
+```
+
+Quantities, prices, and transaction details are **not** exposed in GET — only instrument metadata.
+
+## Security
+
+- Server binds to `127.0.0.1` by default (`HOST` env overrides).
+- No auth — acceptable because traffic stays on loopback.
+- Do not bind to `0.0.0.0` unless you understand LAN exposure risk.

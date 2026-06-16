@@ -176,6 +176,7 @@ function finishBoot() {
   migratePortfolioGroups();
   setupDesktopHint();
   render();
+  holdingsSync();
 }
 
 function setupDesktopHint() {
@@ -310,6 +311,8 @@ function bindEvents() {
     saveState();
     render();
   });
+
+  bindPortfolioDragDrop();
 
   dom.portfolioForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -524,6 +527,26 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  holdingsSync();
+}
+
+let holdingsSyncPending = false;
+function holdingsSync() {
+  if (holdingsSyncPending) return;
+  holdingsSyncPending = true;
+  setTimeout(() => {
+    holdingsSyncPending = false;
+    try {
+      fetch("/api/holdings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          portfolios: state.portfolios,
+          transactions: state.transactions,
+        }),
+      }).catch(() => {});
+    } catch {}
+  }, 300);
 }
 
 function ensurePortfolio() {
@@ -635,23 +658,110 @@ function renderPortfolioNav() {
     const members = portfoliosInGroup(group.id);
     if (!members.length) return;
     members.forEach((portfolio) => groupedIds.add(portfolio.id));
-    const scopeId = groupScopeId(group.id);
-    const childActive = members.some((portfolio) => portfolio.id === state.selectedPortfolioId);
-    dom.portfolioList.appendChild(
-      portfolioGroupButton(group, scopeId, state.selectedPortfolioId === scopeId, childActive, members.length),
-    );
-    members.forEach((portfolio) => {
-      dom.portfolioList.appendChild(portfolioSubButton(portfolio.id, portfolio.name, portfolio.color));
-    });
+    dom.portfolioList.appendChild(createPortfolioGroupBlock(group, members));
   });
-  state.portfolios
-    .filter((portfolio) => !groupedIds.has(portfolio.id))
-    .forEach((portfolio) => {
-      dom.portfolioList.appendChild(portfolioButton(portfolio.id, portfolio.name, portfolio.color));
-    });
+  const ungrouped = state.portfolios.filter((portfolio) => !groupedIds.has(portfolio.id));
+  const hasGroups = (state.portfolioGroups || []).some((group) => portfoliosInGroup(group.id).length);
+  if (ungrouped.length || hasGroups) {
+    dom.portfolioList.appendChild(createPortfolioUngroupedBlock(ungrouped, !ungrouped.length));
+  }
   dom.portfolioList.appendChild(portfolioGroupTitle(t("nav.instrumentTypes")));
   getAssetScopes().forEach((scope) => {
     dom.portfolioList.appendChild(portfolioButton(scope.id, scope.name, scope.color));
+  });
+}
+
+function createPortfolioGroupBlock(group, members) {
+  const block = document.createElement("div");
+  block.className = "portfolio-drop-zone";
+  block.dataset.dropZone = `group:${group.id}`;
+  const scopeId = groupScopeId(group.id);
+  const childActive = members.some((portfolio) => portfolio.id === state.selectedPortfolioId);
+  block.appendChild(
+    portfolioGroupButton(group, scopeId, state.selectedPortfolioId === scopeId, childActive, members.length),
+  );
+  const membersWrap = document.createElement("div");
+  membersWrap.className = "portfolio-group-members";
+  members.forEach((portfolio) => {
+    membersWrap.appendChild(portfolioSubButton(portfolio.id, portfolio.name, portfolio.color));
+  });
+  block.appendChild(membersWrap);
+  return block;
+}
+
+function createPortfolioUngroupedBlock(portfolios, showDropHint) {
+  const block = document.createElement("div");
+  block.className = "portfolio-drop-zone portfolio-ungrouped-zone";
+  block.dataset.dropZone = "ungrouped";
+  portfolios.forEach((portfolio) => {
+    block.appendChild(portfolioButton(portfolio.id, portfolio.name, portfolio.color));
+  });
+  if (showDropHint) {
+    const hint = document.createElement("div");
+    hint.className = "portfolio-drop-hint";
+    hint.textContent = t("nav.dropUngrouped");
+    block.appendChild(hint);
+  }
+  return block;
+}
+
+function isDraggablePortfolioId(id) {
+  return state.portfolios.some((portfolio) => portfolio.id === id);
+}
+
+function assignPortfolioToGroup(portfolioId, groupId = "") {
+  const portfolio = state.portfolios.find((item) => item.id === portfolioId);
+  if (!portfolio || !isDraggablePortfolioId(portfolioId)) return;
+  const nextGroupId = groupId || "";
+  if ((portfolio.groupId || "") === nextGroupId) return;
+  portfolio.groupId = nextGroupId;
+  cleanupEmptyPortfolioGroups();
+  saveState();
+  render();
+}
+
+function bindPortfolioDragDrop() {
+  if (!dom.portfolioList || dom.portfolioList.dataset.dragBound) return;
+  dom.portfolioList.dataset.dragBound = "true";
+  let activeDropZone = null;
+
+  dom.portfolioList.addEventListener("dragstart", (event) => {
+    const button = event.target.closest("[data-drag-portfolio-id]");
+    if (!button) return;
+    event.dataTransfer.setData("text/portfolio-id", button.dataset.dragPortfolioId);
+    event.dataTransfer.effectAllowed = "move";
+    button.classList.add("is-dragging");
+  });
+
+  dom.portfolioList.addEventListener("dragend", (event) => {
+    event.target.closest("[data-drag-portfolio-id]")?.classList.remove("is-dragging");
+    activeDropZone?.classList.remove("drop-target-active");
+    activeDropZone = null;
+  });
+
+  dom.portfolioList.addEventListener("dragover", (event) => {
+    const zone = event.target.closest("[data-drop-zone]");
+    if (!zone) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    if (activeDropZone && activeDropZone !== zone) {
+      activeDropZone.classList.remove("drop-target-active");
+    }
+    activeDropZone = zone;
+    zone.classList.add("drop-target-active");
+  });
+
+  dom.portfolioList.addEventListener("drop", (event) => {
+    const zone = event.target.closest("[data-drop-zone]");
+    if (!zone) return;
+    event.preventDefault();
+    zone.classList.remove("drop-target-active");
+    activeDropZone = null;
+    const portfolioId = event.dataTransfer.getData("text/portfolio-id");
+    if (!portfolioId) return;
+    const dropValue = zone.dataset.dropZone || "";
+    const groupId = dropValue === "ungrouped" ? "" : dropValue.startsWith("group:") ? dropValue.slice(6) : "";
+    assignPortfolioToGroup(portfolioId, groupId);
   });
 }
 
@@ -667,6 +777,11 @@ function portfolioButton(id, name, color) {
   button.type = "button";
   button.className = `portfolio-button ${state.selectedPortfolioId === id ? "active" : ""}`;
   button.dataset.portfolioId = id;
+  if (isDraggablePortfolioId(id)) {
+    button.draggable = true;
+    button.dataset.dragPortfolioId = id;
+    button.title = t("nav.dragPortfolio");
+  }
   button.innerHTML = `
     <span class="scope-dot" style="background:${escapeAttr(color)}"></span>
     <span>${escapeHtml(name)}</span>
@@ -704,6 +819,9 @@ function portfolioSubButton(id, name, color) {
   button.type = "button";
   button.className = `portfolio-button portfolio-sub-button ${state.selectedPortfolioId === id ? "active" : ""}`;
   button.dataset.portfolioId = id;
+  button.draggable = true;
+  button.dataset.dragPortfolioId = id;
+  button.title = t("nav.dragPortfolio");
   button.innerHTML = `
     <span class="scope-dot" style="background:${escapeAttr(color)}"></span>
     <span>${escapeHtml(name)}</span>

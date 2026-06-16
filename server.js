@@ -39,6 +39,14 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 200, { locale: readDefaultLocale() });
       return;
     }
+    if (url.pathname === "/api/holdings") {
+      if (request.method === "POST") {
+        await handleHoldingsPost(request, response);
+      } else {
+        handleHoldingsGet(response);
+      }
+      return;
+    }
     serveStatic(url.pathname, response);
   } catch (error) {
     sendJson(response, 500, { error: error.message || "Server error" });
@@ -65,6 +73,92 @@ function readDefaultLocale() {
     }
   }
   return null;
+}
+
+let holdingsCache = { instruments: [], updatedAt: "", portfolioCount: 0 };
+
+async function handleHoldingsPost(request, response) {
+  try {
+    const body = await readBody(request);
+    const state = JSON.parse(body || "{}");
+    const instruments = extractActiveInstruments(state);
+    holdingsCache = {
+      instruments,
+      updatedAt: new Date().toISOString(),
+      portfolioCount: (state.portfolios || []).length,
+    };
+    sendJson(response, 200, { ok: true, count: instruments.length });
+  } catch (error) {
+    sendJson(response, 400, { error: error.message || "Invalid holdings payload" });
+  }
+}
+
+function handleHoldingsGet(response) {
+  sendJson(response, 200, holdingsCache);
+}
+
+function extractActiveInstruments(state) {
+  const positions = new Map();
+  const transactions = Array.isArray(state.transactions) ? state.transactions : [];
+  const portfolios = Array.isArray(state.portfolios) ? state.portfolios : [];
+  const portfolioMap = new Map(portfolios.map((p) => [p.id, p]));
+
+  // Calculate net position per symbol+currency+portfolio
+  transactions.forEach((tx) => {
+    const symbol = String(tx.symbol || "").trim().toUpperCase();
+    if (!symbol) return;
+    const currency = String(tx.currency || "PLN").toUpperCase();
+    const key = `${tx.portfolioId}|${symbol}|${currency}`;
+
+    if (!positions.has(key)) {
+      positions.set(key, {
+        symbol,
+        name: tx.name || symbol,
+        currency,
+        assetType: tx.assetType || "stock",
+        portfolioId: tx.portfolioId,
+        portfolioName: portfolioMap.get(tx.portfolioId)?.name || "",
+        quantity: 0,
+        market: inferMarket(symbol),
+      });
+    }
+
+    const pos = positions.get(key);
+    if (tx.type === "buy") pos.quantity += Math.abs(tx.quantity || 0);
+    if (tx.type === "sell") pos.quantity -= Math.abs(tx.quantity || 0);
+  });
+
+  return Array.from(positions.values())
+    .filter((p) => p.quantity > 0.0000001)
+    .map((p) => ({
+      symbol: formatInstrumentSymbol(p.symbol, p.market),
+      name: p.name,
+      currency: p.currency,
+      assetType: p.assetType,
+      market: p.market,
+      portfolioName: p.portfolioName,
+    }))
+    .sort((a, b) => a.symbol.localeCompare(b.symbol));
+}
+
+function inferMarket(symbol) {
+  const parts = symbol.split(".");
+  const suffix = parts[1] || "";
+  if (suffix === "PL" || suffix === "WA") return "GPW";
+  if (suffix === "DE") return "Xetra";
+  if (suffix === "UK" || suffix === "L") return "LSE";
+  if (suffix === "US") return "NASDAQ";
+  return "";
+}
+
+function formatInstrumentSymbol(symbol, market) {
+  const parts = symbol.split(".");
+  const base = parts[0];
+  if (market === "GPW") return `${base}.PL`;
+  if (market === "Xetra") return symbol.endsWith(".DE") ? symbol : `${symbol}.DE`;
+  if (market === "LSE") return symbol.endsWith(".UK") ? symbol : `${symbol}.UK`;
+  if (market === "NASDAQ") return symbol.endsWith(".US") ? symbol : `${symbol}.US`;
+  return symbol;
 }
 
 function startLibreWallet(options = {}) {
