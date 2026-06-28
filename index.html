@@ -545,6 +545,30 @@
               <div id="portfolioGroupsPanel"></div>
             </section>
 
+            <section class="panel auto-refresh-panel">
+              <div class="panel-heading">
+                <div>
+                  <p class="eyebrow" data-i18n="autoRefresh.eyebrow">Automatyzacja</p>
+                  <h3 data-i18n="autoRefresh.title">Automatyczne odświeżanie cen</h3>
+                </div>
+              </div>
+              <p class="muted auto-refresh-copy" data-i18n="autoRefresh.description">
+                Ceny będą aktualizowane automatycznie według wybranego interwału. Wymaga pozostawienia otwartej karty LibreWallet.
+              </p>
+              <div class="auto-refresh-controls">
+                <label for="autoRefreshInterval" data-i18n="autoRefresh.label">Odświeżaj co:</label>
+                <select id="autoRefreshInterval">
+                  <option value="0" data-i18n="autoRefresh.disabled">Wyłączone</option>
+                  <option value="15" data-i18n="autoRefresh.15min">15 minut</option>
+                  <option value="30" data-i18n="autoRefresh.30min">30 minut</option>
+                  <option value="60" data-i18n="autoRefresh.1h">1 godzina</option>
+                  <option value="120" data-i18n="autoRefresh.2h">2 godziny</option>
+                  <option value="360" data-i18n="autoRefresh.6h">6 godzin</option>
+                </select>
+              </div>
+              <div id="autoRefreshStatus" class="auto-refresh-status" role="status"></div>
+            </section>
+
             <section class="panel backup-panel">
               <div class="panel-heading">
                 <div>

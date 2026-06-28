@@ -149,6 +149,9 @@ function getAssetScopes() {
 }
 
 const dom = {};
+let autoRefreshTimer = null;
+let autoRefreshNextAt = null;
+let autoRefreshStatusInterval = null;
 let state = loadState();
 let importPreview = [];
 let historyZoom = null;
@@ -177,6 +180,7 @@ function finishBoot() {
   setupDesktopHint();
   render();
   holdingsSync();
+  startAutoRefreshTimer();
 }
 
 function setupDesktopHint() {
@@ -296,6 +300,8 @@ function cacheDom() {
     "portfolioGroupName",
     "portfolioGroupForm",
     "portfolioGroupsPanel",
+    "autoRefreshInterval",
+    "autoRefreshStatus",
   ].forEach((id) => {
     dom[id] = document.getElementById(id);
   });
@@ -460,6 +466,16 @@ function bindEvents() {
   dom.redemptionForm.addEventListener("submit", addRedemption);
   dom.redemptionForm.elements.bondKey.addEventListener("change", applyRedemptionDefaults);
   dom.redemptionForm.elements.quantity.addEventListener("input", updateRedemptionFee);
+  if (dom.autoRefreshInterval) {
+    dom.autoRefreshInterval.value = String(state.autoRefreshIntervalMinutes);
+    dom.autoRefreshInterval.addEventListener("change", () => {
+      const minutes = Number(dom.autoRefreshInterval.value) || 0;
+      state.autoRefreshIntervalMinutes = minutes;
+      saveState();
+      restartAutoRefreshTimer();
+      renderAutoRefreshStatus();
+    });
+  }
 }
 
 function defaultState() {
@@ -483,6 +499,7 @@ function defaultState() {
     showHistoryMarkers: true,
     portfolioGroups: [],
     locale: "",
+    autoRefreshIntervalMinutes: 60,
   };
 }
 
@@ -513,6 +530,7 @@ function normalizeStoredState(stored) {
     assetTypes: stored.assetTypes || {},
     targets: { ...DEFAULT_TARGETS, ...(stored.targets || {}) },
     fxRates: { ...DEFAULT_FX, ...(stored.fxRates || {}) },
+    autoRefreshIntervalMinutes: typeof stored.autoRefreshIntervalMinutes === "number" && stored.autoRefreshIntervalMinutes >= 0 ? stored.autoRefreshIntervalMinutes : 60,
   };
 }
 
@@ -537,12 +555,29 @@ function holdingsSync() {
   setTimeout(() => {
     holdingsSyncPending = false;
     try {
+      const scope = typeof calculateScope === "function" ? calculateScope() : null;
+      const summary = scope ? {
+        totalValue: scope.totalValueBase,
+        netInvested: scope.netInvestedBase,
+        totalProfit: scope.totalProfitBase,
+        returnPct: scope.returnPct,
+        baseCurrency: scope.baseCurrency,
+        cashByCurrency: Object.fromEntries(
+          (scope.cashRows || [])
+            .filter((row) => row.valueBase > 0)
+            .map((row) => [row.currency, row.valueBase])
+        ),
+        allocationByType: scope.allocationByType || {},
+        allocationByCurrency: scope.allocationByCurrency || {},
+      } : null;
+
       fetch("/api/holdings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           portfolios: state.portfolios,
           transactions: state.transactions,
+          summary,
         }),
       }).catch(() => {});
     } catch {}
@@ -595,6 +630,61 @@ function renderLanguageSettings() {
   });
 }
 
+function startAutoRefreshTimer() {
+  stopAutoRefreshTimer();
+  const minutes = state.autoRefreshIntervalMinutes;
+  if (!minutes || minutes <= 0) return;
+  autoRefreshNextAt = Date.now() + minutes * 60 * 1000;
+  autoRefreshTimer = setTimeout(() => {
+    autoRefreshNextAt = null;
+    refreshLivePrices();
+    autoRefreshTimer = null;
+    startAutoRefreshTimer();
+    renderAutoRefreshStatus();
+  }, minutes * 60 * 1000);
+  // Tick the status every 30s so countdown stays fresh
+  autoRefreshStatusInterval = setInterval(() => {
+    if (!autoRefreshNextAt) {
+      clearInterval(autoRefreshStatusInterval);
+      autoRefreshStatusInterval = null;
+      return;
+    }
+    renderAutoRefreshStatus();
+  }, 30000);
+}
+
+function stopAutoRefreshTimer() {
+  if (autoRefreshTimer) {
+    clearTimeout(autoRefreshTimer);
+    autoRefreshTimer = null;
+    autoRefreshNextAt = null;
+  }
+  if (autoRefreshStatusInterval) {
+    clearInterval(autoRefreshStatusInterval);
+    autoRefreshStatusInterval = null;
+  }
+}
+
+function restartAutoRefreshTimer() {
+  startAutoRefreshTimer();
+}
+
+function renderAutoRefreshStatus() {
+  if (!dom.autoRefreshStatus) return;
+  const minutes = state.autoRefreshIntervalMinutes;
+  if (!minutes || minutes <= 0) {
+    dom.autoRefreshStatus.textContent = "";
+    return;
+  }
+  if (autoRefreshNextAt) {
+    const remaining = Math.max(0, Math.ceil((autoRefreshNextAt - Date.now()) / 60000));
+    const nextLabel = t("autoRefresh.next");
+    dom.autoRefreshStatus.textContent = `${nextLabel}: ~${remaining} min`;
+  } else {
+    dom.autoRefreshStatus.textContent = t("autoRefresh.waiting");
+  }
+}
+
 function render() {
   if (state.locale) window.LW_I18N.applyI18n();
   ensurePortfolio();
@@ -617,6 +707,7 @@ function render() {
   renderPortfolioGroupsPanel();
   renderHistoryBenchmarkSelect();
   renderHistoryMarkerToggle();
+  renderAutoRefreshStatus();
 }
 
 function setTab(tabName) {
@@ -2292,7 +2383,7 @@ function renderHoldings() {
             </select>
           </td>
           <td>${formatNumber(position.quantity)}</td>
-          <td>${formatMoney(position.averagePrice, position.currency)}</td>
+          <td>${formatPrice(position.averagePrice, position.currency)}</td>
           <td>
             <div class="price-cell">
               <input class="price-input" data-price-key="${escapeAttr(key)}" type="number" step="0.0001" value="${roundInput(position.currentPrice)}" />
@@ -2560,7 +2651,7 @@ function renderTransactions() {
           <td>${operationLabel(transaction.type)}</td>
           <td>${escapeHtml(transaction.symbol || transaction.name || "-")}</td>
           <td>${transaction.quantity ? formatNumber(transaction.quantity) : "-"}</td>
-          <td>${transaction.price ? formatMoney(transaction.price, transaction.currency) : "-"}</td>
+          <td>${transaction.price ? formatPrice(transaction.price, transaction.currency) : "-"}</td>
           <td>${formatMoney(transaction.gross, transaction.currency)}</td>
           <td>${transaction.fee ? formatMoney(transaction.fee, transaction.currency) : "-"}</td>
           <td>
@@ -2676,7 +2767,7 @@ function renderImportPreview() {
           <td>${operationLabel(transaction.type)}</td>
           <td>${escapeHtml(transaction.symbol || transaction.name || "-")}</td>
           <td>${transaction.quantity ? formatNumber(transaction.quantity) : "-"}</td>
-          <td>${transaction.price ? formatMoney(transaction.price, transaction.currency) : "-"}</td>
+          <td>${transaction.price ? formatPrice(transaction.price, transaction.currency) : "-"}</td>
           <td>${formatMoney(transaction.gross, transaction.currency)}</td>
         </tr>
       `;
@@ -5438,6 +5529,15 @@ function formatMoney(value, currency = "PLN") {
     style: "currency",
     currency,
     maximumFractionDigits: Math.abs(value) >= 1000 ? 0 : 2,
+  });
+  return formatter.format(value || 0);
+}
+
+function formatPrice(value, currency = "PLN") {
+  const formatter = new Intl.NumberFormat(window.LW_I18N.intlLocale(), {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 4,
   });
   return formatter.format(value || 0);
 }

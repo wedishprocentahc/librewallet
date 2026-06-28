@@ -47,6 +47,10 @@ const server = http.createServer(async (request, response) => {
       }
       return;
     }
+    if (url.pathname === "/api/portfolio") {
+      handlePortfolioGet(response);
+      return;
+    }
     serveStatic(url.pathname, response);
   } catch (error) {
     sendJson(response, 500, { error: error.message || "Server error" });
@@ -76,6 +80,7 @@ function readDefaultLocale() {
 }
 
 let holdingsCache = { instruments: [], updatedAt: "", portfolioCount: 0 };
+let portfolioSummary = null;
 
 async function handleHoldingsPost(request, response) {
   try {
@@ -87,6 +92,12 @@ async function handleHoldingsPost(request, response) {
       updatedAt: new Date().toISOString(),
       portfolioCount: (state.portfolios || []).length,
     };
+    if (state.summary && typeof state.summary === "object") {
+      portfolioSummary = {
+        ...state.summary,
+        fetchedAt: new Date().toISOString(),
+      };
+    }
     sendJson(response, 200, { ok: true, count: instruments.length });
   } catch (error) {
     sendJson(response, 400, { error: error.message || "Invalid holdings payload" });
@@ -95,6 +106,21 @@ async function handleHoldingsPost(request, response) {
 
 function handleHoldingsGet(response) {
   sendJson(response, 200, holdingsCache);
+}
+
+function handlePortfolioGet(response) {
+  if (!portfolioSummary) {
+    sendJson(response, 200, {
+      status: "no_data",
+      message: "LibreWallet nie przesłał jeszcze podsumowania portfela. Otwórz LibreWallet w przeglądarce i poczekaj na synchronizację.",
+    });
+    return;
+  }
+  sendJson(response, 200, {
+    status: "ok",
+    summary: portfolioSummary,
+    holdings: holdingsCache,
+  });
 }
 
 function extractActiveInstruments(state) {

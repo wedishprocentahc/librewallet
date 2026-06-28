@@ -1312,6 +1312,53 @@ tr:last-child td {
   grid-column: 1 / -1;
 }
 
+.auto-refresh-panel {
+  grid-column: span 1;
+}
+
+.auto-refresh-copy {
+  margin: 0 0 14px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.auto-refresh-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.auto-refresh-controls label {
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.auto-refresh-controls select {
+  appearance: none;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 0.9rem;
+  padding: 6px 30px 6px 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+
+.auto-refresh-controls select:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.auto-refresh-status {
+  font-size: 0.82rem;
+  color: var(--color-muted);
+  min-height: 1.2rem;
+}
+
 .backup-copy {
   margin: 0 0 14px;
   font-size: 0.9rem;
