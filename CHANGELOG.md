@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.9
+
+- **macOS:** naprawione uprawnienia w instalatorze `.pkg` — aplikacja nie pokazywała się jako „zero bajtów” i była niedostępna po instalacji (katalogi miały tryb `700` zamiast `755`).
+
 ## 1.1.8
 
 - **Auto-odświeżanie cen** — nowy panel w zakładce „Import i ustawienia” pozwala ustawić automatyczne odświeżanie cen co 15 min / 30 min / 1 h / 2 h / 6 h (domyślnie 1 h). Po każdym cyklu ceny i historia dzienna aktualizują się automatycznie.

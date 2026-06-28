@@ -35,9 +35,10 @@ mkdir -p "$APP_PATH/Contents/MacOS"
 mkdir -p "$APP_PATH/Contents/Resources"
 
 cp "$BINARY" "$APP_PATH/Contents/MacOS/librewallet-server"
-chmod +x "$APP_PATH/Contents/MacOS/librewallet-server"
 cp "$ROOT/scripts/macos-app-launcher.sh" "$APP_PATH/Contents/MacOS/LibreWallet"
-chmod +x "$APP_PATH/Contents/MacOS/LibreWallet"
+find "$APP_PATH" -type d -exec chmod 755 {} \;
+find "$APP_PATH" -type f -exec chmod 644 {} \;
+chmod 755 "$APP_PATH/Contents/MacOS/LibreWallet" "$APP_PATH/Contents/MacOS/librewallet-server"
 
 ICON_SRC="$ROOT/assets/app-icon.png"
 if [ -f "$ICON_SRC" ] && command -v iconutil >/dev/null 2>&1 && command -v sips >/dev/null 2>&1; then
@@ -107,6 +108,7 @@ pkgbuild \
   --identifier "com.librewallet.app" \
   --version "$VERSION" \
   --install-location "/Applications" \
+  --ownership recommended \
   --scripts "$SCRIPTS" \
   "$COMPONENT"
 
