@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.10
+
+- Opisz co nowego w wersji 1.1.10
+- ...
+fixed instllation issue
+
+
 ## 1.1.9
 
 - **macOS:** naprawione uprawnienia w instalatorze `.pkg` — aplikacja nie pokazywała się jako „zero bajtów” i była niedostępna po instalacji (katalogi miały tryb `700` zamiast `755`).
