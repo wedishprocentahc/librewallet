@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.8
+
+- **Auto-odświeżanie cen** — nowy panel w zakładce „Import i ustawienia” pozwala ustawić automatyczne odświeżanie cen co 15 min / 30 min / 1 h / 2 h / 6 h (domyślnie 1 h). Po każdym cyklu ceny i historia dzienna aktualizują się automatycznie.
+
 ## 1.1.7
 
 - **`GET /api/holdings`** — returns active portfolio instruments (symbols, names, markets) from an in-memory cache for local integrations (e.g. Inwestor / OpenClaw).
