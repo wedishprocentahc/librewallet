@@ -34,6 +34,7 @@ APP_PATH="$WORK/Applications/LibreWallet.app"
 mkdir -p "$APP_PATH/Contents/MacOS"
 mkdir -p "$APP_PATH/Contents/Resources"
 
+export COPYFILE_DISABLE=1
 cp "$BINARY" "$APP_PATH/Contents/MacOS/librewallet-server"
 cp "$ROOT/scripts/macos-app-launcher.sh" "$APP_PATH/Contents/MacOS/LibreWallet"
 find "$APP_PATH" -type d -exec chmod 755 {} \;
@@ -87,6 +88,14 @@ EOF
 
 SCRIPTS="$WORK/scripts"
 mkdir -p "$SCRIPTS"
+cat > "$SCRIPTS/preinstall" <<'EOF'
+#!/bin/bash
+# Remove broken/partial installs so payload always writes a full app bundle.
+rm -rf "/Applications/LibreWallet.app"
+exit 0
+EOF
+chmod +x "$SCRIPTS/preinstall"
+
 cat > "$SCRIPTS/postinstall" <<'EOF'
 #!/bin/bash
 RESOURCES="/Applications/LibreWallet.app/Contents/Resources"
@@ -102,9 +111,32 @@ exit 0
 EOF
 chmod +x "$SCRIPTS/postinstall"
 
+COMPONENT_PLIST="$WORK/components.plist"
+cat > "$COMPONENT_PLIST" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<array>
+  <dict>
+    <key>BundleHasStrictIdentifier</key>
+    <true/>
+    <key>BundleIsRelocatable</key>
+    <false/>
+    <key>BundleIsVersionChecked</key>
+    <true/>
+    <key>BundleOverwriteAction</key>
+    <string>replace</string>
+    <key>RootRelativeBundlePath</key>
+    <string>LibreWallet.app</string>
+  </dict>
+</array>
+</plist>
+EOF
+
 COMPONENT="$WORK/LibreWallet-component.pkg"
 pkgbuild \
   --root "$WORK/Applications" \
+  --component-plist "$COMPONENT_PLIST" \
   --identifier "com.librewallet.app" \
   --version "$VERSION" \
   --install-location "/Applications" \

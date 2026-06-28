@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.12
+
+- **macOS:** naprawiona instalacja `.pkg` — instalator nie nadpisywał uszkodzonej aplikacji (upgrade/relocation zostawiał tylko plik `default-locale`, ~3 bajty). Teraz preinstall usuwa starą aplikację, a paczka wymusza pełną podmianę bundle.
+
 ## 1.1.11
 
 - Opisz co nowego w wersji 1.1.11
