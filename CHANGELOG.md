@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.11
+
+- Opisz co nowego w wersji 1.1.11
+- ...
+fixed installation error
+
+
 ## 1.1.10
 
 - Opisz co nowego w wersji 1.1.10
