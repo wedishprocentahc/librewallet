@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.15
+
+- **Pozycje (Holdings):** edycja wolumenu/ilości oraz możliwość usunięcia pozycji.
+
 ## 1.1.14
 
 - **GPW/Yahoo:** ticker `EEE` jest ignorowany (nie wpływa na wyceny/historię), bo Yahoo potrafi zwracać wartości rozjechane względem rachunku.
