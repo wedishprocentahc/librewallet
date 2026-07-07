@@ -485,6 +485,7 @@ function defaultState() {
     portfolios: [],
     transactions: [],
     priceOverrides: {},
+    quantityOverrides: {},
     priceMeta: {},
     quoteHistory: {},
     fxHistory: {},
@@ -519,6 +520,7 @@ function normalizeStoredState(stored) {
       : [],
     transactions: Array.isArray(stored.transactions) ? stored.transactions : [],
     priceOverrides: stored.priceOverrides || {},
+    quantityOverrides: stored.quantityOverrides || {},
     priceMeta: stored.priceMeta || {},
     quoteHistory: stored.quoteHistory || {},
     fxHistory: stored.fxHistory || {},
@@ -2366,6 +2368,7 @@ function renderHoldings() {
       const profitClass = position.totalProfitBase >= 0 ? "positive" : "negative";
       const share = (position.currentValueBase / totalValue) * 100;
       const key = priceKey(position);
+      const qtyKey = key;
       const periodCells = RETURN_PERIODS.map((period) => {
         return `<td class="period-return">${formatPeriodReturn(positionPeriodReturn(position, period))}</td>`;
       }).join("");
@@ -2382,7 +2385,12 @@ function renderHoldings() {
               ${assetTypeOptions(position.assetType)}
             </select>
           </td>
-          <td>${formatNumber(position.quantity)}</td>
+          <td>
+            <div class="qty-cell">
+              <input class="qty-input" data-qty-key="${escapeAttr(qtyKey)}" type="number" step="0.00000001" min="0" value="${roundInput(position.quantity)}" />
+              <button class="text-button danger" data-delete-position="${escapeAttr(qtyKey)}" type="button">${escapeHtml(t("action.delete"))}</button>
+            </div>
+          </td>
           <td>${formatPrice(position.averagePrice, position.currency)}</td>
           <td>
             <div class="price-cell">
@@ -2414,6 +2422,30 @@ function renderHoldings() {
         delete state.priceOverrides[input.dataset.priceKey];
         delete state.priceMeta[input.dataset.priceKey];
       }
+      saveState();
+      render();
+    });
+  });
+
+  dom.holdingsTable.querySelectorAll("[data-qty-key]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const value = parseNumber(input.value);
+      if (Number.isFinite(value) && value > 0) {
+        state.quantityOverrides[input.dataset.qtyKey] = value;
+      } else {
+        delete state.quantityOverrides[input.dataset.qtyKey];
+      }
+      saveState();
+      render();
+    });
+  });
+
+  dom.holdingsTable.querySelectorAll("[data-delete-position]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const key = button.dataset.deletePosition;
+      state.quantityOverrides[key] = 0;
+      delete state.priceOverrides[key];
+      delete state.priceMeta[key];
       saveState();
       render();
     });
@@ -3025,13 +3057,16 @@ function createPosition(transaction, key) {
 function summarizePositions(positions, cash, baseCurrency, includeCash, asOf) {
   const positionsList = Array.from(positions.values()).map((position) => {
     const assetType = state.assetTypes[position.assetKey] || position.assetType || "other";
+    const quantityOverride = state.quantityOverrides[position.assetKey];
+    const effectiveQuantity =
+      Number.isFinite(quantityOverride) && quantityOverride >= 0 ? quantityOverride : position.quantity;
     const currentPrice = getCurrentPrice(position, asOf);
-    const currentValue = Math.max(0, position.quantity) * currentPrice;
+    const currentValue = Math.max(0, effectiveQuantity) * currentPrice;
     const unrealized = currentValue - position.costBasis;
     const totalProfit = unrealized + position.realized + position.income;
     const currentValueBase = convertAt(currentValue, position.currency, baseCurrency, asOf);
     const totalProfitBase = convertAt(totalProfit, position.currency, baseCurrency, asOf);
-    const averagePrice = position.quantity ? position.costBasis / position.quantity : currentPrice;
+    const averagePrice = effectiveQuantity ? position.costBasis / effectiveQuantity : currentPrice;
     const returnPct = position.costBasis > 0 ? (totalProfit / position.costBasis) * 100 : 0;
     const portfoliosLabel = Array.from(position.portfolios)
       .map((id) => state.portfolios.find((portfolio) => portfolio.id === id)?.name)
@@ -3040,6 +3075,7 @@ function summarizePositions(positions, cash, baseCurrency, includeCash, asOf) {
     return {
       ...position,
       assetType,
+      quantity: effectiveQuantity,
       currentPrice,
       currentValue,
       currentValueBase,
