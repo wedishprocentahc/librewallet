@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.14
+
+- **GPW/Yahoo:** ticker `EEE` jest ignorowany (nie wpływa na wyceny/historię), bo Yahoo potrafi zwracać wartości rozjechane względem rachunku.
+
 ## 1.1.12
 
 - **macOS:** naprawiona instalacja `.pkg` — instalator nie nadpisywał uszkodzonej aplikacji (upgrade/relocation zostawiał tylko plik `default-locale`, ~3 bajty). Teraz preinstall usuwa starą aplikację, a paczka wymusza pełną podmianę bundle.
