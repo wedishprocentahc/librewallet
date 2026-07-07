@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.16
+
+- **Pozycje (Holdings):** widoczny przycisk „Usuń” obok pola ilości.
+
 ## 1.1.15
 
 - **Pozycje (Holdings):** edycja wolumenu/ilości oraz możliwość usunięcia pozycji.
