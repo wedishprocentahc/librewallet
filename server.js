@@ -133,6 +133,7 @@ function extractActiveInstruments(state) {
   transactions.forEach((tx) => {
     const symbol = String(tx.symbol || "").trim().toUpperCase();
     if (!symbol) return;
+    if (isIgnoredSymbol(symbol)) return;
     const currency = String(tx.currency || "PLN").toUpperCase();
     const key = `${tx.portfolioId}|${symbol}|${currency}`;
 
@@ -317,12 +318,20 @@ function normalizeInstruments(instruments) {
       positionCurrency: String(instrument.positionCurrency || "PLN").trim().toUpperCase(),
     }))
     .filter((instrument) => instrument.symbol)
+    .filter((instrument) => !isIgnoredSymbol(instrument.symbol))
     .filter((instrument) => {
       const key = instrumentKey(instrument.symbol, instrument.positionCurrency);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
+}
+
+function isIgnoredSymbol(symbol) {
+  const parsed = splitSymbol(symbol);
+  // User-reported problematic ticker on Yahoo Finance vs broker account.
+  // We ignore it entirely so it doesn't affect portfolio value/history.
+  return parsed.base === "EEE";
 }
 
 async function fetchYahooQuotes(instruments) {
