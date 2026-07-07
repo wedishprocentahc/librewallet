@@ -983,6 +983,25 @@ tr:last-child td {
   color: var(--muted);
 }
 
+.qty-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.qty-input {
+  width: 108px;
+  text-align: right;
+}
+
+.qty-delete {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
 .type-select {
   width: 116px;
 }

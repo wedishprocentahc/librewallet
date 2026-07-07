@@ -2388,7 +2388,9 @@ function renderHoldings() {
           <td>
             <div class="qty-cell">
               <input class="qty-input" data-qty-key="${escapeAttr(qtyKey)}" type="number" step="0.00000001" min="0" value="${roundInput(position.quantity)}" />
-              <button class="text-button danger" data-delete-position="${escapeAttr(qtyKey)}" type="button">${escapeHtml(t("action.delete"))}</button>
+              <button class="ghost-button danger qty-delete" data-delete-position="${escapeAttr(qtyKey)}" type="button">
+                ${escapeHtml(t("action.delete"))}
+              </button>
             </div>
           </td>
           <td>${formatPrice(position.averagePrice, position.currency)}</td>
