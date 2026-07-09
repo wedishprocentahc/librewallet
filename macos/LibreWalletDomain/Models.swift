@@ -5,14 +5,16 @@ import SwiftData
 final class PortfolioGroup {
     @Attribute(.unique) var id: UUID
     var name: String
+    var colorHex: String
     var createdAt: Date
 
     @Relationship(deleteRule: .cascade, inverse: \Portfolio.group)
     var portfolios: [Portfolio] = []
 
-    init(id: UUID = UUID(), name: String, createdAt: Date) {
+    init(id: UUID = UUID(), name: String, colorHex: String = "#176b4d", createdAt: Date) {
         self.id = id
         self.name = name
+        self.colorHex = colorHex
         self.createdAt = createdAt
     }
 }

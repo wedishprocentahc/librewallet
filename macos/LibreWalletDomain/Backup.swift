@@ -20,6 +20,7 @@ struct LWBackup: Codable {
     struct GroupDTO: Codable {
         let id: UUID
         let name: String
+        let colorHex: String
         let createdAt: Date
     }
 
@@ -81,7 +82,7 @@ enum BackupService {
             format: LWBackup.formatId,
             version: LWBackup.currentVersion,
             exportedAt: .now,
-            groups: groups.map { .init(id: $0.id, name: $0.name, createdAt: $0.createdAt) },
+            groups: groups.map { .init(id: $0.id, name: $0.name, colorHex: $0.colorHex, createdAt: $0.createdAt) },
             portfolios: portfolios.map {
                 .init(
                     id: $0.id,
@@ -144,7 +145,7 @@ enum BackupService {
         }
 
         let groupsById: [UUID: PortfolioGroup] = Dictionary(uniqueKeysWithValues: backup.groups.map { dto in
-            let g = PortfolioGroup(id: dto.id, name: dto.name, createdAt: dto.createdAt)
+            let g = PortfolioGroup(id: dto.id, name: dto.name, colorHex: dto.colorHex, createdAt: dto.createdAt)
             context.insert(g)
             return (dto.id, g)
         })

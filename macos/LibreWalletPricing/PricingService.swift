@@ -13,13 +13,18 @@ enum PricingService {
         currencyBySymbol: [String: String] = [:],
         context: ModelContext
     ) async throws {
+        // SwiftData ModelContext is not thread-safe; only touch it on MainActor.
         for symbol in symbols {
             let preferredCurrency = currencyBySymbol[symbol.uppercased()]
             if let quote = try await fetchYahooQuote(symbol: symbol, preferredCurrency: preferredCurrency) {
-                await upsertQuote(symbol: symbol.uppercased(), quote: quote, context: context)
+                await MainActor.run {
+                    upsertQuote(symbol: symbol.uppercased(), quote: quote, context: context)
+                }
             }
         }
-        try context.save()
+        try await MainActor.run {
+            try context.save()
+        }
     }
 
     static func fetchHistory(symbol: String) async throws -> [(date: Date, close: Double)] {
@@ -82,7 +87,8 @@ enum PricingService {
         return nil
     }
 
-    private static func upsertQuote(symbol: String, quote: (price: Double, currency: String, asOf: Date), context: ModelContext) async {
+    @MainActor
+    private static func upsertQuote(symbol: String, quote: (price: Double, currency: String, asOf: Date), context: ModelContext) {
         let descriptor = FetchDescriptor<Quote>(predicate: #Predicate { $0.symbol == symbol })
         if let existing = try? context.fetch(descriptor).first {
             existing.price = quote.price

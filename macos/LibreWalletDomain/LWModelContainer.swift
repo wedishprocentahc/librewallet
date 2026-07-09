@@ -18,7 +18,16 @@ enum LWModelContainer {
             withIntermediateDirectories: true
         )
         let config = ModelConfiguration(schema: schema, url: url)
-        return try! ModelContainer(for: schema, configurations: [config])
+        do {
+            return try ModelContainer(for: schema, configurations: [config])
+        } catch {
+            // SwiftData doesn't always auto-migrate when the schema changes during development.
+            // If we hit a schema mismatch, wipe the local store and recreate it.
+            try? FileManager.default.removeItem(at: url)
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: url.path + "-shm"))
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: url.path + "-wal"))
+            return try! ModelContainer(for: schema, configurations: [config])
+        }
     }()
 
     static func storeURL() -> URL {

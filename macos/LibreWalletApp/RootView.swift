@@ -58,7 +58,12 @@ struct RootView: View {
                                     appState.selectPortfolio(portfolio)
                                     appState.navigationSelection = .portfolio(portfolio.id)
                                 } label: {
-                                    Label(portfolio.name, systemImage: "briefcase")
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(Color(hex: portfolio.colorHex) ?? .gray)
+                                            .frame(width: 10, height: 10)
+                                        Label(portfolio.name, systemImage: "briefcase")
+                                    }
                                 }
                                 .buttonStyle(.plain)
                                 .contextMenu {
@@ -79,12 +84,17 @@ struct RootView: View {
                             }
                             .buttonStyle(.plain)
                         } label: {
-                            Label(group.name, systemImage: "folder")
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(Color(hex: group.colorHex) ?? .gray)
+                                    .frame(width: 10, height: 10)
+                                Label(group.name, systemImage: "folder")
+                            }
                                 .contextMenu {
                                     Button("Edytuj…") {
                                         renamingGroup = group
                                         renameText = group.name
-                                        editColor = .green
+                                        editColor = Color(hex: group.colorHex) ?? .green
                                     }
                                     Button("Usuń…", role: .destructive) {
                                         confirmDeleteGroup = group
@@ -145,6 +155,7 @@ struct RootView: View {
             set: { if !$0 { renamingGroup = nil } }
         )) {
             TextField("Nazwa", text: $renameText)
+            ColorPicker("Kolor", selection: $editColor, supportsOpacity: false)
             Button("Anuluj", role: .cancel) {
                 renamingGroup = nil
             }
@@ -153,12 +164,13 @@ struct RootView: View {
                 let newName = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !newName.isEmpty {
                     g.name = newName
+                    g.colorHex = editColor.toHex() ?? g.colorHex
                     try? context.save()
                 }
                 renamingGroup = nil
             }
         } message: {
-            Text("Ustaw nazwę grupy.")
+            Text("Ustaw nazwę i kolor grupy.")
         }
         .alert("Usunąć portfel?", isPresented: Binding(
             get: { confirmDeletePortfolio != nil },
@@ -247,7 +259,7 @@ struct RootView: View {
     private func createGroup(name: String, portfolios: [DraftPortfolio]) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let groupName = trimmed.isEmpty ? "Nowa grupa" : trimmed
-        let group = PortfolioGroup(name: groupName, createdAt: .now)
+        let group = PortfolioGroup(name: groupName, colorHex: "#176b4d", createdAt: .now)
         context.insert(group)
 
         let cleaned = portfolios
