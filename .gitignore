@@ -5,3 +5,6 @@ dist/
 debug-*.log
 .claude/
 fixtures/
+macos/LibreWallet.xcodeproj/project.xcworkspace/xcuserdata/
+macos/LibreWallet.xcodeproj/xcuserdata/
+**/*.xcuserstate

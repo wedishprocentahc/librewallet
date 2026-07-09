@@ -1,0 +1,612 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0BEBDDC72FD7B1422391EBEB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 2FE0ABC39E78B10CFAB7D1C1 /* ZIPFoundation */; };
+		27462A117AEC79F404098BD5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7F45D9368C3B5F31B76CF2 /* Models.swift */; };
+		289257D0B31981CEADF07791 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40574EFF205A2E0C7C7AC110 /* AppState.swift */; };
+		28A6218FFA19635F24092ABE /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C151B0499FD7D3C27A0F06 /* Formatting.swift */; };
+		3418528651C4F70C8EE8F0C8 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083A44D3AA91E0450B81336A /* TransactionRow.swift */; };
+		3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */; };
+		3B4177BC4E572B6F0FA60C5E /* RebalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B985AA3514869729F52EAC /* RebalanceView.swift */; };
+		3BB7F0472B5D658050E14A90 /* LWModelContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C53DECBDA85DFF53BF4D9481 /* LWModelContainer.swift */; };
+		43EC305302C259ACFF3CFA97 /* PricingPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2614D8EB21BD5A857E2EF00F /* PricingPlaceholders.swift */; };
+		45F6F77F9AFD487C11630E47 /* PricingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C39E719ADE4DA6B7064E76 /* PricingService.swift */; };
+		460C9749F049269746105CE6 /* ImportedTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C717B9874B810B3DF6034232 /* ImportedTransaction.swift */; };
+		55A996ADBAE2FFCF5318A032 /* PlaceholderViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2886B0827F11F60FD546BF3A /* PlaceholderViews.swift */; };
+		63B0D09BA7650786A4F86370 /* CSV.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3841508530FAFB937E7198E0 /* CSV.swift */; };
+		6801253BD9974071E6FA04A0 /* BondPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 666F3089A1B7A298DFA96B29 /* BondPresets.swift */; };
+		6D5DB1E0B6531CEE63F2589B /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2ED05C566CB990A9D864C2 /* Backup.swift */; };
+		71730FE5819199FF1743D5F7 /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = CC4214F57180E8B85AACFDD6 /* CoreXLSX */; };
+		78603CFCB514C299425123B6 /* ImportPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */; };
+		7930A4E39A39BF1F4CD1DD11 /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B68E3963CD60CA9F30A75F5 /* AddTransactionSheet.swift */; };
+		81192BA50CF372C290156D60 /* PortfolioCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B797816F6464846A7131A4E /* PortfolioCalculator.swift */; };
+		8FE6FA44715C639E68DB7F45 /* NBPExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD20A5913CB288A94FA0343 /* NBPExchangeRateService.swift */; };
+		97482D687F1F61B67EF83C2E /* XTBZipImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDEB74EF10D94FB18B7C439 /* XTBZipImporter.swift */; };
+		A4DA2B7ED45B07745100E3E6 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574F0512FB45B0E5301051BB /* RootView.swift */; };
+		A59C779D3F484213DFB9F444 /* BondsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3CBD021269E656684CB54F1 /* BondsView.swift */; };
+		C5F6F6D3807A4EEC079C518C /* XTBOperationParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA87349D7559F4839312221 /* XTBOperationParsing.swift */; };
+		C7970D8A847530020C226BBE /* LibreWalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */; };
+		D77B8B6A33D748DA466AA8C6 /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */; };
+		E4CBD84F7E7F32BE51483AF3 /* ImportScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC6DD06853FB4E40B1B19A2 /* ImportScreen.swift */; };
+		EB42828B5B3A249EF9EE431C /* UniversalImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31779618A277EF73F85DBDC7 /* UniversalImporter.swift */; };
+		F02503D5BD39DD818CFBFA87 /* ColorHex.swift in Sources */ = {isa = PBXBuildFile; fileRef = D405ECEE72CD3F00ADB4F511 /* ColorHex.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		F41FCB57E1BB85E16E8E5AF5 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5FD5BAAB35BE1A3585A09372 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5C718B36E6D0E108CB33298B;
+			remoteInfo = LibreWallet;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		00763762100EDA5DC3D43958 /* LibreWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibreWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		083A44D3AA91E0450B81336A /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
+		1FC6DD06853FB4E40B1B19A2 /* ImportScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportScreen.swift; sourceTree = "<group>"; };
+		2614D8EB21BD5A857E2EF00F /* PricingPlaceholders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PricingPlaceholders.swift; sourceTree = "<group>"; };
+		2886B0827F11F60FD546BF3A /* PlaceholderViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderViews.swift; sourceTree = "<group>"; };
+		2B797816F6464846A7131A4E /* PortfolioCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCalculator.swift; sourceTree = "<group>"; };
+		2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortfolioCalculatorTests.swift; sourceTree = "<group>"; };
+		2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibreWalletApp.swift; sourceTree = "<group>"; };
+		31779618A277EF73F85DBDC7 /* UniversalImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversalImporter.swift; sourceTree = "<group>"; };
+		31B985AA3514869729F52EAC /* RebalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebalanceView.swift; sourceTree = "<group>"; };
+		3841508530FAFB937E7198E0 /* CSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSV.swift; sourceTree = "<group>"; };
+		3DDEB74EF10D94FB18B7C439 /* XTBZipImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTBZipImporter.swift; sourceTree = "<group>"; };
+		40574EFF205A2E0C7C7AC110 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		55C151B0499FD7D3C27A0F06 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		574F0512FB45B0E5301051BB /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		666F3089A1B7A298DFA96B29 /* BondPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondPresets.swift; sourceTree = "<group>"; };
+		68C39E719ADE4DA6B7064E76 /* PricingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PricingService.swift; sourceTree = "<group>"; };
+		6E2ED05C566CB990A9D864C2 /* Backup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backup.swift; sourceTree = "<group>"; };
+		7CA87349D7559F4839312221 /* XTBOperationParsing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTBOperationParsing.swift; sourceTree = "<group>"; };
+		8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
+		8B68E3963CD60CA9F30A75F5 /* AddTransactionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionSheet.swift; sourceTree = "<group>"; };
+		8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPlaceholders.swift; sourceTree = "<group>"; };
+		933AF8B638C821EE4675426C /* LibreWalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LibreWalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA7F45D9368C3B5F31B76CF2 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		BDD20A5913CB288A94FA0343 /* NBPExchangeRateService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NBPExchangeRateService.swift; sourceTree = "<group>"; };
+		C3CBD021269E656684CB54F1 /* BondsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondsView.swift; sourceTree = "<group>"; };
+		C53DECBDA85DFF53BF4D9481 /* LWModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LWModelContainer.swift; sourceTree = "<group>"; };
+		C717B9874B810B3DF6034232 /* ImportedTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportedTransaction.swift; sourceTree = "<group>"; };
+		D405ECEE72CD3F00ADB4F511 /* ColorHex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHex.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		31D4F577F883123325E7FC0A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0BEBDDC72FD7B1422391EBEB /* ZIPFoundation in Frameworks */,
+				71730FE5819199FF1743D5F7 /* CoreXLSX in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0215803AB449AB09D9360D7B /* LibreWalletPricing */ = {
+			isa = PBXGroup;
+			children = (
+				BDD20A5913CB288A94FA0343 /* NBPExchangeRateService.swift */,
+				2614D8EB21BD5A857E2EF00F /* PricingPlaceholders.swift */,
+				68C39E719ADE4DA6B7064E76 /* PricingService.swift */,
+			);
+			path = LibreWalletPricing;
+			sourceTree = "<group>";
+		};
+		025BA5978A36FA7032D136DD /* LibreWalletTests */ = {
+			isa = PBXGroup;
+			children = (
+				2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */,
+			);
+			path = LibreWalletTests;
+			sourceTree = "<group>";
+		};
+		16746E891B59F534FC8B0560 /* Bonds */ = {
+			isa = PBXGroup;
+			children = (
+				C3CBD021269E656684CB54F1 /* BondsView.swift */,
+			);
+			path = Bonds;
+			sourceTree = "<group>";
+		};
+		26290BF76916C51574FE434C /* Import */ = {
+			isa = PBXGroup;
+			children = (
+				1FC6DD06853FB4E40B1B19A2 /* ImportScreen.swift */,
+			);
+			path = Import;
+			sourceTree = "<group>";
+		};
+		319F55B9DC2708969991D2E5 /* LibreWalletImport */ = {
+			isa = PBXGroup;
+			children = (
+				3841508530FAFB937E7198E0 /* CSV.swift */,
+				C717B9874B810B3DF6034232 /* ImportedTransaction.swift */,
+				8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */,
+				31779618A277EF73F85DBDC7 /* UniversalImporter.swift */,
+				3DDEB74EF10D94FB18B7C439 /* XTBZipImporter.swift */,
+			);
+			path = LibreWalletImport;
+			sourceTree = "<group>";
+		};
+		756364F1E1681A30194684FE /* LibreWalletShared */ = {
+			isa = PBXGroup;
+			children = (
+				D405ECEE72CD3F00ADB4F511 /* ColorHex.swift */,
+				55C151B0499FD7D3C27A0F06 /* Formatting.swift */,
+				7CA87349D7559F4839312221 /* XTBOperationParsing.swift */,
+			);
+			path = LibreWalletShared;
+			sourceTree = "<group>";
+		};
+		828B17934EAC9C703485F18A /* Rebalance */ = {
+			isa = PBXGroup;
+			children = (
+				31B985AA3514869729F52EAC /* RebalanceView.swift */,
+			);
+			path = Rebalance;
+			sourceTree = "<group>";
+		};
+		840B36A2C46DD6A89E5DAF2F /* LibreWalletApp */ = {
+			isa = PBXGroup;
+			children = (
+				D56E188D1C39C0643B129C4D /* Views */,
+				40574EFF205A2E0C7C7AC110 /* AppState.swift */,
+				2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */,
+				8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */,
+				574F0512FB45B0E5301051BB /* RootView.swift */,
+			);
+			path = LibreWalletApp;
+			sourceTree = "<group>";
+		};
+		924F5BFAF65C32FB30553661 = {
+			isa = PBXGroup;
+			children = (
+				840B36A2C46DD6A89E5DAF2F /* LibreWalletApp */,
+				9509046C351D9CCF1F4975AA /* LibreWalletDomain */,
+				319F55B9DC2708969991D2E5 /* LibreWalletImport */,
+				0215803AB449AB09D9360D7B /* LibreWalletPricing */,
+				756364F1E1681A30194684FE /* LibreWalletShared */,
+				025BA5978A36FA7032D136DD /* LibreWalletTests */,
+				B23219E7A467B504DCF27D25 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		9509046C351D9CCF1F4975AA /* LibreWalletDomain */ = {
+			isa = PBXGroup;
+			children = (
+				6E2ED05C566CB990A9D864C2 /* Backup.swift */,
+				666F3089A1B7A298DFA96B29 /* BondPresets.swift */,
+				C53DECBDA85DFF53BF4D9481 /* LWModelContainer.swift */,
+				AA7F45D9368C3B5F31B76CF2 /* Models.swift */,
+				2B797816F6464846A7131A4E /* PortfolioCalculator.swift */,
+			);
+			path = LibreWalletDomain;
+			sourceTree = "<group>";
+		};
+		B23219E7A467B504DCF27D25 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				00763762100EDA5DC3D43958 /* LibreWallet.app */,
+				933AF8B638C821EE4675426C /* LibreWalletTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D56E188D1C39C0643B129C4D /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				16746E891B59F534FC8B0560 /* Bonds */,
+				26290BF76916C51574FE434C /* Import */,
+				828B17934EAC9C703485F18A /* Rebalance */,
+				D6CE27A7F8EF8961A4787B8D /* Transactions */,
+				2886B0827F11F60FD546BF3A /* PlaceholderViews.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		D6CE27A7F8EF8961A4787B8D /* Transactions */ = {
+			isa = PBXGroup;
+			children = (
+				8B68E3963CD60CA9F30A75F5 /* AddTransactionSheet.swift */,
+				083A44D3AA91E0450B81336A /* TransactionRow.swift */,
+			);
+			path = Transactions;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		5C718B36E6D0E108CB33298B /* LibreWallet */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B6AE3272D8EA1BB418EBA4BF /* Build configuration list for PBXNativeTarget "LibreWallet" */;
+			buildPhases = (
+				7BE9F3765F868B587DF9A3F9 /* Sources */,
+				31D4F577F883123325E7FC0A /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LibreWallet;
+			packageProductDependencies = (
+				2FE0ABC39E78B10CFAB7D1C1 /* ZIPFoundation */,
+				CC4214F57180E8B85AACFDD6 /* CoreXLSX */,
+			);
+			productName = LibreWallet;
+			productReference = 00763762100EDA5DC3D43958 /* LibreWallet.app */;
+			productType = "com.apple.product-type.application";
+		};
+		CBAA1FB85DDEDA59F6453FD9 /* LibreWalletTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 20DF9326A02696A25C8D1126 /* Build configuration list for PBXNativeTarget "LibreWalletTests" */;
+			buildPhases = (
+				D92C0F720794090D9BC1B5A9 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BEE1D838FCB992AB2E308D8E /* PBXTargetDependency */,
+			);
+			name = LibreWalletTests;
+			packageProductDependencies = (
+			);
+			productName = LibreWalletTests;
+			productReference = 933AF8B638C821EE4675426C /* LibreWalletTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		5FD5BAAB35BE1A3585A09372 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = D8235DF0FC77E2867100D12D /* Build configuration list for PBXProject "LibreWallet" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 924F5BFAF65C32FB30553661;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				980C01F0149FDD55CE4DFDD2 /* XCRemoteSwiftPackageReference "CoreXLSX" */,
+				94857567F5529690C721563C /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = B23219E7A467B504DCF27D25 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				5C718B36E6D0E108CB33298B /* LibreWallet */,
+				CBAA1FB85DDEDA59F6453FD9 /* LibreWalletTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		7BE9F3765F868B587DF9A3F9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7930A4E39A39BF1F4CD1DD11 /* AddTransactionSheet.swift in Sources */,
+				289257D0B31981CEADF07791 /* AppState.swift in Sources */,
+				6D5DB1E0B6531CEE63F2589B /* Backup.swift in Sources */,
+				6801253BD9974071E6FA04A0 /* BondPresets.swift in Sources */,
+				A59C779D3F484213DFB9F444 /* BondsView.swift in Sources */,
+				63B0D09BA7650786A4F86370 /* CSV.swift in Sources */,
+				F02503D5BD39DD818CFBFA87 /* ColorHex.swift in Sources */,
+				28A6218FFA19635F24092ABE /* Formatting.swift in Sources */,
+				78603CFCB514C299425123B6 /* ImportPlaceholders.swift in Sources */,
+				E4CBD84F7E7F32BE51483AF3 /* ImportScreen.swift in Sources */,
+				460C9749F049269746105CE6 /* ImportedTransaction.swift in Sources */,
+				3BB7F0472B5D658050E14A90 /* LWModelContainer.swift in Sources */,
+				C7970D8A847530020C226BBE /* LibreWalletApp.swift in Sources */,
+				27462A117AEC79F404098BD5 /* Models.swift in Sources */,
+				8FE6FA44715C639E68DB7F45 /* NBPExchangeRateService.swift in Sources */,
+				D77B8B6A33D748DA466AA8C6 /* NavigationDestination.swift in Sources */,
+				55A996ADBAE2FFCF5318A032 /* PlaceholderViews.swift in Sources */,
+				81192BA50CF372C290156D60 /* PortfolioCalculator.swift in Sources */,
+				43EC305302C259ACFF3CFA97 /* PricingPlaceholders.swift in Sources */,
+				45F6F77F9AFD487C11630E47 /* PricingService.swift in Sources */,
+				3B4177BC4E572B6F0FA60C5E /* RebalanceView.swift in Sources */,
+				A4DA2B7ED45B07745100E3E6 /* RootView.swift in Sources */,
+				3418528651C4F70C8EE8F0C8 /* TransactionRow.swift in Sources */,
+				EB42828B5B3A249EF9EE431C /* UniversalImporter.swift in Sources */,
+				C5F6F6D3807A4EEC079C518C /* XTBOperationParsing.swift in Sources */,
+				97482D687F1F61B67EF83C2E /* XTBZipImporter.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D92C0F720794090D9BC1B5A9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BEE1D838FCB992AB2E308D8E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5C718B36E6D0E108CB33298B /* LibreWallet */;
+			targetProxy = F41FCB57E1BB85E16E8E5AF5 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		34988275137E831915775B74 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.librewallet.LibreWalletTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LibreWallet.app/Contents/MacOS/LibreWallet";
+			};
+			name = Release;
+		};
+		8AFF5F306740B2C2EC209581 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.librewallet.LibreWallet;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		B6433365D6C18E6587D608E7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.librewallet.LibreWallet;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		B80E26D3432CCC85D8F15BBB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LibreWallet;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Release;
+		};
+		F2DCED2171EF1B4CA4F3F66E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = LibreWallet;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.9;
+			};
+			name = Debug;
+		};
+		FAE4D26ED60B96EA9578E420 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.librewallet.LibreWalletTests;
+				SDKROOT = macosx;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/LibreWallet.app/Contents/MacOS/LibreWallet";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		20DF9326A02696A25C8D1126 /* Build configuration list for PBXNativeTarget "LibreWalletTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FAE4D26ED60B96EA9578E420 /* Debug */,
+				34988275137E831915775B74 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B6AE3272D8EA1BB418EBA4BF /* Build configuration list for PBXNativeTarget "LibreWallet" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8AFF5F306740B2C2EC209581 /* Debug */,
+				B6433365D6C18E6587D608E7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D8235DF0FC77E2867100D12D /* Build configuration list for PBXProject "LibreWallet" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F2DCED2171EF1B4CA4F3F66E /* Debug */,
+				B80E26D3432CCC85D8F15BBB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		94857567F5529690C721563C /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.9.0;
+			};
+		};
+		980C01F0149FDD55CE4DFDD2 /* XCRemoteSwiftPackageReference "CoreXLSX" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/CoreOffice/CoreXLSX.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		2FE0ABC39E78B10CFAB7D1C1 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 94857567F5529690C721563C /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
+		};
+		CC4214F57180E8B85AACFDD6 /* CoreXLSX */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 980C01F0149FDD55CE4DFDD2 /* XCRemoteSwiftPackageReference "CoreXLSX" */;
+			productName = CoreXLSX;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 5FD5BAAB35BE1A3585A09372 /* Project object */;
+}

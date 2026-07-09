@@ -1,0 +1,68 @@
+name: LibreWallet
+
+options:
+  bundleIdPrefix: com.librewallet
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+
+packages:
+  ZIPFoundation:
+    url: https://github.com/weichsel/ZIPFoundation.git
+    from: 0.9.0
+  CoreXLSX:
+    url: https://github.com/CoreOffice/CoreXLSX.git
+    from: 0.14.0
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    INFOPLIST_KEY_CFBundleDisplayName: LibreWallet
+    INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.finance
+    INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © LibreWallet"
+
+targets:
+  LibreWallet:
+    type: application
+    platform: macOS
+    sources:
+      - path: LibreWalletApp
+      - path: LibreWalletDomain
+      - path: LibreWalletImport
+      - path: LibreWalletPricing
+      - path: LibreWalletShared
+    dependencies:
+      - package: ZIPFoundation
+      - package: CoreXLSX
+
+  LibreWalletTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - path: LibreWalletTests
+    dependencies:
+      - target: LibreWallet
+
+schemes:
+  LibreWallet:
+    build:
+      targets:
+        LibreWallet: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
+  LibreWalletTests:
+    build:
+      targets:
+        LibreWalletTests: all
+    test:
+      config: Debug
+      targets:
+        - name: LibreWalletTests
+

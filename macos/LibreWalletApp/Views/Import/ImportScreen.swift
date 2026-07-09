@@ -1,0 +1,326 @@
+import SwiftUI
+import SwiftData
+import UniformTypeIdentifiers
+import AppKit
+
+struct ImportScreen: View {
+    @Environment(\.modelContext) private var context
+    @EnvironmentObject private var appState: AppState
+
+    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
+    @Query(sort: \PortfolioGroup.createdAt) private var groups: [PortfolioGroup]
+
+    @State private var preview: [ImportedTransaction] = []
+    @State private var previewSource: String?
+    @State private var selectedPortfolioId: UUID?
+    @State private var errorMessage: String?
+    @State private var isDropTargeted = false
+    @State private var showSavedAlert = false
+    @State private var savedCount = 0
+
+    private var commitTitle: String { "Zapisz (\(preview.count))" }
+    private var previewTitle: String { previewSource ?? "Import" }
+    private var xtbAccountsSummary: String? {
+        let accounts = Set(preview.compactMap(\.account)).sorted()
+        guard !accounts.isEmpty else { return nil }
+        return accounts.count == 1 ? "Konto: \(accounts[0])" : "Konta: \(accounts.joined(separator: ", "))"
+    }
+    private var currenciesSummary: String? {
+        let ccys = Set(preview.map(\.currency)).sorted()
+        guard ccys.count > 1 else { return nil }
+        return "Waluty: \(ccys.joined(separator: ", "))"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            toolbar
+            errorBanner
+            previewBox
+            Spacer()
+        }
+        .padding()
+        .navigationTitle("Import")
+        .onAppear(perform: onAppear)
+        .alert("Zapisano", isPresented: $showSavedAlert) {
+            Button("OK") {
+                appState.navigationSelection = .transactions
+            }
+        } message: {
+            Text("Dodano \(savedCount) operacji.")
+        }
+    }
+
+    private var errorBanner: some View {
+        Group {
+            if let errorMessage {
+                Text(errorMessage).foregroundStyle(.red)
+            }
+        }
+    }
+
+    private var previewBox: some View {
+        GroupBox("Podgląd importu") {
+            if preview.isEmpty {
+                ContentUnavailableView("Brak podglądu", systemImage: "eye", description: Text("Załaduj plik importu, żeby zobaczyć podgląd."))
+                    .frame(maxWidth: .infinity, minHeight: 220)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(previewTitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let xtbAccountsSummary {
+                        Text(xtbAccountsSummary).font(.caption).foregroundStyle(.secondary)
+                    }
+                    if let currenciesSummary {
+                        Text(currenciesSummary).font(.caption).foregroundStyle(.secondary)
+                    }
+
+                    List(preview.prefix(200)) { row in
+                        ImportRow(row: row)
+                    }
+                    .frame(minHeight: 340)
+
+                    HStack {
+                        Spacer()
+                        Button("Wyczyść", action: clearPreview)
+                        Button(commitTitle, action: commitPreview)
+                            .buttonStyle(.borderedProminent)
+                            .disabled(preview.isEmpty || selectedPortfolioId == nil)
+                    }
+                }
+                .padding(.top, 6)
+            }
+        }
+        .overlay(dropOverlay)
+        .dropDestination(for: URL.self, action: handleDrop(_:_:), isTargeted: { isDropTargeted = $0 })
+    }
+
+    private var dropOverlay: some View {
+        Group {
+            if isDropTargeted {
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 2, dash: [6]))
+                    .padding(4)
+            }
+        }
+    }
+
+    private var toolbar: some View {
+        HStack {
+            Picker("Portfel docelowy", selection: $selectedPortfolioId) {
+                ForEach(portfolios) { p in
+                    Text(p.name).tag(Optional.some(p.id))
+                }
+            }
+            .frame(maxWidth: 320)
+
+            Spacer()
+
+            Button {
+                openZipPanel()
+            } label: {
+                Label("Import XTB ZIP", systemImage: "archivebox")
+            }
+
+            Button {
+                openUniversalPanel()
+            } label: {
+                Label("Import CSV/XLSX", systemImage: "doc")
+            }
+        }
+    }
+
+    private func onAppear() {
+        selectedPortfolioId = appState.selectedPortfolioId ?? portfolios.first?.id
+    }
+
+    private func clearPreview() {
+        preview = []
+        previewSource = nil
+        errorMessage = nil
+    }
+
+    private func handleDrop(_ items: [URL], _: CGPoint) -> Bool {
+        guard let url = items.first else { return false }
+        loadByExtension(url)
+        return true
+    }
+
+    private func openZipPanel() {
+        errorMessage = nil
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedFileTypes = ["zip"]
+        panel.title = "Wybierz plik ZIP z eksportu XTB"
+        panel.prompt = "Wybierz"
+        if panel.runModal() == .OK, let url = panel.url {
+            loadZip(.success([url]))
+        }
+    }
+
+    private func openUniversalPanel() {
+        errorMessage = nil
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedFileTypes = ["csv", "xlsx", "xls"]
+        panel.title = "Wybierz plik importu (CSV/XLSX/XLS)"
+        panel.prompt = "Wybierz"
+        if panel.runModal() == .OK, let url = panel.url {
+            loadUniversal(.success([url]))
+        }
+    }
+
+    private func loadZip(_ result: Result<[URL], Error>) {
+        errorMessage = nil
+        do {
+            guard let url = try result.get().first else { return }
+            preview = try XTBZipImporter.importPreview(from: url)
+            previewSource = "XTB ZIP: \(url.lastPathComponent)"
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func loadUniversal(_ result: Result<[URL], Error>) {
+        errorMessage = nil
+        do {
+            guard let url = try result.get().first else { return }
+            preview = try UniversalImporter.importPreview(from: url)
+            previewSource = "Plik: \(url.lastPathComponent)"
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func loadByExtension(_ url: URL) {
+        let ext = url.pathExtension.lowercased()
+        if ext == "zip" {
+            loadZip(.success([url]))
+            return
+        }
+        loadUniversal(.success([url]))
+    }
+
+    private func commitPreview() {
+        errorMessage = nil
+        savedCount = 0
+
+        let hasXTBAccounts = preview.contains { ($0.account ?? "").isEmpty == false }
+        if hasXTBAccounts {
+            commitXTBGrouped()
+            return
+        }
+
+        guard let pid = selectedPortfolioId,
+              let portfolio = portfolios.first(where: { $0.id == pid }) else { return }
+
+        for item in preview {
+            insert(item, into: portfolio)
+        }
+        try? context.save()
+        savedCount = preview.count
+        showSavedAlert = true
+    }
+
+    private func commitXTBGrouped() {
+        // Group by (account, currency) and create/find portfolios automatically.
+        struct XTBKey: Hashable {
+            let account: String
+            let currency: String
+        }
+        let grouped = Dictionary(grouping: preview) { item in
+            XTBKey(account: item.account ?? "XTB", currency: item.currency)
+        }
+
+        let group = ensureXTBGroup()
+        var lastPortfolio: Portfolio?
+
+        for (key, items) in grouped {
+            let portfolio = ensureXTBPortfolio(group: group, account: key.account, currency: key.currency)
+            lastPortfolio = portfolio
+            for item in items {
+                insert(item, into: portfolio)
+            }
+            savedCount += items.count
+        }
+
+        try? context.save()
+        if let lastPortfolio {
+            appState.selectPortfolio(lastPortfolio)
+        }
+        showSavedAlert = true
+    }
+
+    private func ensureXTBGroup() -> PortfolioGroup {
+        if let existing = groups.first(where: { $0.name.lowercased() == "xtb" }) {
+            return existing
+        }
+        let g = PortfolioGroup(name: "XTB", createdAt: .now)
+        context.insert(g)
+        return g
+    }
+
+    private func ensureXTBPortfolio(group: PortfolioGroup, account: String, currency: String) -> Portfolio {
+        let normalizedCurrency = currency.uppercased()
+        let name = "XTB \(normalizedCurrency) (\(account))"
+        if let existing = portfolios.first(where: { $0.group?.id == group.id && $0.name == name }) {
+            return existing
+        }
+        let p = Portfolio(
+            name: name,
+            baseCurrency: normalizedCurrency,
+            colorHex: "#176b4d",
+            kind: .account,
+            createdAt: .now,
+            group: group
+        )
+        context.insert(p)
+        return p
+    }
+
+    private func insert(_ item: ImportedTransaction, into portfolio: Portfolio) {
+        let tx = Transaction(
+            date: item.date,
+            type: item.type,
+            symbol: item.symbol,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            gross: item.gross,
+            fee: item.fee,
+            currency: item.currency,
+            cashDelta: item.cashDelta,
+            externalId: item.externalId,
+            notes: item.notes,
+            source: item.source,
+            assetType: item.assetType,
+            portfolio: portfolio
+        )
+        context.insert(tx)
+    }
+}
+
+private struct ImportRow: View {
+    let row: ImportedTransaction
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(row.dateText)
+                .frame(width: 90, alignment: .leading)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(row.type.rawValue)
+                .frame(width: 90, alignment: .leading)
+            Text(row.symbol ?? row.name ?? "—")
+                .lineLimit(1)
+            Spacer()
+            Text(LWFormatting.money(row.gross, currency: row.currency))
+                .frame(width: 140, alignment: .trailing)
+        }
+    }
+}
+
