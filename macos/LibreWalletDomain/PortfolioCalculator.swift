@@ -46,6 +46,16 @@ struct CashRow: Identifiable, Hashable {
     let value: Double
 }
 
+struct HistoryRow: Identifiable, Hashable {
+    var id: String { dayKey }
+    let date: Date
+    let dayKey: String
+    let value: Double
+    let invested: Double
+    let positions: Double
+    let cash: Double
+}
+
 enum PortfolioCalculator {
     static func calculate(
         portfolio: Portfolio?,
@@ -277,6 +287,185 @@ enum PortfolioCalculator {
         )
     }
 
+    static func buildDailyTimeline(
+        portfolio: Portfolio?,
+        allTransactions: [Transaction],
+        quotes: [Quote],
+        histories: [String: [(date: Date, close: Double)]] = [:]
+    ) -> [HistoryRow] {
+        let scoped = allTransactions
+            .filter { tx in
+                guard let portfolio else { return true }
+                return tx.portfolio?.id == portfolio.id
+            }
+            .sorted { $0.date < $1.date }
+
+        guard let first = scoped.first else { return [] }
+
+        let hasCashOperations = scoped.contains { ["deposit", "withdrawal", "transfer"].contains($0.typeRaw) }
+
+        var positions: [String: PositionAccumulator] = [:]
+        var cash: [String: Double] = [:]
+        var netInvested: Double = 0
+        var explicitCashFlow: Double = 0
+
+        let quoteBySymbol: [String: Quote] = Dictionary(uniqueKeysWithValues: quotes.map { ($0.symbol.uppercased(), $0) })
+        let quoteMap: [String: Quote] = Dictionary(uniqueKeysWithValues: quotes.map { ("\($0.symbol.uppercased())|\($0.currency.uppercased())", $0) })
+
+        // Pre-sort historical price series (ascending) per uppercased symbol for fast lookup.
+        let sortedHistories: [String: [(date: Date, close: Double)]] = histories.mapValues {
+            $0.filter { $0.close > 0 }.sorted { $0.date < $1.date }
+        }
+
+        let cal = Calendar.current
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "en_US_POSIX")
+        df.dateFormat = "yyyy-MM-dd"
+
+        let startDay = cal.startOfDay(for: first.date)
+        let endDay = cal.startOfDay(for: Date())
+
+        var out: [HistoryRow] = []
+        var idx = 0
+
+        var day = startDay
+        while day <= endDay {
+            while idx < scoped.count {
+                let tx = scoped[idx]
+                let txDay = cal.startOfDay(for: tx.date)
+                guard txDay <= day else { break }
+                let norm = normalizeTransaction(tx)
+                applyTransaction(norm, positions: &positions, cash: &cash)
+
+                if hasCashOperations {
+                    switch norm.type {
+                    case .deposit:
+                        explicitCashFlow += norm.cashDelta ?? norm.gross
+                    case .withdrawal:
+                        explicitCashFlow += norm.cashDelta ?? -norm.gross
+                    case .transfer:
+                        explicitCashFlow += norm.cashDelta ?? 0
+                    default:
+                        break
+                    }
+                } else {
+                    if norm.type == .buy { netInvested += norm.gross + norm.fee }
+                    if norm.type == .sell { netInvested -= max(0, norm.gross - norm.fee) }
+                    if norm.type == .dividend || norm.type == .interest {
+                        netInvested -= max(0, norm.gross - norm.fee)
+                    }
+                }
+
+                idx += 1
+            }
+
+            // Each historical day is valued at the market price for that day, matching the
+            // pre-migration web chart. Trades are recorded in the account currency (e.g. PLN),
+            // while price history is in the instrument's native currency, so we scale the
+            // account-currency cost basis (`lastPrice`) by the native market performance since
+            // the last trade: value = qty * lastPrice * close(day) / close(lastTradeDate).
+            // This keeps the result in the account currency (FX at trade time stays embedded)
+            // and lets the value line float above/below contributions like real market value.
+            let isLatestDay = day == endDay
+            var positionsValue = 0.0
+            for acc in positions.values where abs(acc.quantity) > 0.0000001 {
+                var price = acc.lastPrice ?? 0
+
+                if let series = sortedHistories[acc.symbol.uppercased()],
+                   let anchorDate = acc.lastTradeDate,
+                   let cost = acc.lastPrice, cost > 0,
+                   let anchorClose = closeAtOrBefore(series, date: anchorDate),
+                   anchorClose > 0,
+                   let dayClose = closeAtOrBefore(series, date: day),
+                   dayClose > 0 {
+                    price = cost * (dayClose / anchorClose)
+                } else if isLatestDay {
+                    let q = quoteMap["\(acc.symbol)|\(acc.currency)"] ?? quoteBySymbol[acc.symbol.uppercased()]
+                    let quoteCurrency = (q?.currency ?? "").uppercased()
+                    let positionCurrency = acc.currency.uppercased()
+                    let canUseQuote = q != nil && (quoteCurrency.isEmpty || quoteCurrency == "N/A" || quoteCurrency == positionCurrency)
+                    if canUseQuote { price = q?.price ?? price }
+                }
+
+                positionsValue += max(0, acc.quantity * price)
+            }
+
+            let cashValue = hasCashOperations ? cash.values.reduce(0, +) : 0
+            let totalValue = positionsValue + cashValue
+            let invested = hasCashOperations ? explicitCashFlow : max(0, netInvested)
+
+            out.append(
+                HistoryRow(
+                    date: day,
+                    dayKey: df.string(from: day),
+                    value: totalValue,
+                    invested: invested,
+                    positions: positionsValue,
+                    cash: cashValue
+                )
+            )
+
+            guard let next = cal.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+
+        return out
+    }
+
+    /// Returns the most recent close on or before `date` (series must be sorted ascending).
+    private static func closeAtOrBefore(_ series: [(date: Date, close: Double)], date: Date) -> Double? {
+        var result: Double?
+        for point in series {
+            if point.date <= date {
+                result = point.close
+            } else {
+                break
+            }
+        }
+        // If the target predates the whole series, fall back to the earliest known close.
+        return result ?? series.first?.close
+    }
+
+    static func aggregateDailyTimelineToPLN(
+        portfolios: [Portfolio],
+        allTransactions: [Transaction],
+        quotes: [Quote],
+        ratesToPLN: [String: Double],
+        histories: [String: [(date: Date, close: Double)]] = [:]
+    ) -> [HistoryRow] {
+        guard !portfolios.isEmpty else { return [] }
+
+        var merged: [String: (date: Date, value: Double, invested: Double, positions: Double, cash: Double)] = [:]
+
+        for p in portfolios {
+            let rows = buildDailyTimeline(portfolio: p, allTransactions: allTransactions, quotes: quotes, histories: histories)
+            for r in rows {
+                let key = r.dayKey
+                let valuePLN = convertToPLN(r.value, currency: p.baseCurrency, rates: ratesToPLN)
+                let investedPLN = convertToPLN(r.invested, currency: p.baseCurrency, rates: ratesToPLN)
+                let positionsPLN = convertToPLN(r.positions, currency: p.baseCurrency, rates: ratesToPLN)
+                let cashPLN = convertToPLN(r.cash, currency: p.baseCurrency, rates: ratesToPLN)
+                if let existing = merged[key] {
+                    merged[key] = (
+                        date: existing.date,
+                        value: existing.value + valuePLN,
+                        invested: existing.invested + investedPLN,
+                        positions: existing.positions + positionsPLN,
+                        cash: existing.cash + cashPLN
+                    )
+                } else {
+                    merged[key] = (date: r.date, value: valuePLN, invested: investedPLN, positions: positionsPLN, cash: cashPLN)
+                }
+            }
+        }
+
+        return merged
+            .map { (key, v) in
+                HistoryRow(date: v.date, dayKey: key, value: v.value, invested: v.invested, positions: v.positions, cash: v.cash)
+            }
+            .sorted { $0.date < $1.date }
+    }
+
     static func convertToPLN(_ amount: Double, currency: String, rates: [String: Double]) -> Double {
         NBPExchangeRateService.convertToPLN(amount, currency: currency, rates: rates)
     }
@@ -365,11 +554,12 @@ enum PortfolioCalculator {
 
         let key = "\(symbol)|\(currency)|\(tx.portfolio?.id.uuidString ?? "-")"
         if positions[key] == nil {
+            let detectedType = tx.assetType ?? AssetTypeDetection.detect(symbol: tx.symbol, name: tx.name)
             positions[key] = PositionAccumulator(
                 symbol: symbol,
                 name: tx.name ?? symbol,
                 currency: currency,
-                assetType: tx.assetType ?? "stock"
+                assetType: detectedType
             )
         }
         guard var acc = positions[key] else { return }
@@ -387,6 +577,7 @@ enum PortfolioCalculator {
             } else if norm.price > 0 {
                 acc.lastPrice = norm.price
             }
+            acc.lastTradeDate = tx.date
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? -(value + fee))
         case .sell:
             let qty = norm.quantity
@@ -409,6 +600,7 @@ enum PortfolioCalculator {
             } else if norm.price > 0 {
                 acc.lastPrice = norm.price
             }
+            acc.lastTradeDate = tx.date
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? (value - fee))
         case .dividend, .interest:
             acc.income += gross - fee
@@ -439,5 +631,6 @@ private struct PositionAccumulator {
     var realized: Double = 0
     var income: Double = 0
     var lastPrice: Double? = nil
+    var lastTradeDate: Date? = nil
 }
 

@@ -11,6 +11,7 @@
 		27462A117AEC79F404098BD5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7F45D9368C3B5F31B76CF2 /* Models.swift */; };
 		289257D0B31981CEADF07791 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40574EFF205A2E0C7C7AC110 /* AppState.swift */; };
 		28A6218FFA19635F24092ABE /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C151B0499FD7D3C27A0F06 /* Formatting.swift */; };
+		339D601014175AF94E37E10A /* AssetTypeDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C1D2B7CB9826CD0E503274 /* AssetTypeDetection.swift */; };
 		3418528651C4F70C8EE8F0C8 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083A44D3AA91E0450B81336A /* TransactionRow.swift */; };
 		3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */; };
 		3B4177BC4E572B6F0FA60C5E /* RebalanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B985AA3514869729F52EAC /* RebalanceView.swift */; };
@@ -59,6 +60,7 @@
 		2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibreWalletApp.swift; sourceTree = "<group>"; };
 		31779618A277EF73F85DBDC7 /* UniversalImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UniversalImporter.swift; sourceTree = "<group>"; };
 		31B985AA3514869729F52EAC /* RebalanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RebalanceView.swift; sourceTree = "<group>"; };
+		34C1D2B7CB9826CD0E503274 /* AssetTypeDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetTypeDetection.swift; sourceTree = "<group>"; };
 		3841508530FAFB937E7198E0 /* CSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSV.swift; sourceTree = "<group>"; };
 		3DDEB74EF10D94FB18B7C439 /* XTBZipImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTBZipImporter.swift; sourceTree = "<group>"; };
 		40574EFF205A2E0C7C7AC110 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -142,6 +144,7 @@
 		756364F1E1681A30194684FE /* LibreWalletShared */ = {
 			isa = PBXGroup;
 			children = (
+				34C1D2B7CB9826CD0E503274 /* AssetTypeDetection.swift */,
 				D405ECEE72CD3F00ADB4F511 /* ColorHex.swift */,
 				55C151B0499FD7D3C27A0F06 /* Formatting.swift */,
 				7CA87349D7559F4839312221 /* XTBOperationParsing.swift */,
@@ -307,6 +310,7 @@
 			files = (
 				7930A4E39A39BF1F4CD1DD11 /* AddTransactionSheet.swift in Sources */,
 				289257D0B31981CEADF07791 /* AppState.swift in Sources */,
+				339D601014175AF94E37E10A /* AssetTypeDetection.swift in Sources */,
 				6D5DB1E0B6531CEE63F2589B /* Backup.swift in Sources */,
 				6801253BD9974071E6FA04A0 /* BondPresets.swift in Sources */,
 				A59C779D3F484213DFB9F444 /* BondsView.swift in Sources */,

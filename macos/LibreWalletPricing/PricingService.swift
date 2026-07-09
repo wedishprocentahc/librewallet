@@ -27,6 +27,49 @@ enum PricingService {
         }
     }
 
+    struct PriceHistoryPoint: Codable {
+        let date: Date
+        let close: Double
+    }
+
+    /// Fetches daily close history for the given held symbols and persists it to a JSON
+    /// cache on disk (so the dashboard chart can value historical days at market prices
+    /// without hitting the network on every launch). Returns the merged history keyed by
+    /// the uppercased symbol as used in transactions.
+    static func refreshHistories(symbols: [String]) async -> [String: [(date: Date, close: Double)]] {
+        var result = loadCachedHistories()
+        for symbol in symbols {
+            let key = symbol.uppercased()
+            if let history = try? await fetchHistory(symbol: symbol), !history.isEmpty {
+                result[key] = history
+            }
+        }
+        saveHistories(result)
+        return result
+    }
+
+    static func historyCacheURL() -> URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = appSupport.appendingPathComponent("LibreWallet", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("price-history.json")
+    }
+
+    static func loadCachedHistories() -> [String: [(date: Date, close: Double)]] {
+        guard let data = try? Data(contentsOf: historyCacheURL()),
+              let decoded = try? JSONDecoder().decode([String: [PriceHistoryPoint]].self, from: data) else {
+            return [:]
+        }
+        return decoded.mapValues { points in points.map { (date: $0.date, close: $0.close) } }
+    }
+
+    static func saveHistories(_ histories: [String: [(date: Date, close: Double)]]) {
+        let encodable = histories.mapValues { points in points.map { PriceHistoryPoint(date: $0.date, close: $0.close) } }
+        if let data = try? JSONEncoder().encode(encodable) {
+            try? data.write(to: historyCacheURL(), options: .atomic)
+        }
+    }
+
     static func fetchHistory(symbol: String) async throws -> [(date: Date, close: Double)] {
         for candidate in yahooCandidates(symbol) {
             guard let url = URL(string: "https://query1.finance.yahoo.com/v8/finance/chart/\(candidate)?period1=0&period2=\(Int(Date().timeIntervalSince1970))&interval=1d&events=history") else {
