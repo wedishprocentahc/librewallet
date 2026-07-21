@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LibreWallet — pobierz dla macOS</title>
+  <meta name="description" content="Lokalny tracker portfela na Maca. Dane zostają na Twoim komputerze." />
+  <style>
+    :root {
+      --bg: #0f1412;
+      --fg: #e8efe9;
+      --muted: #9ab0a2;
+      --accent: #3d9b6e;
+      --card: #1a221e;
+      --border: #2a3830;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #1c3a2c 0%, var(--bg) 55%);
+      color: var(--fg);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 64px 24px 80px;
+    }
+    h1 {
+      font-size: 2.4rem;
+      letter-spacing: -0.03em;
+      margin: 0 0 8px;
+    }
+    .lead {
+      color: #a8b8ae;
+      font-size: 1.1rem;
+      margin: 0 0 28px;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    a.button {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      color: #06140c;
+      text-decoration: none;
+      font-weight: 650;
+      padding: 12px 18px;
+      border-radius: 10px;
+    }
+    a.button.secondary {
+      background: transparent;
+      color: var(--fg);
+      border: 1px solid var(--border);
+      font-weight: 500;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px 22px;
+      margin-bottom: 18px;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.05rem;
+    }
+    ol { margin: 0; padding-left: 1.2rem; }
+    li { margin: 6px 0; color: #c5d4cb; }
+    code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: #101612;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 0.92em;
+    }
+    footer {
+      margin-top: 40px;
+      color: #7f9186;
+      font-size: 0.9rem;
+    }
+    footer a { color: #9ec9b0; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>LibreWallet</h1>
+    <p class="lead">Lokalny tracker portfela na macOS. Twoje dane nie wychodzą z komputera.</p>
+
+    <div class="actions">
+      <a class="button" href="download/mac/">Pobierz dla macOS</a>
+      <a class="button secondary" href="https://github.com/wedishprocentahc/librewallet/releases/latest">GitHub Releases</a>
+    </div>
+
+    <div class="card">
+      <h2>Instalacja (ważne przy pierwszym uruchomieniu)</h2>
+      <ol>
+        <li>Pobierz <code>LibreWallet.zip</code> i rozpakuj.</li>
+        <li>Przenieś <code>LibreWallet.app</code> do folderu <strong>Aplikacje</strong>.</li>
+        <li>Przy pierwszym otwarciu macOS może zablokować plik (brak notarizacji Apple).</li>
+        <li>Kliknij apkę <strong>prawym przyciskiem</strong> → <strong>Otwórz</strong> → potwierdź <strong>Otwórz</strong>.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>Aktualizacje</h2>
+      <p style="margin:0;color:#c5d4cb">
+        W aplikacji: menu LibreWallet → <strong>Sprawdź aktualizacje…</strong>
+        albo Ustawienia → O programie. Aktualizację pobierasz ręcznie (ZIP) i podmieniasz apkę.
+      </p>
+    </div>
+
+    <footer>
+      Kod źródłowy:
+      <a href="https://github.com/wedishprocentahc/librewallet">github.com/wedishprocentahc/librewallet</a>
+    </footer>
+  </main>
+</body>
+</html>

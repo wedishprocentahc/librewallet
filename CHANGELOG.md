@@ -1,5 +1,19 @@
 # Changelog
 
+Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
+
+Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
+Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
+
+## [0.1.0] — 2026-07-21
+
+### Dodane (native macOS)
+
+- Natywna aplikacja SwiftUI z dashboardem, pozycjami, importem XTB i wykresami.
+- Wersjonowanie (semver + build) oraz ekran „O programie”.
+- Sprawdzanie aktualizacji przez GitHub Releases (bez autoinstalacji / bez Apple Developer ID).
+- Strona pobierania z instrukcją Gatekeeper oraz skrypt/CI publikujący `LibreWallet.zip`.
+
 ## 1.1.16
 
 - **Pozycje (Holdings):** widoczny przycisk „Usuń” obok pola ilości.

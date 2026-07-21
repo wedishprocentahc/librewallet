@@ -1,9 +1,11 @@
 import SwiftUI
 import SwiftData
+import AppKit
 
 struct RootView: View {
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var updateController: UpdateController
 
     @Query(sort: \PortfolioGroup.createdAt) private var groups: [PortfolioGroup]
     @State private var renamingPortfolio: Portfolio?
@@ -127,6 +129,22 @@ struct RootView: View {
                     showCreateGroupSheet = false
                 }
             )
+        }
+        .sheet(isPresented: $updateController.showAbout) {
+            AboutLibreWalletView()
+        }
+        .alert(
+            updateController.alertTitle,
+            isPresented: $updateController.showAlert
+        ) {
+            if let url = updateController.alertPrimaryURL, let label = updateController.alertPrimaryLabel {
+                Button(label) {
+                    NSWorkspace.shared.open(url)
+                }
+            }
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(updateController.alertMessage)
         }
         .alert("Edytuj portfel", isPresented: Binding(
             get: { renamingPortfolio != nil },
@@ -375,6 +393,33 @@ private struct CreateGroupSheet: View {
             }
         }
         .frame(minWidth: 520, minHeight: 420)
+    }
+}
+
+private struct AboutLibreWalletView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("LibreWallet")
+                .font(.title2.weight(.bold))
+            Text("Wersja \(AppVersion.displayString)")
+                .foregroundStyle(.secondary)
+            Text("Lokalny tracker portfela. Dane zostają na Twoim komputerze.")
+                .fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Link("Pobieranie", destination: LibreWalletDistribution.downloadPageURL)
+                Link("Releases", destination: LibreWalletDistribution.releasesPageURL)
+            }
+            .padding(.top, 4)
+            HStack {
+                Spacer()
+                Button("Zamknij") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(24)
+        .frame(width: 360)
     }
 }
 

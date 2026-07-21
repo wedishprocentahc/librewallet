@@ -14,17 +14,20 @@ Track your investments on your computer. **Your data never leaves your machine**
 
 ## Download
 
-Get the latest version from **[Releases](https://github.com/wedishprocentahc/librewallet/releases).
+**Native macOS app (SwiftUI):** get `LibreWallet.zip` from **[Releases](https://github.com/wedishprocentahc/librewallet/releases)** or the [download page](https://wedishprocentahc.github.io/librewallet/).
 
 | System | File |
 |--------|------|
-| macOS (Apple Silicon — M1/M2/M3/M4) | `LibreWallet-1.1.7-mac-arm64.pkg` |
-| macOS (Intel) | `LibreWallet-*-mac-x64.pkg` (if available in Releases) |
-| Windows | `LibreWallet-*-win.exe` (if available in Releases) |
+| macOS (native) | `LibreWallet.zip` |
+| Older Electron builds (legacy) | `LibreWallet-*-mac-arm64.pkg` / `*-win.exe` (if still listed) |
+
+First launch on Mac: **right-click → Open** (Gatekeeper — the app is not notarized with a paid Apple Developer ID).
+
+To cut a release locally: `./scripts/release-macos.sh` (add `--publish` to create the GitHub Release). Tag must match `MARKETING_VERSION` in `macos/project.yml` (e.g. `v0.1.0`).
 
 ---
 
-## Install on Mac (Apple Silicon) — step by step
+## Install on Mac (Apple Silicon) — step by step (legacy pkg)
 
 For Macs with **Apple Silicon** (M1, M2, M3, M4).
 

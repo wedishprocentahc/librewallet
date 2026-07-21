@@ -1,0 +1,97 @@
+name: Release macOS
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          brew install xcodegen
+          # xcbeautify optional
+
+      - name: Read version from project.yml
+        id: ver
+        run: |
+          VERSION=$(ruby -ryaml -e 'puts YAML.load_file("macos/project.yml").dig("settings","base","MARKETING_VERSION")')
+          BUILD=$(ruby -ryaml -e 'puts YAML.load_file("macos/project.yml").dig("settings","base","CURRENT_PROJECT_VERSION")')
+          TAG="${GITHUB_REF_NAME}"
+          EXPECTED="v${VERSION}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG" != "$EXPECTED" ]]; then
+            echo "::error::Tag $TAG does not match MARKETING_VERSION ($EXPECTED). Bump macos/project.yml or retag."
+            exit 1
+          fi
+
+      - name: Generate Xcode project
+        working-directory: macos
+        run: xcodegen generate
+
+      - name: Archive (unsigned)
+        working-directory: macos
+        run: |
+          mkdir -p ../dist/macos
+          xcodebuild \
+            -project LibreWallet.xcodeproj \
+            -scheme LibreWallet \
+            -configuration Release \
+            -destination 'generic/platform=macOS' \
+            -archivePath ../dist/macos/LibreWallet.xcarchive \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Pack LibreWallet.zip
+        run: |
+          APP="dist/macos/LibreWallet.xcarchive/Products/Applications/LibreWallet.app"
+          test -d "$APP"
+          (
+            cd dist/macos/LibreWallet.xcarchive/Products/Applications
+            ditto -c -k --keepParent LibreWallet.app ../../../LibreWallet.zip
+          )
+          ls -lh dist/macos/LibreWallet.zip
+
+      - name: Build release notes
+        run: |
+          VERSION="${{ steps.ver.outputs.version }}"
+          BUILD="${{ steps.ver.outputs.build }}"
+          {
+            echo "## LibreWallet ${VERSION} (macOS native)"
+            echo
+            echo "Build: ${BUILD}"
+            echo
+            echo "### Instalacja"
+            echo
+            echo "1. Pobierz \`LibreWallet.zip\` i rozpakuj."
+            echo "2. Przenieś \`LibreWallet.app\` do folderu Aplikacje."
+            echo "3. Przy pierwszym otwarciu: **prawy przycisk → Otwórz** (Gatekeeper)."
+            echo
+            echo "### Changelog"
+            echo
+            awk -v ver="$VERSION" '
+              $0 ~ "^## \\[" ver "\\]" {p=1; print; next}
+              p && $0 ~ /^## / {exit}
+              p {print}
+            ' CHANGELOG.md || echo "- See CHANGELOG.md"
+          } > dist/macos/release-notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" \
+            dist/macos/LibreWallet.zip \
+            --title "LibreWallet ${{ steps.ver.outputs.version }} (macOS)" \
+            --notes-file dist/macos/release-notes.md

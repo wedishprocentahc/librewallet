@@ -1172,6 +1172,7 @@ struct ImportView: View {
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var updateController: UpdateController
     @State private var exportDoc: LWBackupDocument?
     @State private var importing = false
     @State private var showExport = false
@@ -1179,6 +1180,24 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section("O programie") {
+                LabeledContent("Wersja", value: AppVersion.shortVersion)
+                LabeledContent("Build", value: AppVersion.buildNumber)
+                Button {
+                    Task { await updateController.checkForUpdates(interactive: true) }
+                } label: {
+                    if updateController.isChecking {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Text("Sprawdź aktualizacje…")
+                    }
+                }
+                .disabled(updateController.isChecking)
+
+                Link("Strona pobierania", destination: LibreWalletDistribution.downloadPageURL)
+                Link("GitHub Releases", destination: LibreWalletDistribution.releasesPageURL)
+            }
+
             Section("Backup") {
                 Button("Eksportuj backup…") {
                     do {

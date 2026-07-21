@@ -11,6 +11,7 @@
 		27462A117AEC79F404098BD5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7F45D9368C3B5F31B76CF2 /* Models.swift */; };
 		289257D0B31981CEADF07791 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40574EFF205A2E0C7C7AC110 /* AppState.swift */; };
 		28A6218FFA19635F24092ABE /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C151B0499FD7D3C27A0F06 /* Formatting.swift */; };
+		3329072110ED3CFF1BA9ED81 /* AppVersionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C677A53B22AB059ED59BFD1 /* AppVersionTests.swift */; };
 		339D601014175AF94E37E10A /* AssetTypeDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C1D2B7CB9826CD0E503274 /* AssetTypeDetection.swift */; };
 		3418528651C4F70C8EE8F0C8 /* TransactionRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 083A44D3AA91E0450B81336A /* TransactionRow.swift */; };
 		3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */; };
@@ -27,12 +28,15 @@
 		78603CFCB514C299425123B6 /* ImportPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */; };
 		7930A4E39A39BF1F4CD1DD11 /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B68E3963CD60CA9F30A75F5 /* AddTransactionSheet.swift */; };
 		81192BA50CF372C290156D60 /* PortfolioCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B797816F6464846A7131A4E /* PortfolioCalculator.swift */; };
+		863007B2AE3B308F6592FB9F /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA78AA2926D4A68711972045 /* UpdateChecker.swift */; };
 		8FE6FA44715C639E68DB7F45 /* NBPExchangeRateService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDD20A5913CB288A94FA0343 /* NBPExchangeRateService.swift */; };
 		97482D687F1F61B67EF83C2E /* XTBZipImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDEB74EF10D94FB18B7C439 /* XTBZipImporter.swift */; };
 		A4DA2B7ED45B07745100E3E6 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 574F0512FB45B0E5301051BB /* RootView.swift */; };
 		A59C779D3F484213DFB9F444 /* BondsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3CBD021269E656684CB54F1 /* BondsView.swift */; };
+		B41C9D50FBB45414B7BBA685 /* AppVersion.swift in Sources */ = {isa = PBXBuildFile; fileRef = 536F3CC51A5D14B747392FC4 /* AppVersion.swift */; };
 		C5F6F6D3807A4EEC079C518C /* XTBOperationParsing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CA87349D7559F4839312221 /* XTBOperationParsing.swift */; };
 		C7970D8A847530020C226BBE /* LibreWalletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */; };
+		D66B730B33CAD98B005CD754 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7F48CBA7DD0D7C4A711F073 /* UpdateController.swift */; };
 		D77B8B6A33D748DA466AA8C6 /* NavigationDestination.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */; };
 		E4CBD84F7E7F32BE51483AF3 /* ImportScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FC6DD06853FB4E40B1B19A2 /* ImportScreen.swift */; };
 		EB42828B5B3A249EF9EE431C /* UniversalImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31779618A277EF73F85DBDC7 /* UniversalImporter.swift */; };
@@ -64,6 +68,8 @@
 		3841508530FAFB937E7198E0 /* CSV.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSV.swift; sourceTree = "<group>"; };
 		3DDEB74EF10D94FB18B7C439 /* XTBZipImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTBZipImporter.swift; sourceTree = "<group>"; };
 		40574EFF205A2E0C7C7AC110 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		4C677A53B22AB059ED59BFD1 /* AppVersionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersionTests.swift; sourceTree = "<group>"; };
+		536F3CC51A5D14B747392FC4 /* AppVersion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppVersion.swift; sourceTree = "<group>"; };
 		55C151B0499FD7D3C27A0F06 /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		574F0512FB45B0E5301051BB /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		666F3089A1B7A298DFA96B29 /* BondPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondPresets.swift; sourceTree = "<group>"; };
@@ -80,6 +86,8 @@
 		C53DECBDA85DFF53BF4D9481 /* LWModelContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LWModelContainer.swift; sourceTree = "<group>"; };
 		C717B9874B810B3DF6034232 /* ImportedTransaction.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportedTransaction.swift; sourceTree = "<group>"; };
 		D405ECEE72CD3F00ADB4F511 /* ColorHex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorHex.swift; sourceTree = "<group>"; };
+		E7F48CBA7DD0D7C4A711F073 /* UpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateController.swift; sourceTree = "<group>"; };
+		FA78AA2926D4A68711972045 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -108,6 +116,7 @@
 		025BA5978A36FA7032D136DD /* LibreWalletTests */ = {
 			isa = PBXGroup;
 			children = (
+				4C677A53B22AB059ED59BFD1 /* AppVersionTests.swift */,
 				2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */,
 			);
 			path = LibreWalletTests;
@@ -144,9 +153,11 @@
 		756364F1E1681A30194684FE /* LibreWalletShared */ = {
 			isa = PBXGroup;
 			children = (
+				536F3CC51A5D14B747392FC4 /* AppVersion.swift */,
 				34C1D2B7CB9826CD0E503274 /* AssetTypeDetection.swift */,
 				D405ECEE72CD3F00ADB4F511 /* ColorHex.swift */,
 				55C151B0499FD7D3C27A0F06 /* Formatting.swift */,
+				FA78AA2926D4A68711972045 /* UpdateChecker.swift */,
 				7CA87349D7559F4839312221 /* XTBOperationParsing.swift */,
 			);
 			path = LibreWalletShared;
@@ -168,6 +179,7 @@
 				2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */,
 				8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */,
 				574F0512FB45B0E5301051BB /* RootView.swift */,
+				E7F48CBA7DD0D7C4A711F073 /* UpdateController.swift */,
 			);
 			path = LibreWalletApp;
 			sourceTree = "<group>";
@@ -310,6 +322,7 @@
 			files = (
 				7930A4E39A39BF1F4CD1DD11 /* AddTransactionSheet.swift in Sources */,
 				289257D0B31981CEADF07791 /* AppState.swift in Sources */,
+				B41C9D50FBB45414B7BBA685 /* AppVersion.swift in Sources */,
 				339D601014175AF94E37E10A /* AssetTypeDetection.swift in Sources */,
 				6D5DB1E0B6531CEE63F2589B /* Backup.swift in Sources */,
 				6801253BD9974071E6FA04A0 /* BondPresets.swift in Sources */,
@@ -333,6 +346,8 @@
 				A4DA2B7ED45B07745100E3E6 /* RootView.swift in Sources */,
 				3418528651C4F70C8EE8F0C8 /* TransactionRow.swift in Sources */,
 				EB42828B5B3A249EF9EE431C /* UniversalImporter.swift in Sources */,
+				863007B2AE3B308F6592FB9F /* UpdateChecker.swift in Sources */,
+				D66B730B33CAD98B005CD754 /* UpdateController.swift in Sources */,
 				C5F6F6D3807A4EEC079C518C /* XTBOperationParsing.swift in Sources */,
 				97482D687F1F61B67EF83C2E /* XTBZipImporter.swift in Sources */,
 			);
@@ -342,6 +357,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				3329072110ED3CFF1BA9ED81 /* AppVersionTests.swift in Sources */,
 				3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
