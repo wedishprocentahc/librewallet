@@ -21,14 +21,17 @@ struct DashboardView: View {
     @State private var historyZoom: ClosedRange<Date>?
     @State private var hoverDate: Date?
     @State private var priceHistory: [String: [(date: Date, close: Double)]] = [:]
+    @State private var cachedScope: ScopeResult?
+    @State private var cachedHistoryRows: [HistoryRow] = []
+    @State private var cachedChartRows: [ChartHistoryRow] = []
+    @State private var isLoadingChart = false
 
     var body: some View {
-        let scope = dashboardScope
-        let historyRows = dashboardHistoryRows()
-        let chartRows = attachBenchmarkSeries(historyRows)
+        let scope = cachedScope ?? emptyScope
+        let historyRows = cachedHistoryRows
         let visibleDomain = historyZoom ?? defaultDomain(historyRows)
-        let visibleRowsRaw = chartRows.filter { $0.date >= visibleDomain.lowerBound && $0.date <= visibleDomain.upperBound }
-        let visibleRows = compressChartRows(visibleRowsRaw)
+        let visibleRowsRaw = cachedChartRows.filter { $0.date >= visibleDomain.lowerBound && $0.date <= visibleDomain.upperBound }
+        let visibleRows = dedupeChartRowsByDate(visibleRowsRaw)
 
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
@@ -104,28 +107,32 @@ struct DashboardView: View {
                                     y: .value("Wartość", row.value),
                                     series: .value("Seria", "Wartość portfela")
                                 )
-                                .foregroundStyle(by: .value("Seria", "Wartość portfela"))
+                                .foregroundStyle(Self.portfolioValueColor)
                                 .interpolationMethod(.linear)
                                 .lineStyle(StrokeStyle(lineWidth: 2.5))
+                            }
 
+                            ForEach(visibleRows) { row in
                                 LineMark(
                                     x: .value("Data", row.date),
                                     y: .value("Wkład", row.invested),
                                     series: .value("Seria", "Wkład własny")
                                 )
-                                .foregroundStyle(by: .value("Seria", "Wkład własny"))
+                                .foregroundStyle(Self.contributionColor)
                                 .interpolationMethod(.stepEnd)
                                 .lineStyle(StrokeStyle(lineWidth: 2.5))
+                            }
 
-                                if let b = row.benchmark {
+                            if !selectedBenchmarkId.isEmpty {
+                                ForEach(visibleRows.filter { $0.benchmark != nil }) { row in
                                     LineMark(
                                         x: .value("Data", row.date),
-                                        y: .value("Benchmark", b),
+                                        y: .value("Benchmark", row.benchmark ?? 0),
                                         series: .value("Seria", "Benchmark")
                                     )
-                                    .foregroundStyle(by: .value("Seria", "Benchmark"))
-                                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 4]))
+                                    .foregroundStyle(.gray)
                                     .interpolationMethod(.linear)
+                                    .lineStyle(StrokeStyle(lineWidth: 2, dash: [6, 4]))
                                 }
                             }
 
@@ -156,11 +163,7 @@ struct DashboardView: View {
                                 .foregroundStyle(Self.contributionColor)
                             }
                         }
-                        .chartForegroundStyleScale(
-                            domain: chartSeriesDomain(visibleRows),
-                            range: chartSeriesColors(visibleRows)
-                        )
-                        .chartLegend(position: .bottom, alignment: .leading, spacing: 8)
+                        .chartLegend(.hidden)
                         .chartXScale(domain: visibleDomain)
                         .chartOverlay { proxy in
                             GeometryReader { geo in
@@ -188,6 +191,8 @@ struct DashboardView: View {
                         }
                         .frame(height: 260)
                         .padding(.top, 4)
+
+                        chartLegend(hasBenchmark: !selectedBenchmarkId.isEmpty && visibleRows.contains { $0.benchmark != nil })
 
                         if showHistoryOperations {
                             OperationsMarkerStrip(
@@ -239,10 +244,54 @@ struct DashboardView: View {
             if priceHistory.isEmpty {
                 await refreshHistories()
             }
+            await refreshChartData()
+        }
+        .task(id: chartRefreshToken) {
+            await refreshChartData()
         }
         .task(id: selectedBenchmarkId) {
             await ensureBenchmarkHistory()
         }
+    }
+
+    private var emptyScope: ScopeResult {
+        ScopeResult(
+            baseCurrency: "PLN",
+            transactions: [],
+            hasCashOperations: false,
+            positions: [],
+            cashRows: [],
+            totalValueBase: 0,
+            positionValueBase: 0,
+            cashValueBase: 0,
+            totalProfitBase: 0,
+            netInvestedBase: 0,
+            returnPct: 0,
+            allocationByType: [:],
+            allocationByCurrency: [:]
+        )
+    }
+
+    private var chartRefreshToken: String {
+        let pid = appState.selectedPortfolioId?.uuidString ?? ""
+        let gid = appState.selectedGroupId?.uuidString ?? ""
+        let quoteStamp = quotes.first?.asOf.timeIntervalSince1970 ?? 0
+        let benchKeys = benchmarkHistory.keys.sorted().joined(separator: "|")
+        return "\(pid)|\(gid)|\(transactions.count)|\(quoteStamp)|\(priceHistory.count)|\(benchKeys)|\(selectedBenchmarkId)"
+    }
+
+    private func refreshChartData() async {
+        isLoadingChart = true
+        await Task.yield()
+
+        let scope = dashboardScope
+        let history = dashboardHistoryRows()
+        let chart = attachBenchmarkSeries(history)
+
+        cachedScope = scope
+        cachedHistoryRows = history
+        cachedChartRows = chart
+        isLoadingChart = false
     }
 
     private var scopedPortfolios: [Portfolio] {
@@ -433,11 +482,13 @@ struct DashboardView: View {
         let symbols = Set(transactions.compactMap { $0.symbol?.uppercased() }.filter { !$0.isEmpty })
         guard !symbols.isEmpty else { return }
         priceHistory = await PricingService.refreshHistories(symbols: Array(symbols))
+        await refreshChartData()
     }
 
     private var benchmarkOptions: [BenchmarkOption] {
-        [
-            .init(id: "", label: "Brak", symbols: [], currency: scopeCurrency, isComposite: false),
+        let currency = cachedScope?.baseCurrency ?? "PLN"
+        return [
+            .init(id: "", label: "Brak", symbols: [], currency: currency, isComposite: false),
             .init(id: "wig", label: "WIG", symbols: ["ETFBW20TR.WA", "ETFBM40TR.WA"], currency: "PLN", isComposite: true),
             .init(id: "wig20", label: "WIG20", symbols: ["ETFBW20TR.WA"], currency: "PLN", isComposite: false),
             .init(id: "mwig40", label: "mWIG40", symbols: ["ETFBM40TR.WA"], currency: "PLN", isComposite: false),
@@ -446,27 +497,27 @@ struct DashboardView: View {
         ]
     }
 
-    private var scopeCurrency: String {
-        dashboardScope.baseCurrency
+    private func isBenchmarkLoaded(_ cfg: BenchmarkOption) -> Bool {
+        if cfg.isComposite {
+            return cfg.symbols.allSatisfy { benchmarkHistory["\(cfg.id):\($0)"] != nil }
+        }
+        return benchmarkHistory[cfg.id] != nil
     }
 
     private func ensureBenchmarkHistory() async {
         benchmarkError = nil
         let id = selectedBenchmarkId
         guard let cfg = benchmarkOptions.first(where: { $0.id == id }), !cfg.id.isEmpty else { return }
-        if benchmarkHistory[cfg.id] != nil { return }
+        if isBenchmarkLoaded(cfg) { return }
 
         do {
-            var merged: [Date: Double] = [:]
             for sym in cfg.symbols {
                 let h = try await PricingService.fetchHistory(symbol: sym)
                 if cfg.isComposite {
-                    // For composite, store per symbol separately; we'll blend later.
                     benchmarkHistory["\(cfg.id):\(sym)"] = h
                 } else {
                     benchmarkHistory[cfg.id] = h
                 }
-                _ = merged
             }
         } catch {
             benchmarkError = error.localizedDescription
@@ -479,15 +530,16 @@ struct DashboardView: View {
             return rows.map { ChartHistoryRow(from: $0, benchmark: nil) }
         }
 
-        let priceMap: [String: Double] = blendedBenchmarkPrices(cfg: cfg)
-        if priceMap.isEmpty {
+        var series = blendedBenchmarkSeries(cfg: cfg)
+        if series.valuesByDayKey.isEmpty || series.sortedDayKeys.isEmpty {
             return rows.map { ChartHistoryRow(from: $0, benchmark: nil) }
         }
 
         var units = 0.0
         var prevInvested = 0.0
+        var priceIndex = 0
         return rows.map { r in
-            let price = priceAtOrBefore(priceMap, dayKey: r.dayKey)
+            let price = series.priceAtOrBefore(dayKey: r.dayKey, index: &priceIndex)
             let invested = r.invested
             let delta = invested - prevInvested
             if abs(delta) > 0.005, price > 0 {
@@ -495,19 +547,43 @@ struct DashboardView: View {
                 if units < 0 { units = 0 }
                 prevInvested = invested
             }
-            let benchValue = (price > 0 && units > 0) ? units * price : nil
+            let benchValue: Double? = {
+                guard price > 0, units > 0 else { return nil }
+                let value = units * price
+                return value.isFinite ? value : nil
+            }()
             return ChartHistoryRow(from: r, benchmark: benchValue)
         }
     }
 
-    private func blendedBenchmarkPrices(cfg: BenchmarkOption) -> [String: Double] {
-        // Build a dateKey -> price(in scope currency) map
+    private struct BenchmarkSeries {
+        let sortedDayKeys: [String]
+        let valuesByDayKey: [String: Double]
+
+        mutating func priceAtOrBefore(dayKey: String, index: inout Int) -> Double {
+            guard !sortedDayKeys.isEmpty else { return 0 }
+            if index < 0 { index = 0 }
+            if index >= sortedDayKeys.count { index = sortedDayKeys.count - 1 }
+
+            // Advance while next key is still <= requested key.
+            while (index + 1) < sortedDayKeys.count, sortedDayKeys[index + 1] <= dayKey {
+                index += 1
+            }
+
+            // If requested key is before our first known key, just use first value.
+            if sortedDayKeys[index] > dayKey { index = 0 }
+            return valuesByDayKey[sortedDayKeys[index]] ?? 0
+        }
+    }
+
+    private func blendedBenchmarkSeries(cfg: BenchmarkOption) -> BenchmarkSeries {
+        // Build a dayKey -> price(in scope currency) series.
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd"
 
         func toScopeCurrency(_ amount: Double, currency: String) -> Double {
-            let scope = scopeCurrency.uppercased()
+            let scope = (cachedScope?.baseCurrency ?? "PLN").uppercased()
             let ccy = currency.uppercased()
             if scope == ccy { return amount }
             // Approx: convert via today's NBP table A rates.
@@ -519,7 +595,7 @@ struct DashboardView: View {
         }
 
         if cfg.isComposite {
-            let series: [[String: Double]] = cfg.symbols.compactMap { sym in
+            let maps: [[String: Double]] = cfg.symbols.compactMap { sym in
                 guard let h = benchmarkHistory["\(cfg.id):\(sym)"] else { return nil }
                 var map: [String: Double] = [:]
                 for row in h {
@@ -527,71 +603,89 @@ struct DashboardView: View {
                 }
                 return map
             }
-            return blendComposite(series)
+            return blendCompositeSeries(maps)
         } else {
-            guard let h = benchmarkHistory[cfg.id] else { return [:] }
+            guard let h = benchmarkHistory[cfg.id] else { return BenchmarkSeries(sortedDayKeys: [], valuesByDayKey: [:]) }
             var map: [String: Double] = [:]
             for row in h {
                 map[df.string(from: row.date)] = toScopeCurrency(row.close, currency: cfg.currency)
             }
-            return map
+            let keys = map.keys.sorted()
+            return BenchmarkSeries(sortedDayKeys: keys, valuesByDayKey: map)
         }
     }
 
-    private func blendComposite(_ maps: [[String: Double]]) -> [String: Double] {
-        guard !maps.isEmpty else { return [:] }
+    private func blendCompositeSeries(_ maps: [[String: Double]]) -> BenchmarkSeries {
+        guard !maps.isEmpty else { return BenchmarkSeries(sortedDayKeys: [], valuesByDayKey: [:]) }
         let allDates = Set(maps.flatMap { $0.keys })
         let dates = allDates.sorted()
-        guard !dates.isEmpty else { return [:] }
+        guard !dates.isEmpty else { return BenchmarkSeries(sortedDayKeys: [], valuesByDayKey: [:]) }
+
+        // Turn each map into a sorted series for O(n) pointer-walk alignment.
+        var series: [BenchmarkSeries] = maps.map { map in
+            BenchmarkSeries(sortedDayKeys: map.keys.sorted(), valuesByDayKey: map)
+        }
 
         // Normalize each series to its first available price, then average.
-        let normalized: [[String: Double]] = maps.map { map in
-            var start: Double = 0
-            var out: [String: Double] = [:]
-            for d in dates {
-                let v = priceAtOrBefore(map, dayKey: d)
-                if start == 0, v > 0 { start = v }
-                if start > 0, v > 0 { out[d] = v / start }
+        var normalized: [[String: Double]] = Array(repeating: [:], count: series.count)
+        var indices: [Int] = Array(repeating: 0, count: series.count)
+        var starts: [Double] = Array(repeating: 0, count: series.count)
+
+        for d in dates {
+            for i in series.indices {
+                var s = series[i]
+                let v = s.priceAtOrBefore(dayKey: d, index: &indices[i])
+                series[i] = s
+                if starts[i] == 0, v > 0 { starts[i] = v }
+                if starts[i] > 0, v > 0 {
+                    normalized[i][d] = v / starts[i]
+                }
             }
-            return out
         }
 
         var blended: [String: Double] = [:]
+        blended.reserveCapacity(dates.count)
         for d in dates {
             let vals = normalized.compactMap { $0[d] }.filter { $0 > 0 }
             if vals.count == maps.count {
                 blended[d] = vals.reduce(0, +) / Double(vals.count)
             }
         }
-        return blended
+
+        return BenchmarkSeries(sortedDayKeys: blended.keys.sorted(), valuesByDayKey: blended)
     }
 
-    private func priceAtOrBefore(_ map: [String: Double], dayKey: String) -> Double {
-        if let v = map[dayKey], v > 0 { return v }
-        // Find nearest previous date key. Map sizes are small, linear scan ok.
-        let candidates = map.keys.filter { $0 <= dayKey }.sorted()
-        guard let last = candidates.last else { return 0 }
-        return map[last] ?? 0
+    @ViewBuilder
+    private func chartLegend(hasBenchmark: Bool) -> some View {
+        HStack(spacing: 16) {
+            chartLegendItem(color: Self.portfolioValueColor, label: "Wartość portfela")
+            chartLegendItem(color: Self.contributionColor, label: "Wkład własny")
+            if hasBenchmark {
+                chartLegendItem(color: .gray, label: "Benchmark", dashed: true)
+            }
+        }
+        .font(.caption)
+        .padding(.top, 4)
+    }
+
+    private func chartLegendItem(color: Color, label: String, dashed: Bool = false) -> some View {
+        HStack(spacing: 6) {
+            if dashed {
+                Capsule()
+                    .stroke(color, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                    .frame(width: 18, height: 2)
+            } else {
+                Capsule()
+                    .fill(color)
+                    .frame(width: 18, height: 3)
+            }
+            Text(label)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private static let portfolioValueColor = Color(red: 0.18, green: 0.45, blue: 0.36)
     private static let contributionColor = Color(red: 0.64, green: 0.44, blue: 0.12)
-
-    private func chartSeriesDomain(_ rows: [ChartHistoryRow]) -> [String] {
-        var domain = ["Wartość portfela", "Wkład własny"]
-        if rows.contains(where: { $0.benchmark != nil }) {
-            domain.append("Benchmark")
-        }
-        return domain
-    }
-
-    private func chartSeriesColors(_ rows: [ChartHistoryRow]) -> [Color] {
-        var colors = [Self.portfolioValueColor, Self.contributionColor]
-        if rows.contains(where: { $0.benchmark != nil }) {
-            colors.append(.gray)
-        }
-        return colors
-    }
 
     private func hoveredChartRow(_ rows: [ChartHistoryRow]) -> ChartHistoryRow? {
         guard let target = hoverDate, !rows.isEmpty else { return nil }
@@ -705,39 +799,12 @@ struct DashboardView: View {
             .sorted { $0.date < $1.date }
     }
 
-    private func compressChartRows(_ rows: [ChartHistoryRow]) -> [ChartHistoryRow] {
-        guard rows.count >= 3 else { return rows }
-        let sorted = rows.sorted { $0.date < $1.date }
-
-        var out: [ChartHistoryRow] = []
-        out.reserveCapacity(min(sorted.count, 400))
-
-        var prev = sorted[0]
-        out.append(prev)
-
-        // Keep only meaningful changes to avoid jagged rendering when values are constant.
-        let valueEps = 0.01
-        let investedEps = 0.005
-        let maxSpacing: TimeInterval = 86400 * 14 // keep at least one point every 2 weeks
-        var lastKeptDate = prev.date
-
-        for row in sorted.dropFirst().dropLast() {
-            let valueDelta = abs(row.value - prev.value)
-            let investedDelta = abs(row.invested - prev.invested)
-            let timeDelta = row.date.timeIntervalSince(lastKeptDate)
-
-            if valueDelta > valueEps || investedDelta > investedEps || timeDelta >= maxSpacing {
-                out.append(row)
-                prev = row
-                lastKeptDate = row.date
-            }
+    private func dedupeChartRowsByDate(_ rows: [ChartHistoryRow]) -> [ChartHistoryRow] {
+        var byDay: [String: ChartHistoryRow] = [:]
+        for row in rows {
+            byDay[row.dayKey] = row
         }
-
-        if let last = sorted.last {
-            out.append(last)
-        }
-
-        return out
+        return byDay.values.sorted { $0.date < $1.date }
     }
 }
 

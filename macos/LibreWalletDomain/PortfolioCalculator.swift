@@ -312,21 +312,32 @@ enum PortfolioCalculator {
         let quoteBySymbol: [String: Quote] = Dictionary(uniqueKeysWithValues: quotes.map { ($0.symbol.uppercased(), $0) })
         let quoteMap: [String: Quote] = Dictionary(uniqueKeysWithValues: quotes.map { ("\($0.symbol.uppercased())|\($0.currency.uppercased())", $0) })
 
-        // Pre-sort historical price series (ascending) per uppercased symbol for fast lookup.
-        let sortedHistories: [String: [(date: Date, close: Double)]] = histories.mapValues {
-            $0.filter { $0.close > 0 }.sorted { $0.date < $1.date }
-        }
-
         let cal = Calendar.current
         let df = DateFormatter()
         df.locale = Locale(identifier: "en_US_POSIX")
         df.dateFormat = "yyyy-MM-dd"
+
+        // Pre-sort historical price series (ascending) per uppercased symbol for fast lookup.
+        // Normalize to calendar day boundaries so trade timestamps and quote dates align.
+        let sortedHistories: [String: [(date: Date, close: Double)]] = histories.mapValues { points in
+            var byDay: [Date: Double] = [:]
+            for point in points where point.close > 0 {
+                let day = cal.startOfDay(for: point.date)
+                byDay[day] = point.close
+            }
+            return byDay
+                .map { (date: $0.key, close: $0.value) }
+                .sorted { $0.date < $1.date }
+        }
 
         let startDay = cal.startOfDay(for: first.date)
         let endDay = cal.startOfDay(for: Date())
 
         var out: [HistoryRow] = []
         var idx = 0
+        // Pointer-walk indices for O(1) amortized historical price lookup per day.
+        var dayHistoryIndices: [String: Int] = [:]
+        var anchorCloses: [String: (tradeDate: Date, close: Double)] = [:]
 
         var day = startDay
         while day <= endDay {
@@ -369,16 +380,32 @@ enum PortfolioCalculator {
             let isLatestDay = day == endDay
             var positionsValue = 0.0
             for acc in positions.values where abs(acc.quantity) > 0.0000001 {
-                var price = acc.lastPrice ?? 0
+                let avgCost = acc.invested / acc.quantity
+                var price = avgCost > 0 ? avgCost : (acc.lastPrice ?? 0)
+                let symbolKey = acc.symbol.uppercased()
 
-                if let series = sortedHistories[acc.symbol.uppercased()],
+                if let series = sortedHistories[symbolKey],
                    let anchorDate = acc.lastTradeDate,
-                   let cost = acc.lastPrice, cost > 0,
-                   let anchorClose = closeAtOrBefore(series, date: anchorDate),
-                   anchorClose > 0,
-                   let dayClose = closeAtOrBefore(series, date: day),
-                   dayClose > 0 {
-                    price = cost * (dayClose / anchorClose)
+                   price > 0 {
+                    let tradeDay = cal.startOfDay(for: anchorDate)
+                    if anchorCloses[symbolKey]?.tradeDate != tradeDay {
+                        var anchorIndex = 0
+                        let anchorClose = closeAtOrBefore(series, date: tradeDay, index: &anchorIndex) ?? 0
+                        anchorCloses[symbolKey] = (tradeDay, anchorClose)
+                        dayHistoryIndices[symbolKey] = anchorIndex
+                    }
+
+                    let anchorClose = anchorCloses[symbolKey]?.close ?? 0
+                    // On the trade day itself keep cost-basis valuation (ratio = 1) to avoid
+                    // one-day dips from timestamp / quote-alignment mismatches.
+                    if day != tradeDay, anchorClose > 0 {
+                        var dayIndex = dayHistoryIndices[symbolKey] ?? 0
+                        let dayClose = closeAtOrBefore(series, date: day, index: &dayIndex) ?? 0
+                        dayHistoryIndices[symbolKey] = dayIndex
+                        if dayClose > 0 {
+                            price = price * (dayClose / anchorClose)
+                        }
+                    }
                 } else if isLatestDay {
                     let q = quoteMap["\(acc.symbol)|\(acc.currency)"] ?? quoteBySymbol[acc.symbol.uppercased()]
                     let quoteCurrency = (q?.currency ?? "").uppercased()
@@ -412,18 +439,24 @@ enum PortfolioCalculator {
         return out
     }
 
-    /// Returns the most recent close on or before `date` (series must be sorted ascending).
-    private static func closeAtOrBefore(_ series: [(date: Date, close: Double)], date: Date) -> Double? {
-        var result: Double?
-        for point in series {
-            if point.date <= date {
-                result = point.close
-            } else {
-                break
-            }
+    /// Returns the most recent close on or before `date` (series must be sorted ascending, day-normalized).
+    private static func closeAtOrBefore(
+        _ series: [(date: Date, close: Double)],
+        date: Date,
+        index: inout Int
+    ) -> Double? {
+        guard !series.isEmpty else { return nil }
+        let target = Calendar.current.startOfDay(for: date)
+        if index < 0 { index = 0 }
+        if index >= series.count { index = series.count - 1 }
+
+        while (index + 1) < series.count, series[index + 1].date <= target {
+            index += 1
         }
-        // If the target predates the whole series, fall back to the earliest known close.
-        return result ?? series.first?.close
+        if series[index].date > target {
+            index = 0
+        }
+        return series[index].close
     }
 
     static func aggregateDailyTimelineToPLN(
@@ -570,14 +603,16 @@ enum PortfolioCalculator {
             let qty = norm.quantity
             let value = gross > 0 ? gross : qty * norm.price
             guard qty > 0 || value > 0 else { return }
+            let oldQty = acc.quantity
             acc.quantity += qty
             acc.invested += value + fee
-            if qty > 0 {
-                acc.lastPrice = value / qty
+            if acc.quantity > 0 {
+                let priorCost = oldQty > 0 ? (acc.lastPrice ?? 0) * oldQty : 0
+                acc.lastPrice = (priorCost + value) / acc.quantity
             } else if norm.price > 0 {
                 acc.lastPrice = norm.price
             }
-            acc.lastTradeDate = tx.date
+            acc.lastTradeDate = Calendar.current.startOfDay(for: tx.date)
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? -(value + fee))
         case .sell:
             let qty = norm.quantity
@@ -593,14 +628,12 @@ enum PortfolioCalculator {
             if abs(acc.quantity) < 0.0000001 {
                 acc.quantity = 0
                 acc.invested = 0
+                acc.lastPrice = nil
+            } else {
+                acc.lastPrice = acc.invested / acc.quantity
             }
             acc.realized += value - fee - costSold
-            if qty > 0 {
-                acc.lastPrice = value / qty
-            } else if norm.price > 0 {
-                acc.lastPrice = norm.price
-            }
-            acc.lastTradeDate = tx.date
+            acc.lastTradeDate = Calendar.current.startOfDay(for: tx.date)
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? (value - fee))
         case .dividend, .interest:
             acc.income += gross - fee
