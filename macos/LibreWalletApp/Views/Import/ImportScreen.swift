@@ -18,6 +18,16 @@ struct ImportScreen: View {
     @State private var showSavedAlert = false
     @State private var savedCount = 0
 
+    private var autoCreatesPortfolios: Bool {
+        if previewSource?.localizedCaseInsensitiveContains("XTB") == true { return true }
+        if preview.contains(where: { ($0.source ?? "").localizedCaseInsensitiveContains("XTB") }) { return true }
+        return preview.contains { !($0.account ?? "").isEmpty }
+    }
+
+    private var canCommit: Bool {
+        !preview.isEmpty && (autoCreatesPortfolios || selectedPortfolioId != nil)
+    }
+
     private var commitTitle: String { "Zapisz (\(preview.count))" }
     private var previewTitle: String { previewSource ?? "Import" }
     private var xtbAccountsSummary: String? {
@@ -85,7 +95,7 @@ struct ImportScreen: View {
                         Button("Wyczyść", action: clearPreview)
                         Button(commitTitle, action: commitPreview)
                             .buttonStyle(.borderedProminent)
-                            .disabled(preview.isEmpty || selectedPortfolioId == nil)
+                            .disabled(!canCommit)
                     }
                 }
                 .padding(.top, 6)
@@ -107,12 +117,18 @@ struct ImportScreen: View {
 
     private var toolbar: some View {
         HStack {
-            Picker("Portfel docelowy", selection: $selectedPortfolioId) {
-                ForEach(portfolios) { p in
-                    Text(p.name).tag(Optional.some(p.id))
+            if autoCreatesPortfolios {
+                Label("Portfele utworzą się automatycznie z importu", systemImage: "briefcase.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.callout)
+            } else {
+                Picker("Portfel docelowy", selection: $selectedPortfolioId) {
+                    ForEach(portfolios) { p in
+                        Text(p.name).tag(Optional.some(p.id))
+                    }
                 }
+                .frame(maxWidth: 320)
             }
-            .frame(maxWidth: 320)
 
             Spacer()
 
@@ -209,20 +225,23 @@ struct ImportScreen: View {
         errorMessage = nil
         savedCount = 0
 
-        let hasXTBAccounts = preview.contains { ($0.account ?? "").isEmpty == false }
-        if hasXTBAccounts {
+        if autoCreatesPortfolios {
             commitXTBGrouped()
             return
         }
 
         guard let pid = selectedPortfolioId,
-              let portfolio = portfolios.first(where: { $0.id == pid }) else { return }
+              let portfolio = portfolios.first(where: { $0.id == pid }) else {
+            errorMessage = "Wybierz portfel docelowy."
+            return
+        }
 
         for item in preview {
             insert(item, into: portfolio)
         }
         try? context.save()
         savedCount = preview.count
+        clearPreview()
         showSavedAlert = true
     }
 
@@ -237,10 +256,16 @@ struct ImportScreen: View {
         }
 
         let group = ensureXTBGroup()
+        var portfolioCache: [String: Portfolio] = [:]
         var lastPortfolio: Portfolio?
 
         for (key, items) in grouped {
-            let portfolio = ensureXTBPortfolio(group: group, account: key.account, currency: key.currency)
+            let portfolio = ensureXTBPortfolio(
+                group: group,
+                account: key.account,
+                currency: key.currency,
+                cache: &portfolioCache
+            )
             lastPortfolio = portfolio
             for item in items {
                 insert(item, into: portfolio)
@@ -252,6 +277,7 @@ struct ImportScreen: View {
         if let lastPortfolio {
             appState.selectPortfolio(lastPortfolio)
         }
+        clearPreview()
         showSavedAlert = true
     }
 
@@ -264,10 +290,20 @@ struct ImportScreen: View {
         return g
     }
 
-    private func ensureXTBPortfolio(group: PortfolioGroup, account: String, currency: String) -> Portfolio {
+    private func ensureXTBPortfolio(
+        group: PortfolioGroup,
+        account: String,
+        currency: String,
+        cache: inout [String: Portfolio]
+    ) -> Portfolio {
         let normalizedCurrency = currency.uppercased()
         let name = "XTB \(normalizedCurrency) (\(account))"
+        let cacheKey = "\(group.id.uuidString)|\(name)"
+        if let cached = cache[cacheKey] {
+            return cached
+        }
         if let existing = portfolios.first(where: { $0.group?.id == group.id && $0.name == name }) {
+            cache[cacheKey] = existing
             return existing
         }
         let p = Portfolio(
@@ -279,6 +315,7 @@ struct ImportScreen: View {
             group: group
         )
         context.insert(p)
+        cache[cacheKey] = p
         return p
     }
 
