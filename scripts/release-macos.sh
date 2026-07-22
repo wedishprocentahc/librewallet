@@ -38,6 +38,7 @@ VERSION="$(ruby -ryaml -e 'puts YAML.load_file(ARGV[0]).dig("settings","base","M
 BUILD="$(ruby -ryaml -e 'puts YAML.load_file(ARGV[0]).dig("settings","base","CURRENT_PROJECT_VERSION")' "$MACOS/project.yml")"
 TAG="v${VERSION}"
 ZIP_NAME="LibreWallet.zip"
+PKG_NAME="LibreWallet-${VERSION}-mac-arm64.pkg"
 APP_NAME="LibreWallet.app"
 
 echo "==> Version ${VERSION} (build ${BUILD}), tag ${TAG}"
@@ -74,6 +75,10 @@ echo "==> Packing $ZIP_NAME"
   ditto -c -k --keepParent "$APP_NAME" "$DIST/$ZIP_NAME"
 )
 
+echo "==> Building $PKG_NAME"
+chmod +x "$ROOT/scripts/build-macos-native-pkg.sh"
+"$ROOT/scripts/build-macos-native-pkg.sh" "$APP_SRC" arm64
+
 NOTES_FILE="$DIST/release-notes.md"
 {
   echo "## LibreWallet ${VERSION} (macOS native)"
@@ -98,7 +103,7 @@ NOTES_FILE="$DIST/release-notes.md"
 } > "$NOTES_FILE"
 
 echo "==> Artifacts:"
-ls -lh "$DIST/$ZIP_NAME" "$NOTES_FILE"
+ls -lh "$DIST/$ZIP_NAME" "$DIST/$PKG_NAME" "$NOTES_FILE"
 
 if [[ "$PUBLISH" -eq 1 ]]; then
   if ! command -v gh >/dev/null 2>&1; then
@@ -112,10 +117,11 @@ if [[ "$PUBLISH" -eq 1 ]]; then
   git -C "$ROOT" push origin "$TAG" 2>/dev/null || true
 
   if gh release view "$TAG" --repo wedishprocentahc/librewallet >/dev/null 2>&1; then
-    gh release upload "$TAG" "$DIST/$ZIP_NAME" --clobber --repo wedishprocentahc/librewallet
+    gh release upload "$TAG" "$DIST/$ZIP_NAME" "$DIST/$PKG_NAME" --clobber --repo wedishprocentahc/librewallet
   else
     gh release create "$TAG" \
       "$DIST/$ZIP_NAME" \
+      "$DIST/$PKG_NAME" \
       --repo wedishprocentahc/librewallet \
       --title "LibreWallet $VERSION (macOS)" \
       --notes-file "$NOTES_FILE"

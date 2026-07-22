@@ -5,6 +5,13 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.1.1] — 2026-07-22
+
+### Naprawione (native macOS)
+
+- Instalator `.pkg` ustawia poprawne uprawnienia wykonywania — aplikacja uruchamia się po instalacji.
+- Preinstall usuwa stare ślady instalacji (`LibreWallet.app`, folder `librewallet` w Aplikacjach).
+
 ## [0.1.0] — 2026-07-21
 
 ### Dodane (native macOS)
