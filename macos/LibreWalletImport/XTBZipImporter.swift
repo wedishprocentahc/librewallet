@@ -204,14 +204,51 @@ private enum XTBXLSX {
         guard let file = XLSXFile(filepath: url.path) else { return [] }
         let sharedStrings = try file.parseSharedStrings()
         guard let workbook = try file.parseWorkbooks().first else { return [] }
-        guard let sheet = try file.parseWorksheetPathsAndNames(workbook: workbook).first else { return [] }
-        let ws = try file.parseWorksheet(at: sheet.path)
+        let sheets = try file.parseWorksheetPathsAndNames(workbook: workbook)
+        guard !sheets.isEmpty else { return [] }
 
+        // XTB exports have multiple sheets (Closed Positions / Cash Operations / Open Positions).
+        // Cash ops live on "Cash Operations" — scanning only the first sheet misses them.
+        let ordered = sheets.sorted { lhs, rhs in
+            cashOperationsScore(lhs.name) > cashOperationsScore(rhs.name)
+        }
+
+        for sheet in ordered {
+            let imported = try importCashOperationsSheet(
+                file: file,
+                path: sheet.path,
+                sharedStrings: sharedStrings,
+                currencyHint: currencyHint
+            )
+            if !imported.isEmpty {
+                return imported
+            }
+        }
+        return []
+    }
+
+    /// Prefer explicit Cash Operations sheet names (EN/PL).
+    private static func cashOperationsScore(_ name: String?) -> Int {
+        let label = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if label == "cash operations" { return 100 }
+        if label.contains("cash operation") { return 90 }
+        if label.contains("operacje gotowk") || label.contains("operacje pieniez") || label.contains("operacje pienięż") {
+            return 90
+        }
+        return 0
+    }
+
+    private static func importCashOperationsSheet(
+        file: XLSXFile,
+        path: String,
+        sharedStrings: SharedStrings?,
+        currencyHint: String?
+    ) throws -> [ImportedTransaction] {
+        let ws = try file.parseWorksheet(at: path)
         let rows = ws.data?.rows ?? []
         if rows.isEmpty { return [] }
 
-        // Find header row (XTB Cash Operations export)
-        // Header example: Type, Ticker, Instrument, Time, Amount, ID, Comment, Product
+        // Header example: Type, Instrument, Ticker, Category, Time, Amount, ID, Comment, Product
         var headerByCol: [String: String] = [:]
         var headerRowIndex: Int?
         for (idx, row) in rows.enumerated() {
@@ -222,7 +259,17 @@ private enum XTBXLSX {
                 if !value.isEmpty { tmp[col] = value }
             }
             let normalized = Set(tmp.values.map { $0.trimmed.lowercased() })
-            if normalized.contains("type"), normalized.contains("ticker"), normalized.contains("amount") {
+            let hasType = normalized.contains("type") || normalized.contains("typ") || normalized.contains("operacja")
+            let hasAmount = normalized.contains("amount")
+                || normalized.contains("kwota")
+                || normalized.contains("wartość")
+                || normalized.contains("wartosc")
+            let hasTime = normalized.contains("time")
+                || normalized.contains("czas")
+                || normalized.contains("date")
+                || normalized.contains("data")
+            // Require cash-ops shape; Closed Positions has Type/Ticker/Volume but no Amount.
+            if hasType, hasAmount, hasTime {
                 headerByCol = tmp
                 headerRowIndex = idx
                 break
@@ -230,7 +277,6 @@ private enum XTBXLSX {
         }
         guard let headerRowIndex else { return [] }
 
-        // Parse data rows after header
         var out: [ImportedTransaction] = []
         for row in rows.dropFirst(headerRowIndex + 1) {
             var dict: [String: String] = [:]
@@ -242,7 +288,7 @@ private enum XTBXLSX {
 
             // Stop at totals/footer
             if let first = dict.values.first(where: { !$0.trimmed.isEmpty }),
-               first.trimmed.lowercased() == "total" {
+               first.trimmed.lowercased() == "total" || first.trimmed.lowercased() == "profit/loss" {
                 break
             }
             if dict.isEmpty { continue }

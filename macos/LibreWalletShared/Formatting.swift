@@ -21,5 +21,14 @@ enum LWFormatting {
         let prefix = value >= 0 ? "+" : ""
         return "\(prefix)\(str)%"
     }
+
+    static func number(_ value: Double, locale: Locale = .current, fractionDigits: Int = 4) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = fractionDigits
+        return formatter.string(from: NSNumber(value: value)) ?? String(value)
+    }
 }
 

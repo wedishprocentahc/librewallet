@@ -9,7 +9,6 @@ enum NavigationDestination: Hashable {
     case rebalance
     case bonds
     case settings
-    case group(PersistentIdentifier)
-    case portfolio(PersistentIdentifier)
+    case group(UUID)
+    case portfolio(UUID)
 }
-

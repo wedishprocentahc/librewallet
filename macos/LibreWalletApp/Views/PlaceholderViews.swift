@@ -310,7 +310,8 @@ struct DashboardView: View {
             return PortfolioCalculator.calculate(
                 portfolio: portfolio,
                 allTransactions: transactions,
-                quotes: quotes
+                quotes: quotes,
+                ratesToPLN: ratesToPLN
             )
         }
         return PortfolioCalculator.aggregateToPLN(
@@ -1064,106 +1065,6 @@ struct TransactionsView: View {
     }
 }
 
-struct PositionsView: View {
-    @Environment(\.modelContext) private var context
-    @EnvironmentObject private var appState: AppState
-
-    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
-    @Query(sort: \PortfolioGroup.createdAt) private var groups: [PortfolioGroup]
-    @Query(sort: \Transaction.date) private var transactions: [Transaction]
-    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
-
-    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
-
-    var body: some View {
-        let scope = scopeForCurrentSelection()
-        List {
-            ForEach(scope.positions, id: \.id) { pos in
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(pos.symbol).font(.headline)
-                        Text(pos.name).font(.caption).foregroundStyle(.secondary)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(LWFormatting.money(pos.currentValue, currency: pos.currency)).font(.headline)
-                        Text(LWFormatting.money(pos.totalProfit, currency: pos.currency))
-                            .font(.caption)
-                            .foregroundStyle(pos.totalProfit >= 0 ? .green : .red)
-                    }
-                }
-                .contentShape(Rectangle())
-                .contextMenu {
-                    Button("Usuń pozycję…", role: .destructive) {
-                        confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
-                    }
-                }
-            }
-        }
-        .navigationTitle("Pozycje")
-        .alert(
-            "Usunąć pozycję?",
-            isPresented: Binding(
-                get: { confirmDeletePosition != nil },
-                set: { if !$0 { confirmDeletePosition = nil } }
-            ),
-            presenting: confirmDeletePosition
-        ) { pos in
-            Button("Anuluj", role: .cancel) {
-                confirmDeletePosition = nil
-            }
-            Button("Usuń", role: .destructive) {
-                deletePosition(symbol: pos.symbol, currency: pos.currency)
-                confirmDeletePosition = nil
-            }
-        } message: { pos in
-            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w bieżącym zakresie.")
-        }
-    }
-
-    private func scopedPortfolios() -> [Portfolio] {
-        if let pid = appState.selectedPortfolioId {
-            return portfolios.filter { $0.id == pid }
-        }
-        if let gid = appState.selectedGroupId {
-            return portfolios.filter { $0.group?.id == gid }
-        }
-        return portfolios
-    }
-
-    private func scopeForCurrentSelection() -> ScopeResult {
-        let scoped = scopedPortfolios()
-        if scoped.count == 1, let portfolio = scoped.first {
-            return PortfolioCalculator.calculate(
-                portfolio: portfolio,
-                allTransactions: transactions,
-                quotes: quotes
-            )
-        }
-        return PortfolioCalculator.aggregateToPLN(
-            portfolios: scoped,
-            allTransactions: transactions,
-            quotes: quotes,
-            ratesToPLN: ["PLN": 1.0]
-        )
-    }
-
-    private func deletePosition(symbol: String, currency: String) {
-        let scopedIds = Set(scopedPortfolios().map { $0.id })
-        let normSymbol = symbol.uppercased()
-        let normCurrency = currency.uppercased()
-
-        let toDelete = transactions.filter { tx in
-            guard let pid = tx.portfolio?.id, scopedIds.contains(pid) else { return false }
-            return (tx.symbol ?? "").uppercased() == normSymbol
-                && tx.currency.uppercased() == normCurrency
-        }
-
-        for tx in toDelete { context.delete(tx) }
-        try? context.save()
-    }
-}
-
 struct ImportView: View {
     var body: some View {
         ImportScreen()
@@ -1247,21 +1148,341 @@ struct SettingsView: View {
     }
 }
 
-struct GroupDetailView: View {
-    let groupId: PersistentIdentifier
+struct PositionsView: View {
+    @Environment(\.modelContext) private var context
+    @EnvironmentObject private var appState: AppState
+
+    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
+    @Query(sort: \Transaction.date) private var transactions: [Transaction]
+    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
+
+    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
+    @State private var ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
+
+    private var scopedPortfolios: [Portfolio] {
+        if let pid = appState.selectedPortfolioId {
+            return portfolios.filter { $0.id == pid }
+        }
+        if let gid = appState.selectedGroupId {
+            return portfolios.filter { $0.group?.id == gid }
+        }
+        return portfolios
+    }
+
+    private var scope: ScopeResult {
+        let scoped = scopedPortfolios
+        if scoped.count == 1, let portfolio = scoped.first {
+            return PortfolioCalculator.calculate(
+                portfolio: portfolio,
+                allTransactions: transactions,
+                quotes: quotes,
+                ratesToPLN: ratesToPLN
+            )
+        }
+        return PortfolioCalculator.aggregateToPLN(
+            portfolios: scoped,
+            allTransactions: transactions,
+            quotes: quotes,
+            ratesToPLN: ratesToPLN
+        )
+    }
 
     var body: some View {
-        Text("Grupa \(groupId)")
-            .navigationTitle("Grupa")
+        PositionsListContent(
+            scope: scope,
+            emptyDescription: "Brak pozycji w bieżącym zakresie. Wybierz portfel albo zaimportuj operacje.",
+            onDeleteRequest: { pos in
+                confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
+            }
+        )
+        .navigationTitle("Pozycje")
+        .task { await loadRates() }
+        .alert(
+            "Usunąć pozycję?",
+            isPresented: Binding(
+                get: { confirmDeletePosition != nil },
+                set: { if !$0 { confirmDeletePosition = nil } }
+            ),
+            presenting: confirmDeletePosition
+        ) { pos in
+            Button("Anuluj", role: .cancel) {
+                confirmDeletePosition = nil
+            }
+            Button("Usuń", role: .destructive) {
+                deletePosition(symbol: pos.symbol, currency: pos.currency)
+                confirmDeletePosition = nil
+            }
+        } message: { pos in
+            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w bieżącym zakresie.")
+        }
+    }
+
+    private func loadRates() async {
+        if let rates = try? await NBPExchangeRateService.ratesToPLN() {
+            ratesToPLN = rates
+        }
+    }
+
+    private func deletePosition(symbol: String, currency: String) {
+        let scopedIds = Set(scopedPortfolios.map(\.id))
+        let normSymbol = symbol.uppercased()
+        let normCurrency = currency.uppercased()
+        let toDelete = transactions.filter { tx in
+            guard let pid = tx.portfolio?.id, scopedIds.contains(pid) else { return false }
+            return (tx.symbol ?? "").uppercased() == normSymbol
+                && tx.currency.uppercased() == normCurrency
+        }
+        for tx in toDelete { context.delete(tx) }
+        try? context.save()
+    }
+}
+
+struct GroupDetailView: View {
+    let groupId: UUID
+
+    @Environment(\.modelContext) private var context
+    @EnvironmentObject private var appState: AppState
+
+    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
+    @Query(sort: \PortfolioGroup.createdAt) private var groups: [PortfolioGroup]
+    @Query(sort: \Transaction.date) private var transactions: [Transaction]
+    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
+
+    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
+    @State private var ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
+
+    private var group: PortfolioGroup? {
+        groups.first(where: { $0.id == groupId })
+    }
+
+    private var scopedPortfolios: [Portfolio] {
+        portfolios.filter { $0.group?.id == groupId }
+    }
+
+    private var scope: ScopeResult {
+        PortfolioCalculator.aggregateToPLN(
+            portfolios: scopedPortfolios,
+            allTransactions: transactions,
+            quotes: quotes,
+            ratesToPLN: ratesToPLN
+        )
+    }
+
+    var body: some View {
+        PositionsListContent(
+            scope: scope,
+            emptyDescription: "Brak pozycji w tej grupie.",
+            onDeleteRequest: { pos in
+                confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
+            }
+        )
+        .navigationTitle(group?.name ?? "Grupa")
+        .task { await loadRates() }
+        .onAppear {
+            appState.selectedGroupId = groupId
+            appState.selectedPortfolioId = nil
+        }
+        .alert(
+            "Usunąć pozycję?",
+            isPresented: Binding(
+                get: { confirmDeletePosition != nil },
+                set: { if !$0 { confirmDeletePosition = nil } }
+            ),
+            presenting: confirmDeletePosition
+        ) { pos in
+            Button("Anuluj", role: .cancel) {
+                confirmDeletePosition = nil
+            }
+            Button("Usuń", role: .destructive) {
+                deletePosition(symbol: pos.symbol, currency: pos.currency)
+                confirmDeletePosition = nil
+            }
+        } message: { pos in
+            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w tej grupie.")
+        }
+    }
+
+    private func loadRates() async {
+        if let rates = try? await NBPExchangeRateService.ratesToPLN() {
+            ratesToPLN = rates
+        }
+    }
+
+    private func deletePosition(symbol: String, currency: String) {
+        let scopedIds = Set(scopedPortfolios.map(\.id))
+        let normSymbol = symbol.uppercased()
+        let normCurrency = currency.uppercased()
+        let toDelete = transactions.filter { tx in
+            guard let pid = tx.portfolio?.id, scopedIds.contains(pid) else { return false }
+            return (tx.symbol ?? "").uppercased() == normSymbol
+                && tx.currency.uppercased() == normCurrency
+        }
+        for tx in toDelete { context.delete(tx) }
+        try? context.save()
     }
 }
 
 struct PortfolioDetailView: View {
-    let portfolioId: PersistentIdentifier
+    let portfolioId: UUID
+
+    @Environment(\.modelContext) private var context
+    @EnvironmentObject private var appState: AppState
+
+    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
+    @Query(sort: \Transaction.date) private var transactions: [Transaction]
+    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
+
+    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
+    @State private var ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
+
+    private var portfolio: Portfolio? {
+        portfolios.first(where: { $0.id == portfolioId })
+    }
+
+    private var scope: ScopeResult {
+        guard let portfolio else {
+            return PortfolioCalculator.calculate(portfolio: nil, allTransactions: [], quotes: [])
+        }
+        return PortfolioCalculator.calculate(
+            portfolio: portfolio,
+            allTransactions: transactions,
+            quotes: quotes,
+            ratesToPLN: ratesToPLN
+        )
+    }
 
     var body: some View {
-        ContentUnavailableView("Portfel", systemImage: "briefcase", description: Text("Wybierz portfel z paska bocznego, aby zobaczyć szczegóły."))
-            .navigationTitle("Portfel")
+        VStack(alignment: .leading, spacing: 0) {
+            if let portfolio {
+                portfolioSummary(portfolio: portfolio, scope: scope)
+                    .padding()
+                Divider()
+            }
+
+            PositionsListContent(
+                scope: scope,
+                emptyDescription: "Brak pozycji w tym portfelu. Zaimportuj operacje albo dodaj obligacje.",
+                onDeleteRequest: { pos in
+                    confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
+                }
+            )
+        }
+        .navigationTitle(portfolio?.name ?? "Portfel")
+        .task { await loadRates() }
+        .onAppear {
+            if let portfolio {
+                appState.selectPortfolio(portfolio)
+            }
+        }
+        .alert(
+            "Usunąć pozycję?",
+            isPresented: Binding(
+                get: { confirmDeletePosition != nil },
+                set: { if !$0 { confirmDeletePosition = nil } }
+            ),
+            presenting: confirmDeletePosition
+        ) { pos in
+            Button("Anuluj", role: .cancel) {
+                confirmDeletePosition = nil
+            }
+            Button("Usuń", role: .destructive) {
+                deletePosition(symbol: pos.symbol, currency: pos.currency)
+                confirmDeletePosition = nil
+            }
+        } message: { pos in
+            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w tym portfelu.")
+        }
+    }
+
+    private func loadRates() async {
+        if let rates = try? await NBPExchangeRateService.ratesToPLN() {
+            ratesToPLN = rates
+        }
+    }
+
+    @ViewBuilder
+    private func portfolioSummary(portfolio: Portfolio, scope: ScopeResult) -> some View {
+        HStack(spacing: 24) {
+            summaryMetric(title: "Wartość", value: LWFormatting.money(scope.totalValueBase, currency: portfolio.baseCurrency))
+            summaryMetric(
+                title: "Zysk",
+                value: LWFormatting.money(scope.totalProfitBase, currency: portfolio.baseCurrency),
+                tint: scope.totalProfitBase >= 0 ? .green : .red
+            )
+            summaryMetric(title: "Zwrot", value: String(format: "%.2f%%", scope.returnPct))
+            if scope.hasCashOperations, abs(scope.cashValueBase) > 0.01 {
+                summaryMetric(title: "Gotówka", value: LWFormatting.money(scope.cashValueBase, currency: portfolio.baseCurrency))
+            }
+            Spacer()
+        }
+    }
+
+    private func summaryMetric(title: String, value: String, tint: Color = .primary) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(tint)
+        }
+    }
+
+    private func deletePosition(symbol: String, currency: String) {
+        let normSymbol = symbol.uppercased()
+        let normCurrency = currency.uppercased()
+        let toDelete = transactions.filter { tx in
+            guard tx.portfolio?.id == portfolioId else { return false }
+            return (tx.symbol ?? "").uppercased() == normSymbol
+                && tx.currency.uppercased() == normCurrency
+        }
+        for tx in toDelete { context.delete(tx) }
+        try? context.save()
     }
 }
+
+private struct PositionsListContent: View {
+    let scope: ScopeResult
+    let emptyDescription: String
+    let onDeleteRequest: (PositionRow) -> Void
+
+    var body: some View {
+        if scope.positions.isEmpty {
+            ContentUnavailableView(
+                "Brak pozycji",
+                systemImage: "briefcase",
+                description: Text(emptyDescription)
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        } else {
+            List {
+                ForEach(scope.positions, id: \.id) { pos in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(pos.symbol).font(.headline)
+                            Text(pos.name).font(.caption).foregroundStyle(.secondary)
+                            Text("\(LWFormatting.number(pos.quantity)) szt. · średnio \(LWFormatting.money(pos.avgCost, currency: pos.currency))")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text(LWFormatting.money(pos.currentValue, currency: pos.currency)).font(.headline)
+                            Text(LWFormatting.money(pos.totalProfit, currency: pos.currency))
+                                .font(.caption)
+                                .foregroundStyle(pos.totalProfit >= 0 ? .green : .red)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .contextMenu {
+                        Button("Usuń pozycję…", role: .destructive) {
+                            onDeleteRequest(pos)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 

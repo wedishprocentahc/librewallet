@@ -13,7 +13,7 @@ enum AssetTypeDetection {
         if matches(text, pattern: #"\b(etf|ucits|ishares|vanguard|xtrackers|amundi|lyxor|invesco|spdr|wisdomtree)\b"#) {
             return "etf"
         }
-        if matches(text, pattern: #"\b(bond|oblig|treasury|skarb|edo|coi|tos|rod|rso|catalyst)\b"#) {
+        if matches(text, pattern: #"\b(bond|oblig|treasury|skarb|edo|coi|tos|rod|ros|ror|dor|ots|rso|catalyst)\b"#) {
             return "bond"
         }
         if symbol.isEmpty, matches(text, pattern: #"cash|gotow"#) {

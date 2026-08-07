@@ -56,10 +56,7 @@ struct RootView: View {
                     ForEach(groups) { group in
                         DisclosureGroup {
                             ForEach(group.portfolios.sorted(by: { $0.createdAt < $1.createdAt })) { portfolio in
-                                Button {
-                                    appState.selectPortfolio(portfolio)
-                                    appState.navigationSelection = .portfolio(portfolio.id)
-                                } label: {
+                                NavigationLink(value: NavigationDestination.portfolio(portfolio.id)) {
                                     HStack(spacing: 8) {
                                         Circle()
                                             .fill(Color(hex: portfolio.colorHex) ?? .gray)
@@ -67,7 +64,9 @@ struct RootView: View {
                                         Label(portfolio.name, systemImage: "briefcase")
                                     }
                                 }
-                                .buttonStyle(.plain)
+                                .simultaneousGesture(TapGesture().onEnded {
+                                    appState.selectPortfolio(portfolio)
+                                })
                                 .contextMenu {
                                     Button("Edytuj…") {
                                         renamingPortfolio = portfolio
@@ -86,12 +85,18 @@ struct RootView: View {
                             }
                             .buttonStyle(.plain)
                         } label: {
-                            HStack(spacing: 8) {
-                                Circle()
-                                    .fill(Color(hex: group.colorHex) ?? .gray)
-                                    .frame(width: 10, height: 10)
-                                Label(group.name, systemImage: "folder")
+                            NavigationLink(value: NavigationDestination.group(group.id)) {
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(Color(hex: group.colorHex) ?? .gray)
+                                        .frame(width: 10, height: 10)
+                                    Label(group.name, systemImage: "folder")
+                                }
                             }
+                            .simultaneousGesture(TapGesture().onEnded {
+                                appState.selectedGroupId = group.id
+                                appState.selectedPortfolioId = nil
+                            })
                                 .contextMenu {
                                     Button("Edytuj…") {
                                         renamingGroup = group

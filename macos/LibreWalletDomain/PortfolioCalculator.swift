@@ -61,7 +61,8 @@ enum PortfolioCalculator {
         portfolio: Portfolio?,
         allTransactions: [Transaction],
         quotes: [Quote],
-        includeCashInAllocation: Bool = true
+        includeCashInAllocation: Bool = true,
+        ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
     ) -> ScopeResult {
         let baseCurrency = portfolio?.baseCurrency ?? "PLN"
         let scoped = allTransactions
@@ -110,19 +111,22 @@ enum PortfolioCalculator {
 
         // Summarize positions with prices
         let positionRows: [PositionRow] = positions.values
-            .map { acc in
-                let q = quoteMap["\(acc.symbol)|\(acc.currency)"] ?? quoteBySymbol[acc.symbol.uppercased()]
-                // IMPORTANT:
-                // Many XTB imports store account-currency amounts (e.g. PLN) even for US/DE instruments.
-                // If we blindly use a Yahoo quote in USD/EUR, we can destroy the portfolio value.
-                // JS app avoided this by keeping consistent instrument currency detection. For now, we only
-                // apply a quote if its currency matches the position currency (or is unknown).
-                let quoteCurrency = (q?.currency ?? "").uppercased()
-                let positionCurrency = acc.currency.uppercased()
-                let canUseQuote = q != nil && (quoteCurrency.isEmpty || quoteCurrency == "N/A" || quoteCurrency == positionCurrency)
-                let price = canUseQuote ? (q?.price ?? 0) : (acc.lastPrice ?? 0)
-                let currentValue = acc.quantity * price
+            .compactMap { acc -> PositionRow? in
+                // Yahoo vs XTB mismatch for this ticker — ignore in valuation (web parity).
+                if IgnoredSymbols.contains(acc.symbol) {
+                    return nil
+                }
                 let invested = acc.invested
+                let price: Double
+                let currentValue: Double
+                if let bondValue = bondMarkValue(acc, asOf: Date()) {
+                    currentValue = bondValue
+                    price = abs(acc.quantity) > 0.0000001 ? bondValue / acc.quantity : 0
+                } else {
+                    let q = quoteMap["\(acc.symbol)|\(acc.currency)"] ?? quoteBySymbol[acc.symbol.uppercased()]
+                    price = markPrice(for: acc, quote: q, ratesToPLN: ratesToPLN)
+                    currentValue = acc.quantity * price
+                }
                 let profit = currentValue - invested
                 return PositionRow(
                     id: "\(acc.symbol)|\(acc.currency)",
@@ -236,7 +240,12 @@ enum PortfolioCalculator {
 
         for portfolio in portfolios {
             let scoped = allTransactions.filter { $0.portfolio?.id == portfolio.id }
-            let scope = calculate(portfolio: portfolio, allTransactions: scoped, quotes: quotes)
+            let scope = calculate(
+                portfolio: portfolio,
+                allTransactions: scoped,
+                quotes: quotes,
+                ratesToPLN: ratesToPLN
+            )
             let base = scope.baseCurrency.uppercased()
 
             totalValuePLN += convertToPLN(scope.totalValueBase, currency: base, rates: ratesToPLN)
@@ -380,6 +389,14 @@ enum PortfolioCalculator {
             let isLatestDay = day == endDay
             var positionsValue = 0.0
             for acc in positions.values where abs(acc.quantity) > 0.0000001 {
+                if IgnoredSymbols.contains(acc.symbol) {
+                    continue
+                }
+                if let bondValue = bondMarkValue(acc, asOf: day) {
+                    positionsValue += max(0, bondValue)
+                    continue
+                }
+
                 let avgCost = acc.invested / acc.quantity
                 var price = avgCost > 0 ? avgCost : (acc.lastPrice ?? 0)
                 let symbolKey = acc.symbol.uppercased()
@@ -408,10 +425,11 @@ enum PortfolioCalculator {
                     }
                 } else if isLatestDay {
                     let q = quoteMap["\(acc.symbol)|\(acc.currency)"] ?? quoteBySymbol[acc.symbol.uppercased()]
-                    let quoteCurrency = (q?.currency ?? "").uppercased()
-                    let positionCurrency = acc.currency.uppercased()
-                    let canUseQuote = q != nil && (quoteCurrency.isEmpty || quoteCurrency == "N/A" || quoteCurrency == positionCurrency)
-                    if canUseQuote { price = q?.price ?? price }
+                    price = markPrice(
+                        for: acc,
+                        quote: q,
+                        ratesToPLN: NBPExchangeRateService.cachedRatesToPLN()
+                    )
                 }
 
                 positionsValue += max(0, acc.quantity * price)
@@ -503,9 +521,74 @@ enum PortfolioCalculator {
         NBPExchangeRateService.convertToPLN(amount, currency: currency, rates: rates)
     }
 
-    // Note: currency conversion for quotes is intentionally disabled for now.
-    // We only apply quotes when currencies match (see above), otherwise we fall back to lastPrice
-    // derived from transaction history. This keeps XTB account-currency imports stable.
+    // Note: quotes in a foreign currency are converted into the position/account currency
+    // via NBP mid rates (same approach as the web app). Without a rate we fall back to cost.
+
+    private static func markPrice(
+        for acc: PositionAccumulator,
+        quote: Quote?,
+        ratesToPLN: [String: Double]
+    ) -> Double {
+        let fallback = acc.lastPrice ?? 0
+        guard let quote, quote.price > 0 else { return fallback }
+
+        let quoteCurrency = quote.currency.uppercased()
+        let positionCurrency = acc.currency.uppercased()
+        if quoteCurrency.isEmpty || quoteCurrency == "N/A" || quoteCurrency == positionCurrency {
+            return quote.price
+        }
+        if let converted = convertPrice(quote.price, from: quoteCurrency, to: positionCurrency, rates: ratesToPLN) {
+            return converted
+        }
+        return fallback
+    }
+
+    /// Convert a market price between currencies using PLN as the bridge (NBP table A).
+    static func convertPrice(
+        _ price: Double,
+        from quoteCurrency: String,
+        to positionCurrency: String,
+        rates: [String: Double]
+    ) -> Double? {
+        let from = quoteCurrency.uppercased()
+        let to = positionCurrency.uppercased()
+        if from == to { return price }
+        let fromRate = from == "PLN" ? 1.0 : rates[from]
+        let toRate = to == "PLN" ? 1.0 : rates[to]
+        guard let fromRate, fromRate > 0, let toRate, toRate > 0 else { return nil }
+        let pricePLN = price * fromRate
+        return pricePLN / toRate
+    }
+
+    private static func bondMarkValue(_ acc: PositionAccumulator, asOf: Date) -> Double? {
+        guard !acc.bondLots.isEmpty else { return nil }
+        return acc.bondLots.reduce(0.0) { partial, lot in
+            guard lot.quantity > 0 else { return partial }
+            return partial + lot.quantity * BondPricing.currentPrice(
+                terms: lot.terms,
+                purchaseDate: lot.purchaseDate,
+                asOf: asOf
+            )
+        }
+    }
+
+    private static func reduceBondLots(_ lots: inout [BondLot], selling: Double) {
+        var remaining = selling
+        var next: [BondLot] = []
+        for lot in lots {
+            guard remaining > 0.0000001 else {
+                next.append(lot)
+                continue
+            }
+            if lot.quantity <= remaining + 0.0000001 {
+                remaining -= lot.quantity
+            } else {
+                next.append(BondLot(quantity: lot.quantity - remaining, purchaseDate: lot.purchaseDate, terms: lot.terms))
+                remaining = 0
+            }
+        }
+        lots = next
+    }
 
     private struct NormalizedTransaction {
         let transaction: Transaction
@@ -613,6 +696,15 @@ enum PortfolioCalculator {
                 acc.lastPrice = norm.price
             }
             acc.lastTradeDate = Calendar.current.startOfDay(for: tx.date)
+            if let terms = BondPricing.resolveTerms(
+                symbol: tx.symbol,
+                name: tx.name,
+                notes: tx.notes,
+                assetType: tx.assetType ?? acc.assetType
+            ), qty > 0 {
+                acc.assetType = "bond"
+                acc.bondLots.append(BondLot(quantity: qty, purchaseDate: tx.date, terms: terms))
+            }
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? -(value + fee))
         case .sell:
             let qty = norm.quantity
@@ -629,8 +721,12 @@ enum PortfolioCalculator {
                 acc.quantity = 0
                 acc.invested = 0
                 acc.lastPrice = nil
+                acc.bondLots = []
             } else {
                 acc.lastPrice = acc.invested / acc.quantity
+                if !acc.bondLots.isEmpty {
+                    reduceBondLots(&acc.bondLots, selling: qty)
+                }
             }
             acc.realized += value - fee - costSold
             acc.lastTradeDate = Calendar.current.startOfDay(for: tx.date)
@@ -653,6 +749,14 @@ enum PortfolioCalculator {
     }
 }
 
+private enum IgnoredSymbols {
+    /// Yahoo prices for EEE diverge badly from the broker account — ignore in valuation.
+    static func contains(_ symbol: String) -> Bool {
+        let base = symbol.uppercased().split(separator: ".").first.map(String.init) ?? symbol.uppercased()
+        return base == "EEE"
+    }
+}
+
 private struct PositionAccumulator {
     var symbol: String
     var name: String
@@ -665,5 +769,6 @@ private struct PositionAccumulator {
     var income: Double = 0
     var lastPrice: Double? = nil
     var lastTradeDate: Date? = nil
+    var bondLots: [BondLot] = []
 }
 
