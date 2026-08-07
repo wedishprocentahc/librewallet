@@ -5,6 +5,15 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.1.3] — 2026-08-07
+
+### Naprawione (native macOS)
+
+- Import XTB czyta arkusz Cash Operations (wcześniej brał tylko Closed Positions).
+- Wycena walorów w obcej walucie (np. NVDA.US na koncie PLN) przez kursy NBP.
+- Zysk z obligacji (narosłe odsetki) oraz feedback po dodaniu obligacji.
+- Widok portfela pokazuje pozycje; przywrócona zakładka Pozycje.
+
 ## [0.1.2] — 2026-07-22
 
 ### Naprawione (native macOS)
