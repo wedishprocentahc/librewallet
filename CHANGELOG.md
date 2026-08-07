@@ -5,6 +5,12 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.1.4] — 2026-08-07
+
+### Naprawione (native macOS)
+
+- „Pobierz aktualizację” otwiera instalator `.pkg` zamiast ZIP.
+
 ## [0.1.3] — 2026-08-07
 
 ### Naprawione (native macOS)

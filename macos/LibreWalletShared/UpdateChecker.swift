@@ -20,6 +20,20 @@ enum LibreWalletDistribution {
     static var latestReleaseAPIURL: URL {
         URL(string: "https://api.github.com/repos/\(githubOwner)/\(githubRepo)/releases/latest")!
     }
+
+    /// Prefer the native installer `.pkg` (arm64 when present); fall back to ZIP.
+    static func preferredDownloadURL(from assets: [GitHubAsset]) -> URL? {
+        let pkgs = assets.filter { $0.name.lowercased().hasSuffix(".pkg") }
+        let preferredPkg = pkgs.first(where: { $0.name.lowercased().contains("arm64") }) ?? pkgs.first
+        if let preferredPkg, let url = URL(string: preferredPkg.browserDownloadURL) {
+            return url
+        }
+        if let zip = assets.first(where: { $0.name == zipAssetName }),
+           let url = URL(string: zip.browserDownloadURL) {
+            return url
+        }
+        return nil
+    }
 }
 
 enum UpdateChecker {
@@ -46,12 +60,10 @@ enum UpdateChecker {
             }
 
             let releaseURL = URL(string: release.htmlURL) ?? LibreWalletDistribution.releasesPageURL
-            let zipURL = release.assets
-                .first(where: { $0.name == LibreWalletDistribution.zipAssetName })
-                .flatMap { URL(string: $0.browserDownloadURL) }
+            let downloadURL = LibreWalletDistribution.preferredDownloadURL(from: release.assets)
                 ?? LibreWalletDistribution.latestZipURL
 
-            return .updateAvailable(latest: stripV(latest), releaseURL: releaseURL, downloadURL: zipURL)
+            return .updateAvailable(latest: stripV(latest), releaseURL: releaseURL, downloadURL: downloadURL)
         } catch {
             return .failed(error.localizedDescription)
         }
@@ -65,6 +77,16 @@ enum UpdateChecker {
     }
 }
 
+struct GitHubAsset: Decodable, Equatable {
+    let name: String
+    let browserDownloadURL: String
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case browserDownloadURL = "browser_download_url"
+    }
+}
+
 private struct GitHubRelease: Decodable {
     let tagName: String
     let htmlURL: String
@@ -74,15 +96,5 @@ private struct GitHubRelease: Decodable {
         case tagName = "tag_name"
         case htmlURL = "html_url"
         case assets
-    }
-}
-
-private struct GitHubAsset: Decodable {
-    let name: String
-    let browserDownloadURL: String
-
-    enum CodingKeys: String, CodingKey {
-        case name
-        case browserDownloadURL = "browser_download_url"
     }
 }
