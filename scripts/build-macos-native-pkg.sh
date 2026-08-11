@@ -62,8 +62,13 @@ chmod +x "$SCRIPTS/preinstall"
 cat > "$SCRIPTS/postinstall" <<'EOF'
 #!/bin/bash
 APP="/Applications/LibreWallet.app"
-xattr -dr com.apple.quarantine "$APP" 2>/dev/null || true
-chmod 755 "$APP/Contents/MacOS"/*
+# Gatekeeper marks GitHub downloads as quarantine; unsigned/ad-hoc builds then look "damaged".
+xattr -cr "$APP" 2>/dev/null || true
+find "$APP" -type d -exec chmod 755 {} \; 2>/dev/null || true
+find "$APP" -type f -exec chmod 644 {} \; 2>/dev/null || true
+chmod 755 "$APP/Contents/MacOS"/* 2>/dev/null || true
+# Refresh ad-hoc signature after permission/xattr fixes (no Developer ID required).
+codesign --force --deep --sign - "$APP" 2>/dev/null || true
 exit 0
 EOF
 chmod +x "$SCRIPTS/postinstall"

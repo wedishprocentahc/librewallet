@@ -113,6 +113,14 @@ if [[ "$SIGN" -eq 1 ]]; then
 fi
 
 echo "==> Packing $ZIP_NAME"
+# Normalize perms (archive on exFAT/external volumes often ends up as 700) and strip xattrs.
+xattr -cr "$APP_SRC" 2>/dev/null || true
+find "$APP_SRC" -type d -exec chmod 755 {} \;
+find "$APP_SRC" -type f -exec chmod 644 {} \;
+chmod 755 "$APP_SRC/Contents/MacOS/"*
+# Ad-hoc re-sign after chmod/xattr so Gatekeeper sees a consistent local signature.
+# (Downloads from the internet still need: xattr -cr … or prefer the .pkg.)
+codesign --force --deep --sign - "$APP_SRC" 2>/dev/null || true
 (
   cd "$ARCHIVE_PATH/Products/Applications"
   ditto -c -k --keepParent "$APP_NAME" "$DIST/$ZIP_NAME"
@@ -147,9 +155,10 @@ NOTES_FILE="$DIST/release-notes.md"
     echo "2. Zainstaluj / przenieś \`LibreWallet.app\` do **Aplikacje**."
     echo "3. Uruchom dwuklikiem (build notaryzowany)."
   else
-    echo "1. Pobierz \`${ZIP_NAME}\` i rozpakuj (albo \`${PKG_NAME}\`)."
-    echo "2. Przenieś \`LibreWallet.app\` do folderu Aplikacje."
-    echo "3. Przy pierwszym otwarciu: **prawy przycisk → Otwórz** (Gatekeeper)."
+    echo "1. **Preferowane:** pobierz \`${PKG_NAME}\` i zainstaluj (czyści kwarantannę Gatekeeper)."
+    echo "2. Albo \`${ZIP_NAME}\`: rozpakuj, przenieś \`LibreWallet.app\` do Aplikacji, potem w Terminalu:"
+    echo "   \`xattr -cr /Applications/LibreWallet.app && open /Applications/LibreWallet.app\`"
+    echo "3. Dwuklik samego ZIP często kończy się komunikatem „damaged or incomplete” — to Gatekeeper, nie uszkodzony plik."
   fi
   echo
   if [[ -f "$ROOT/CHANGELOG.md" ]]; then

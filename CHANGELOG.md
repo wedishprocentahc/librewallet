@@ -5,6 +5,12 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.1] — 2026-08-12
+
+### Naprawione (native macOS)
+
+- Instalator `.pkg` po instalacji czyści kwarantannę Gatekeeper, naprawia uprawnienia i odświeża podpis ad-hoc — apka nie pokazuje już „damaged or incomplete” po pobraniu z GitHuba.
+
 ## [0.5.0] — 2026-08-11
 
 ### Dodane (native macOS)
