@@ -52,15 +52,16 @@ struct DashboardView: View {
                         ContentUnavailableView("Brak danych", systemImage: "chart.pie", description: Text("Dodaj operacje lub zaimportuj historię."))
                             .frame(maxWidth: .infinity, minHeight: 160)
                     } else {
-                        Chart(allocationRows(scope)) { row in
-                            SectorMark(
-                                angle: .value("Wartość", row.value),
-                                innerRadius: .ratio(0.55)
-                            )
-                            .foregroundStyle(by: .value("Typ", row.label))
-                        }
-                        .frame(height: 220)
-                        .padding(.top, 8)
+                        let rows = allocationRows(scope)
+                        InteractiveDonutChart(
+                            slices: rows.map {
+                                .init(id: $0.key, label: $0.label, value: $0.value, color: assetTypeColor($0.key))
+                            },
+                            valueCurrency: scope.baseCurrency,
+                            centerIdleTitle: LWFormatting.money(rows.reduce(0) { $0 + $1.value }, currency: scope.baseCurrency),
+                            centerIdleSubtitle: L10n.t("dashboard.allocation")
+                        )
+                        .padding(.top, 4)
                     }
                 }
 
@@ -1003,10 +1004,345 @@ private struct AllocationRow: Identifiable {
     }
 }
 
+private func assetTypeColor(_ key: String) -> Color {
+    switch key {
+    case "etf": return Color(red: 0.18, green: 0.52, blue: 0.72)
+    case "stock": return Color(red: 0.82, green: 0.32, blue: 0.28)
+    case "bond": return Color(red: 0.52, green: 0.38, blue: 0.72)
+    case "cash": return Color(red: 0.20, green: 0.62, blue: 0.42)
+    case "other": return Color(red: 0.45, green: 0.48, blue: 0.52)
+    default: return .gray
+    }
+}
+
 private struct CurrencyRow: Identifiable {
     var id: String { currency }
     let currency: String
     let value: Double
+}
+
+private struct InteractiveDonutSlice: Identifiable {
+    let id: String
+    let label: String
+    let value: Double
+    let color: Color
+}
+
+private struct InteractiveDonutChart: View {
+    let slices: [InteractiveDonutSlice]
+    let valueCurrency: String
+    var centerIdleTitle: String? = nil
+    var centerIdleSubtitle: String? = nil
+    var showsLegend: Bool = true
+    var chartHeight: CGFloat = 230
+    var innerRatio: CGFloat = 0.58
+
+    @State private var hoveredID: String?
+    @State private var selectedValue: Double?
+
+    private var total: Double { max(0.000001, slices.reduce(0) { $0 + $1.value }) }
+
+    private var hoveredSlice: InteractiveDonutSlice? {
+        guard let hoveredID else { return nil }
+        return slices.first(where: { $0.id == hoveredID })
+    }
+
+    var body: some View {
+        VStack(spacing: 14) {
+            ZStack {
+                Chart(slices) { slice in
+                    let isHot = hoveredID == slice.id
+                    SectorMark(
+                        angle: .value("Wartość", slice.value),
+                        innerRadius: .ratio(innerRatio),
+                        outerRadius: .ratio(isHot ? 1.0 : 0.88),
+                        angularInset: isHot ? 0.8 : 1.8
+                    )
+                    .cornerRadius(isHot ? 7 : 4)
+                    .foregroundStyle(slice.color)
+                    .opacity(hoveredID == nil || isHot ? 1.0 : 0.42)
+                    .shadow(color: isHot ? Color.black.opacity(0.28) : .clear, radius: isHot ? 7 : 0, y: isHot ? 3 : 0)
+                }
+                .chartLegend(.hidden)
+                .chartAngleSelection(value: $selectedValue)
+                .animation(.spring(response: 0.28, dampingFraction: 0.76), value: hoveredID)
+                .frame(height: chartHeight)
+                .chartOverlay { proxy in
+                    GeometryReader { geo in
+                        let plot = proxy.plotFrame.map { geo[$0] } ?? geo.frame(in: .local)
+                        Rectangle()
+                            .fill(Color.clear)
+                            .contentShape(Rectangle())
+                            .onContinuousHover { phase in
+                                switch phase {
+                                case .active(let point):
+                                    updateHover(at: point, plotFrame: plot)
+                                case .ended:
+                                    hoveredID = nil
+                                    selectedValue = nil
+                                }
+                            }
+                    }
+                }
+                .onChange(of: selectedValue) { _, newValue in
+                    guard let newValue else { return }
+                    hoveredID = sliceID(containing: newValue)
+                }
+
+                // Soft outline ring for the active slice
+                if let hot = hoveredSlice {
+                    DonutSliceOutline(
+                        slices: slices,
+                        highlightedID: hot.id,
+                        innerRatio: innerRatio,
+                        outerRatio: 1.0
+                    )
+                    .frame(height: chartHeight)
+                    .allowsHitTesting(false)
+                }
+
+                VStack(spacing: 4) {
+                    if let hot = hoveredSlice {
+                        Text(hot.label)
+                            .font(.headline.weight(.semibold))
+                        Text(formatSharePercent((hot.value / total) * 100))
+                            .font(.title2.weight(.bold))
+                            .foregroundStyle(hot.color)
+                        Text(LWFormatting.money(hot.value, currency: valueCurrency))
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        if let centerIdleTitle {
+                            Text(centerIdleTitle)
+                                .font(.title3.weight(.bold))
+                                .multilineTextAlignment(.center)
+                        }
+                        if let centerIdleSubtitle {
+                            Text(centerIdleSubtitle)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                    }
+                }
+                .padding(.horizontal, 28)
+                .animation(.easeInOut(duration: 0.15), value: hoveredID)
+            }
+
+            if showsLegend {
+                VStack(alignment: .center, spacing: 8) {
+                    ForEach(slices.sorted(by: { $0.value > $1.value })) { slice in
+                        let pct = (slice.value / total) * 100
+                        let isHot = hoveredID == slice.id
+                        HStack(spacing: 10) {
+                            Circle()
+                                .fill(slice.color)
+                                .frame(width: 10, height: 10)
+                                .overlay {
+                                    if isHot {
+                                        Circle().strokeBorder(Color.primary.opacity(0.55), lineWidth: 1.5)
+                                    }
+                                }
+                            Text(slice.label)
+                                .font(.subheadline.weight(isHot ? .semibold : .regular))
+                                .frame(minWidth: 72, alignment: .leading)
+                            Text(formatSharePercent(pct))
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 70, alignment: .leading)
+                            Text(LWFormatting.money(slice.value, currency: valueCurrency))
+                                .font(.subheadline)
+                                .foregroundStyle(isHot ? .primary : .secondary)
+                                .frame(minWidth: 120, alignment: .trailing)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(isHot ? slice.color.opacity(0.12) : Color.clear)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .strokeBorder(isHot ? slice.color.opacity(0.45) : Color.clear, lineWidth: 1)
+                        )
+                        .contentShape(Rectangle())
+                        .onHover { inside in
+                            hoveredID = inside ? slice.id : (hoveredID == slice.id ? nil : hoveredID)
+                        }
+                    }
+                }
+                .frame(maxWidth: 420)
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    private func updateHover(at point: CGPoint, plotFrame: CGRect) {
+        let center = CGPoint(x: plotFrame.midX, y: plotFrame.midY)
+        let dx = point.x - center.x
+        let dy = point.y - center.y
+        let radius = sqrt(dx * dx + dy * dy)
+        let outer = min(plotFrame.width, plotFrame.height) / 2
+        let inner = outer * innerRatio
+        // Allow a bit of slack for the elevated slice.
+        guard radius >= inner * 0.82, radius <= outer * 1.08 else {
+            hoveredID = nil
+            selectedValue = nil
+            return
+        }
+
+        // Swift Charts SectorMark starts at top and goes clockwise.
+        var degrees = atan2(dx, -dy) * 180 / .pi
+        if degrees < 0 { degrees += 360 }
+        let value = (degrees / 360) * total
+        selectedValue = value
+        hoveredID = sliceID(containing: value)
+    }
+
+    private func sliceID(containing value: Double) -> String? {
+        var cumulative = 0.0
+        for slice in slices {
+            cumulative += slice.value
+            if value <= cumulative + 0.000_001 {
+                return slice.id
+            }
+        }
+        return slices.last?.id
+    }
+
+    private func formatSharePercent(_ value: Double) -> String {
+        let formatter = NumberFormatter()
+        formatter.locale = .current
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 1
+        formatter.maximumFractionDigits = 1
+        let str = formatter.string(from: NSNumber(value: value)) ?? String(format: "%.1f", value)
+        return "\(str)%"
+    }
+}
+
+/// Vector outline matching the hovered donut slice (lift + rounded stroke).
+private struct DonutSliceOutline: View {
+    let slices: [InteractiveDonutSlice]
+    let highlightedID: String
+    let innerRatio: CGFloat
+    let outerRatio: CGFloat
+    /// Matches `SectorMark.cornerRadius` used for the hot slice.
+    var cornerRadius: CGFloat = 7
+
+    var body: some View {
+        Canvas { context, size in
+            let total = max(0.000001, slices.reduce(0) { $0 + $1.value })
+            guard let index = slices.firstIndex(where: { $0.id == highlightedID }) else { return }
+
+            var startFraction = 0.0
+            for i in 0..<index {
+                startFraction += slices[i].value / total
+            }
+            let endFraction = startFraction + slices[index].value / total
+
+            let center = CGPoint(x: size.width / 2, y: size.height / 2)
+            let outer = min(size.width, size.height) / 2 * outerRatio
+            let inner = min(size.width, size.height) / 2 * innerRatio * 0.98
+
+            // Slight inset to follow SectorMark angularInset on the hot slice.
+            let insetFraction = min(0.004, (endFraction - startFraction) * 0.08)
+            let start = Angle.degrees((startFraction + insetFraction) * 360 - 90)
+            let end = Angle.degrees((endFraction - insetFraction) * 360 - 90)
+
+            let path = roundedAnnularSectorPath(
+                center: center,
+                innerRadius: inner,
+                outerRadius: outer,
+                startAngle: start,
+                endAngle: end,
+                cornerRadius: cornerRadius
+            )
+
+            context.stroke(
+                path,
+                with: .color(.primary.opacity(0.7)),
+                style: StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round)
+            )
+            context.stroke(
+                path,
+                with: .color(slices[index].color.opacity(0.95)),
+                style: StrokeStyle(lineWidth: 1.15, lineCap: .round, lineJoin: .round)
+            )
+        }
+        .animation(.spring(response: 0.28, dampingFraction: 0.76), value: highlightedID)
+    }
+}
+
+/// Annular sector with filleted corners (matches Swift Charts `SectorMark` cornerRadius look).
+private func roundedAnnularSectorPath(
+    center: CGPoint,
+    innerRadius: CGFloat,
+    outerRadius: CGFloat,
+    startAngle: Angle,
+    endAngle: Angle,
+    cornerRadius: CGFloat
+) -> Path {
+    let a0 = startAngle.radians
+    let a1 = endAngle.radians
+    let span = a1 - a0
+
+    func polar(_ angle: Double, _ radius: CGFloat) -> CGPoint {
+        CGPoint(
+            x: center.x + CGFloat(cos(angle)) * radius,
+            y: center.y + CGFloat(sin(angle)) * radius
+        )
+    }
+
+    func sharpPath() -> Path {
+        var path = Path()
+        path.addArc(center: center, radius: outerRadius, startAngle: startAngle, endAngle: endAngle, clockwise: false)
+        path.addArc(center: center, radius: innerRadius, startAngle: endAngle, endAngle: startAngle, clockwise: true)
+        path.closeSubpath()
+        return path
+    }
+
+    guard span > 0.025 else { return sharpPath() }
+
+    let cr = min(
+        cornerRadius,
+        (outerRadius - innerRadius) / 2.15,
+        CGFloat(span) * innerRadius / 2.4
+    )
+    guard cr >= 0.8 else { return sharpPath() }
+
+    let oOff = Double(cr / outerRadius)
+    let iOff = Double(cr / innerRadius)
+    guard span > (oOff + iOff) * 2.1 else { return sharpPath() }
+
+    var path = Path()
+    path.move(to: polar(a0 + oOff, outerRadius))
+    path.addArc(
+        center: center,
+        radius: outerRadius,
+        startAngle: .radians(a0 + oOff),
+        endAngle: .radians(a1 - oOff),
+        clockwise: false
+    )
+    // Outer → end radial
+    path.addQuadCurve(to: polar(a1, outerRadius - cr), control: polar(a1, outerRadius))
+    path.addLine(to: polar(a1, innerRadius + cr))
+    // End radial → inner
+    path.addQuadCurve(to: polar(a1 - iOff, innerRadius), control: polar(a1, innerRadius))
+    path.addArc(
+        center: center,
+        radius: innerRadius,
+        startAngle: .radians(a1 - iOff),
+        endAngle: .radians(a0 + iOff),
+        clockwise: true
+    )
+    // Inner → start radial
+    path.addQuadCurve(to: polar(a0, innerRadius + cr), control: polar(a0, innerRadius))
+    path.addLine(to: polar(a0, outerRadius - cr))
+    // Start radial → outer
+    path.addQuadCurve(to: polar(a0 + oOff, outerRadius), control: polar(a0, outerRadius))
+    path.closeSubpath()
+    return path
 }
 
 private struct CurrencyExposureDonut: View {
@@ -1015,70 +1351,23 @@ private struct CurrencyExposureDonut: View {
     let currency: String
 
     var body: some View {
-        let total = max(0.000001, rows.reduce(0) { $0 + $1.value })
-
-        VStack(spacing: 12) {
-            ZStack {
-                Chart(rows) { row in
-                    SectorMark(
-                        angle: .value("Wartość", row.value),
-                        innerRadius: .ratio(0.62)
-                    )
-                    .foregroundStyle(currencyColor(row.currency))
-                }
-                .chartLegend(.hidden)
-                .frame(height: 220)
-
-                VStack(spacing: 4) {
-                    Text(totalLabel)
-                        .font(.title2.weight(.bold))
-                    Text("Ekspozycja walutowa")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
-
-            VStack(alignment: .center, spacing: 10) {
-                ForEach(rows.sorted(by: { $0.value > $1.value })) { row in
-                    let pct = (row.value / total) * 100
-                    HStack(spacing: 10) {
-                        Circle()
-                            .fill(currencyColor(row.currency))
-                            .frame(width: 10, height: 10)
-                        Text(row.currency)
-                            .font(.subheadline.weight(.semibold))
-                            .frame(width: 44, alignment: .leading)
-                        Text(formatSharePercent(pct))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 70, alignment: .leading)
-                        Text(LWFormatting.money(row.value, currency: currency))
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                            .frame(width: 140, alignment: .trailing)
-                    }
-                }
-            }
-            .frame(maxWidth: 360, alignment: .center)
-        }
-        .padding(.top, 8)
-    }
-
-    private func formatSharePercent(_ value: Double) -> String {
-        let formatter = NumberFormatter()
-        formatter.locale = .current
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 2
-        formatter.maximumFractionDigits = 2
-        let str = formatter.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
-        return "\(str)%"
+        InteractiveDonutChart(
+            slices: rows.map {
+                .init(id: $0.currency, label: $0.currency, value: $0.value, color: currencyColor($0.currency))
+            },
+            valueCurrency: currency,
+            centerIdleTitle: totalLabel,
+            centerIdleSubtitle: "Ekspozycja walutowa",
+            showsLegend: true,
+            innerRatio: 0.62
+        )
     }
 
     private func currencyColor(_ code: String) -> Color {
         switch code.uppercased() {
-        case "USD": return Color(red: 0.64, green: 0.44, blue: 0.12) // brown-ish
-        case "PLN": return Color(red: 0.09, green: 0.42, blue: 0.30) // green-ish
-        case "EUR": return Color(red: 0.11, green: 0.33, blue: 0.67) // blue-ish
+        case "USD": return Color(red: 0.64, green: 0.44, blue: 0.12)
+        case "PLN": return Color(red: 0.09, green: 0.42, blue: 0.30)
+        case "EUR": return Color(red: 0.11, green: 0.33, blue: 0.67)
         default: return .gray
         }
     }
