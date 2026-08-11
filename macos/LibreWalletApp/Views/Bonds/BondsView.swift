@@ -12,8 +12,6 @@ struct BondsView: View {
     @State private var presetId: String = BondPresets.all.first?.id ?? "OTS"
     @State private var nominalCount: String = "1"
     @State private var purchaseDate: Date = .now
-    @State private var showSavedAlert = false
-    @State private var savedSummary = ""
     @State private var errorMessage: String?
 
     // Overrides
@@ -129,14 +127,6 @@ struct BondsView: View {
         }
         .onChange(of: portfolios.count) { _, _ in
             syncPortfolioSelection()
-        }
-        .alert("Dodano obligacje", isPresented: $showSavedAlert) {
-            Button("OK", role: .cancel) {}
-            Button("Pokaż operacje") {
-                appState.navigationSelection = .transactions
-            }
-        } message: {
-            Text(savedSummary)
         }
     }
 
@@ -341,11 +331,8 @@ struct BondsView: View {
             return
         }
 
-        let unit = BondPricing.currentPrice(terms: terms, purchaseDate: purchaseDate)
-        let value = unit * Double(count)
-        let profit = value - gross
-        savedSummary = "\(terms.code): \(count) szt. za \(LWFormatting.money(gross, currency: portfolio.baseCurrency)). Szac. dziś: \(LWFormatting.money(value, currency: portfolio.baseCurrency)) (zysk \(LWFormatting.money(profit, currency: portfolio.baseCurrency)))."
-        showSavedAlert = true
+        let summary = "\(terms.code): \(count) szt. · \(LWFormatting.money(gross, currency: portfolio.baseCurrency))"
+        appState.notifySuccess("\(L10n.t("feedback.bondAdded")) \(summary)")
     }
 
     private func redeemBond() {
@@ -387,6 +374,7 @@ struct BondsView: View {
         redeemQty = ""
         redeemPrice = ""
         redeemKey = ""
+        appState.notifySuccess(L10n.t("feedback.bondRedeemed"))
     }
 
     private func shortDate(_ date: Date) -> String {

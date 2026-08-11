@@ -299,6 +299,7 @@ struct AlertsView: View {
                                 .labelsHidden()
                                 Button(role: .destructive) {
                                     appState.priceAlerts.removeAll { $0.id == alert.id }
+                                    appState.notifySuccess(L10n.t("feedback.alertDeleted"))
                                 } label: {
                                     Image(systemName: "trash")
                                 }
@@ -455,6 +456,7 @@ struct AlertsView: View {
         symbol = ""
         target = ""
         pickedPositionId = nil
+        appState.notifySuccess(L10n.t("feedback.alertAdded"))
     }
 
     private func evaluateNow() async {
@@ -464,6 +466,7 @@ struct AlertsView: View {
         await PriceAlertService.notifyPrice(hit, updating: &alerts)
         appState.priceAlerts = alerts
         await evaluateDrift(notify: true, force: true)
+        appState.notifySuccess(L10n.t("feedback.alertsChecked"))
     }
 
     private func evaluateDrift(notify: Bool = false, force: Bool = false) async {

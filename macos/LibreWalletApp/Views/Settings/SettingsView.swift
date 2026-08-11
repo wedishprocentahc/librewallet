@@ -1,17 +1,14 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import AppKit
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var context
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var updateController: UpdateController
 
-    @State private var exportDoc: LWBackupDocument?
-    @State private var csvDoc: LWCSVDocument?
     @State private var importing = false
-    @State private var showExport = false
-    @State private var showCSVExport = false
     @State private var errorMessage: String?
     @State private var confirmClear = false
     @State private var fxCode: String = "USD"
@@ -80,6 +77,7 @@ struct SettingsView: View {
                         appState.fxOverrides = map
                         NBPExchangeRateService.invalidateCache()
                         fxRate = ""
+                        appState.notifySuccess(L10n.t("feedback.fxSaved"))
                     }
                 }
                 ForEach(appState.fxOverrides.sorted(by: { $0.key < $1.key }), id: \.key) { code, rate in
@@ -91,6 +89,7 @@ struct SettingsView: View {
                             map.removeValue(forKey: code)
                             appState.fxOverrides = map
                             NBPExchangeRateService.invalidateCache()
+                            appState.notifySuccess(L10n.t("feedback.fxDeleted"))
                         } label: {
                             Image(systemName: "trash")
                         }
@@ -122,6 +121,7 @@ struct SettingsView: View {
                         Button(role: .destructive) {
                             AppPreferences.removeSymbolMapping(id: m.id)
                             reloadMappings()
+                            appState.notifySuccess(L10n.t("feedback.mappingDeleted"))
                         } label: {
                             Image(systemName: "trash")
                         }
@@ -142,12 +142,7 @@ struct SettingsView: View {
 
             Section(L10n.t("settings.backup")) {
                 Button(L10n.t("settings.exportBackup")) {
-                    do {
-                        exportDoc = LWBackupDocument(data: try BackupService.export(context: context))
-                        showExport = true
-                    } catch {
-                        errorMessage = error.localizedDescription
-                    }
+                    exportBackup()
                 }
 
                 Button(L10n.t("settings.importBackup")) {
@@ -155,8 +150,7 @@ struct SettingsView: View {
                 }
 
                 Button(L10n.t("settings.exportCSV")) {
-                    csvDoc = LWCSVDocument(data: CSVExport.exportTransactions(transactions))
-                    showCSVExport = true
+                    exportTransactionsCSV()
                 }
 
                 Button(L10n.t("settings.clearData"), role: .destructive) {
@@ -185,28 +179,14 @@ struct SettingsView: View {
             Button(L10n.t("common.delete"), role: .destructive) {
                 do {
                     try BackupService.wipe(context: context)
+                    appState.notifySuccess(L10n.t("feedback.clearData"))
                 } catch {
                     errorMessage = error.localizedDescription
+                    appState.notifyError(error.localizedDescription)
                 }
             }
             Button(L10n.t("common.cancel"), role: .cancel) {}
         }
-        .fileExporter(
-            isPresented: $showExport,
-            document: exportDoc,
-            contentType: .json,
-            defaultFilename: "librewallet-backup.json"
-        ) { result in
-            if case .failure(let err) = result {
-                errorMessage = err.localizedDescription
-            }
-        }
-        .fileExporter(
-            isPresented: $showCSVExport,
-            document: csvDoc,
-            contentType: .commaSeparatedText,
-            defaultFilename: "librewallet-transactions.csv"
-        ) { _ in }
         .fileImporter(
             isPresented: $importing,
             allowedContentTypes: [.json],
@@ -216,14 +196,65 @@ struct SettingsView: View {
                 guard let url = try result.get().first else { return }
                 let data = try Data(contentsOf: url)
                 try BackupService.import(data: data, context: context, wipeExisting: true)
+                appState.notifySuccess(L10n.t("feedback.importBackup"))
             } catch {
                 errorMessage = error.localizedDescription
+                appState.notifyError(error.localizedDescription)
             }
         }
     }
 
     private func reloadMappings() {
         mappings = AppPreferences.symbolMappings
+    }
+
+    private func exportBackup() {
+        do {
+            let data = try BackupService.export(context: context)
+            let panel = NSSavePanel()
+            panel.canCreateDirectories = true
+            panel.allowedContentTypes = [.json]
+            panel.nameFieldStringValue = "librewallet-backup.json"
+            panel.begin { response in
+                guard response == .OK, let url = panel.url else { return }
+                do {
+                    try data.write(to: url, options: .atomic)
+                    Task { @MainActor in
+                        appState.notifySuccess(L10n.t("feedback.exportBackup"))
+                    }
+                } catch {
+                    Task { @MainActor in
+                        errorMessage = error.localizedDescription
+                        appState.notifyError(error.localizedDescription)
+                    }
+                }
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+            appState.notifyError(error.localizedDescription)
+        }
+    }
+
+    private func exportTransactionsCSV() {
+        let data = CSVExport.exportTransactions(transactions)
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "librewallet-transactions.csv"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            do {
+                try data.write(to: url, options: .atomic)
+                Task { @MainActor in
+                    appState.notifySuccess(L10n.t("feedback.exportCSV"))
+                }
+            } catch {
+                Task { @MainActor in
+                    errorMessage = error.localizedDescription
+                    appState.notifyError(error.localizedDescription)
+                }
+            }
+        }
     }
 }
 

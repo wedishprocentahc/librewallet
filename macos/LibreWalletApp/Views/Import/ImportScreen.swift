@@ -15,10 +15,6 @@ struct ImportScreen: View {
     @State private var selectedPortfolioId: UUID?
     @State private var errorMessage: String?
     @State private var isDropTargeted = false
-    @State private var showSavedAlert = false
-    @State private var savedCount = 0
-    @State private var templateDoc: LWCSVDocument?
-    @State private var showTemplateExport = false
 
     private var autoCreatesPortfolios: Bool {
         if previewSource?.localizedCaseInsensitiveContains("XTB") == true { return true }
@@ -54,19 +50,6 @@ struct ImportScreen: View {
         .navigationTitle(L10n.t("nav.import"))
         .id(appState.localizationEpoch)
         .onAppear(perform: onAppear)
-        .alert("Zapisano", isPresented: $showSavedAlert) {
-            Button("OK") {
-                appState.navigationSelection = .transactions
-            }
-        } message: {
-            Text("Dodano \(savedCount) operacji.")
-        }
-        .fileExporter(
-            isPresented: $showTemplateExport,
-            document: templateDoc,
-            contentType: .commaSeparatedText,
-            defaultFilename: "librewallet-import-template.csv"
-        ) { _ in }
     }
 
     private var errorBanner: some View {
@@ -168,8 +151,25 @@ struct ImportScreen: View {
     }
 
     private func exportTemplate() {
-        templateDoc = LWCSVDocument(data: CSVExport.templateCSV())
-        showTemplateExport = true
+        let data = CSVExport.templateCSV()
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "librewallet-import-template.csv"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            do {
+                try data.write(to: url, options: .atomic)
+                Task { @MainActor in
+                    appState.notifySuccess(L10n.t("feedback.exportTemplate"))
+                }
+            } catch {
+                Task { @MainActor in
+                    errorMessage = error.localizedDescription
+                    appState.notifyError(error.localizedDescription)
+                }
+            }
+        }
     }
 
     private func openIBKRPanel() {
@@ -268,7 +268,6 @@ struct ImportScreen: View {
 
     private func commitPreview() {
         errorMessage = nil
-        savedCount = 0
 
         if autoCreatesPortfolios {
             commitXTBGrouped()
@@ -281,13 +280,14 @@ struct ImportScreen: View {
             return
         }
 
+        let count = preview.count
         for item in preview {
             insert(item, into: portfolio)
         }
         try? context.save()
-        savedCount = preview.count
         clearPreview()
-        showSavedAlert = true
+        appState.notifySuccess(L10n.t("feedback.importSaved", ["count": "\(count)"]))
+        appState.navigationSelection = .transactions
     }
 
     private func commitXTBGrouped() {
@@ -303,6 +303,7 @@ struct ImportScreen: View {
         let group = ensureXTBGroup()
         var portfolioCache: [String: Portfolio] = [:]
         var lastPortfolio: Portfolio?
+        var savedCount = 0
 
         for (key, items) in grouped {
             let portfolio = ensureXTBPortfolio(
@@ -323,7 +324,8 @@ struct ImportScreen: View {
             appState.selectPortfolio(lastPortfolio)
         }
         clearPreview()
-        showSavedAlert = true
+        appState.notifySuccess(L10n.t("feedback.importSaved", ["count": "\(savedCount)"]))
+        appState.navigationSelection = .transactions
     }
 
     private func ensureXTBGroup() -> PortfolioGroup {

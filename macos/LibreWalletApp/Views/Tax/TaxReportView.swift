@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import AppKit
 
 private enum TaxScopeFilter: Hashable {
     case allTaxable
@@ -18,8 +19,6 @@ struct TaxReportView: View {
     @State private var report: TaxYearReport?
     @State private var isLoading = false
     @State private var loadError: String?
-    @State private var exportDoc: LWCSVDocument?
-    @State private var showExport = false
 
     private var years: [Int] {
         let ys = Set(transactions.map { Calendar.current.component(.year, from: $0.date) })
@@ -143,13 +142,11 @@ struct TaxReportView: View {
 
                 Section {
                     Button {
-                        if let report {
-                            exportDoc = LWCSVDocument(data: TaxReport.csv(report: report))
-                            showExport = true
-                        }
+                        exportTaxCSV()
                     } label: {
                         Label(L10n.t("common.export") + " CSV…", systemImage: "square.and.arrow.up")
                     }
+                    .disabled(report == nil)
                 }
             }
         }
@@ -159,12 +156,28 @@ struct TaxReportView: View {
         .task(id: reloadToken) {
             await reload()
         }
-        .fileExporter(
-            isPresented: $showExport,
-            document: exportDoc,
-            contentType: .commaSeparatedText,
-            defaultFilename: "librewallet-tax-\(year).csv"
-        ) { _ in }
+    }
+
+    private func exportTaxCSV() {
+        guard let report else { return }
+        let data = TaxReport.csv(report: report)
+        let panel = NSSavePanel()
+        panel.canCreateDirectories = true
+        panel.allowedContentTypes = [.commaSeparatedText]
+        panel.nameFieldStringValue = "librewallet-tax-\(year).csv"
+        panel.begin { response in
+            guard response == .OK, let url = panel.url else { return }
+            do {
+                try data.write(to: url, options: .atomic)
+                Task { @MainActor in
+                    appState.notifySuccess(L10n.t("feedback.exportTax"))
+                }
+            } catch {
+                Task { @MainActor in
+                    appState.notifyError(error.localizedDescription)
+                }
+            }
+        }
     }
 
     @ViewBuilder

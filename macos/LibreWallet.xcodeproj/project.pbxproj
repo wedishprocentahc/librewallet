@@ -25,6 +25,7 @@
 		43EC305302C259ACFF3CFA97 /* PricingPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2614D8EB21BD5A857E2EF00F /* PricingPlaceholders.swift */; };
 		45F6F77F9AFD487C11630E47 /* PricingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68C39E719ADE4DA6B7064E76 /* PricingService.swift */; };
 		460C9749F049269746105CE6 /* ImportedTransaction.swift in Sources */ = {isa = PBXBuildFile; fileRef = C717B9874B810B3DF6034232 /* ImportedTransaction.swift */; };
+		48501517143E2E865746A5E6 /* FeedbackBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D51131AF7F469705566C4EC /* FeedbackBanner.swift */; };
 		4AEA00B9B943A6D4BA7BDE6C /* SymbolResolverTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF58367142B80435F4D481C1 /* SymbolResolverTests.swift */; };
 		4E43734CD811CBA3BC0215DA /* CSVExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = C99A657B6654BEC16C31BF98 /* CSVExport.swift */; };
 		4F224A4269378F87DA0EEF40 /* RoadmapFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 263E24A0D5DAD4DEC4ED4FD7 /* RoadmapFeatureTests.swift */; };
@@ -81,6 +82,7 @@
 		00763762100EDA5DC3D43958 /* LibreWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibreWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		0646D787C9CF30EA1ED90E37 /* AlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsView.swift; sourceTree = "<group>"; };
 		083A44D3AA91E0450B81336A /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
+		0D51131AF7F469705566C4EC /* FeedbackBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackBanner.swift; sourceTree = "<group>"; };
 		114AED6765341B39AFAD680E /* BondPricingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondPricingTests.swift; sourceTree = "<group>"; };
 		1432BF79D78EE7786DB9E278 /* SymbolMappingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SymbolMappingSheet.swift; sourceTree = "<group>"; };
 		1FC6DD06853FB4E40B1B19A2 /* ImportScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportScreen.swift; sourceTree = "<group>"; };
@@ -267,6 +269,7 @@
 				D56E188D1C39C0643B129C4D /* Views */,
 				799BE1357AE296C42110CF0E /* AlertMonitorHost.swift */,
 				40574EFF205A2E0C7C7AC110 /* AppState.swift */,
+				0D51131AF7F469705566C4EC /* FeedbackBanner.swift */,
 				2FAC6F43C1D1490F268F8F38 /* LibreWalletApp.swift */,
 				8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */,
 				574F0512FB45B0E5301051BB /* RootView.swift */,
@@ -459,6 +462,7 @@
 				F02503D5BD39DD818CFBFA87 /* ColorHex.swift in Sources */,
 				B50ECCF25C2DF1AAF454BE32 /* CurrencyCode.swift in Sources */,
 				CFCC875DBD063012A1EA2C97 /* DashboardViews.swift in Sources */,
+				48501517143E2E865746A5E6 /* FeedbackBanner.swift in Sources */,
 				28A6218FFA19635F24092ABE /* Formatting.swift in Sources */,
 				02BDD43C5A2AF998EF0D803D /* IBKRImporter.swift in Sources */,
 				78603CFCB514C299425123B6 /* ImportPlaceholders.swift in Sources */,
@@ -595,7 +599,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -612,7 +616,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.5.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -657,7 +661,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 6;
+				CURRENT_PROJECT_VERSION = 7;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -680,7 +684,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.0;
+				MARKETING_VERSION = 0.5.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

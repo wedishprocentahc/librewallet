@@ -4,6 +4,7 @@ import SwiftData
 struct SymbolMappingSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var appState: AppState
 
     let xtbSymbol: String
     let positionCurrency: String
@@ -64,6 +65,7 @@ struct SymbolMappingSheet: View {
                         Button(L10n.t("mapping.clear"), role: .destructive) {
                             AppPreferences.removeSymbolMapping(id: xtbSymbol)
                             status = L10n.t("mapping.cleared")
+                            appState.notifySuccess(L10n.t("feedback.mappingCleared"))
                         }
                     }
                 }
@@ -103,8 +105,10 @@ struct SymbolMappingSheet: View {
                     context: context
                 )
                 status = L10n.t("mapping.saved")
+                appState.notifySuccess(L10n.t("feedback.mappingSaved"))
             } catch {
                 status = error.localizedDescription
+                appState.notifyError(error.localizedDescription)
             }
         }
     }

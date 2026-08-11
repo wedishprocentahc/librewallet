@@ -106,12 +106,17 @@ struct DashboardView: View {
                             Button("+") { zoomIn(historyRows) }
                                 .buttonStyle(.bordered)
                             Button {
-                                historyPreset = .all
-                                historyZoom = defaultDomain(historyRows)
+                                Task { await refreshChartFromUI() }
                             } label: {
-                                Image(systemName: "arrow.counterclockwise")
+                                if isLoadingChart {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                }
                             }
                             .buttonStyle(.bordered)
+                            .disabled(isLoadingChart)
+                            .help(L10n.t("dashboard.chartRefresh"))
                         }
                         .padding(.bottom, 8)
 
@@ -328,7 +333,7 @@ struct DashboardView: View {
             while !Task.isCancelled {
                 try? await Task.sleep(nanoseconds: UInt64(minutes) * 60 * 1_000_000_000)
                 if Task.isCancelled { break }
-                await refreshPrices()
+                await refreshPrices(announce: false)
             }
         }
     }
@@ -409,6 +414,7 @@ struct DashboardView: View {
 
     private func refreshChartData() async {
         isLoadingChart = true
+        defer { isLoadingChart = false }
         await Task.yield()
 
         let scope = dashboardScope
@@ -418,7 +424,28 @@ struct DashboardView: View {
         cachedScope = scope
         cachedHistoryRows = history
         cachedChartRows = chart
-        isLoadingChart = false
+    }
+
+    private func refreshChartFromUI() async {
+        isLoadingChart = true
+        defer { isLoadingChart = false }
+
+        let symbols = Set(transactions.compactMap { $0.symbol?.uppercased() }.filter { !$0.isEmpty })
+        if !symbols.isEmpty {
+            priceHistory = await PricingService.refreshHistories(symbols: Array(symbols))
+        }
+
+        await Task.yield()
+        let scope = dashboardScope
+        let history = dashboardHistoryRows()
+        let chart = attachBenchmarkSeries(history)
+        cachedScope = scope
+        cachedHistoryRows = history
+        cachedChartRows = chart
+
+        historyPreset = .all
+        historyZoom = defaultDomain(history)
+        appState.notifySuccess(L10n.t("feedback.chartRefreshed"))
     }
 
     private var scopedPortfolios: [Portfolio] {
@@ -532,18 +559,25 @@ struct DashboardView: View {
         }
     }
 
-    private func refreshPrices() async {
+    private func refreshPrices(announce: Bool = true) async {
         isRefreshingPrices = true
         refreshError = nil
+        defer { isRefreshingPrices = false }
         do {
             try await PricingService.refreshQuotes(for: transactions, context: context)
             await loadNBPRates()
             await refreshHistories()
             await ensureBenchmarkHistory()
+            await refreshChartData()
+            if announce {
+                appState.notifySuccess(L10n.t("feedback.pricesRefreshed"))
+            }
         } catch {
             refreshError = error.localizedDescription
+            if announce {
+                appState.notifyError(error.localizedDescription)
+            }
         }
-        isRefreshingPrices = false
     }
 
     private func deletePosition(symbol: String, currency: String) {
@@ -559,6 +593,7 @@ struct DashboardView: View {
 
         for tx in toDelete { context.delete(tx) }
         try? context.save()
+        appState.notifySuccess(L10n.t("feedback.positionDeleted", ["symbol": normSymbol]))
     }
 
     private func kpiRow(scope: ScopeResult) -> some View {

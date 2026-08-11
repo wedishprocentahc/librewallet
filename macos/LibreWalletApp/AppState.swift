@@ -33,6 +33,10 @@ final class AppState: ObservableObject {
     /// Bumped to force UI refresh after language change.
     @Published var localizationEpoch: Int = 0
 
+    /// Short-lived success/error banner shown from RootView.
+    @Published private(set) var feedback: AppFeedback?
+    private var feedbackClearTask: Task<Void, Never>?
+
     func selectPortfolio(_ portfolio: Portfolio) {
         selectedPortfolioId = portfolio.id
         selectedGroupId = portfolio.group?.id
@@ -45,5 +49,32 @@ final class AppState: ObservableObject {
 
     func ratesToPLN(from nbp: [String: Double]) -> [String: Double] {
         AppPreferences.mergedRatesToPLN(nbp)
+    }
+
+    func notifySuccess(_ message: String) {
+        presentFeedback(AppFeedback(kind: .success, message: message))
+    }
+
+    func notifyError(_ message: String) {
+        presentFeedback(AppFeedback(kind: .error, message: message))
+    }
+
+    func dismissFeedback() {
+        feedbackClearTask?.cancel()
+        feedbackClearTask = nil
+        feedback = nil
+    }
+
+    private func presentFeedback(_ item: AppFeedback) {
+        feedbackClearTask?.cancel()
+        // Force a visible transition even when replacing an existing banner quickly.
+        feedback = nil
+        feedback = item
+        feedbackClearTask = Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 3_200_000_000)
+            guard !Task.isCancelled, feedback?.id == item.id else { return }
+            feedback = nil
+            feedbackClearTask = nil
+        }
     }
 }

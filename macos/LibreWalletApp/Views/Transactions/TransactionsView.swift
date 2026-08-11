@@ -75,6 +75,7 @@ struct TransactionsView: View {
         let items = offsets.map { filteredTransactions[$0] }
         for tx in items { context.delete(tx) }
         try? context.save()
+        appState.notifySuccess(L10n.t("feedback.txDeleted", ["count": "\(items.count)"]))
     }
 }
 

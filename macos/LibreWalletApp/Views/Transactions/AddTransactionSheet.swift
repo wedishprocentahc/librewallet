@@ -4,6 +4,7 @@ import SwiftData
 struct AddTransactionSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var context
+    @EnvironmentObject private var appState: AppState
 
     let portfolios: [Portfolio]
 
@@ -75,6 +76,7 @@ struct AddTransactionSheet: View {
         )
         context.insert(tx)
         try? context.save()
+        appState.notifySuccess(L10n.t("feedback.txAdded"))
         dismiss()
     }
 

@@ -149,6 +149,17 @@ struct RootView: View {
             AboutLibreWalletView()
         }
         .background(AlertMonitorHost())
+        .overlay(alignment: .top) {
+            if let feedback = appState.feedback {
+                FeedbackBannerView(feedback: feedback) {
+                    appState.dismissFeedback()
+                }
+                .padding(.top, 48)
+                .transition(.move(edge: .top).combined(with: .opacity))
+                .zIndex(1000)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: appState.feedback?.id)
         .alert(
             updateController.alertTitle,
             isPresented: $updateController.showAlert
@@ -178,6 +189,7 @@ struct RootView: View {
                     p.name = newName
                     p.colorHex = editColor.toHex() ?? p.colorHex
                     try? context.save()
+                    appState.notifySuccess(L10n.t("feedback.portfolioUpdated"))
                 }
                 renamingPortfolio = nil
             }
@@ -200,6 +212,7 @@ struct RootView: View {
                     g.name = newName
                     g.colorHex = editColor.toHex() ?? g.colorHex
                     try? context.save()
+                    appState.notifySuccess(L10n.t("feedback.groupUpdated"))
                 }
                 renamingGroup = nil
             }
@@ -225,6 +238,7 @@ struct RootView: View {
                     appState.navigationSelection = .transactions
                 }
                 confirmDeletePortfolio = nil
+                appState.notifySuccess(L10n.t("feedback.portfolioDeleted"))
             }
         } message: {
             Text("Ta operacja usunie też wszystkie operacje w tym portfelu.")
@@ -253,6 +267,7 @@ struct RootView: View {
                 }
 
                 confirmDeleteGroup = nil
+                appState.notifySuccess(L10n.t("feedback.groupDeleted"))
             }
         } message: {
             Text("Ta operacja usunie też wszystkie portfele i operacje w tej grupie.")
@@ -349,6 +364,7 @@ struct RootView: View {
         try? context.save()
         appState.selectedGroupId = group.id
         appState.navigationSelection = .group(group.id)
+        appState.notifySuccess(L10n.t("feedback.groupCreated"))
     }
 
     private func createPortfolio(in group: PortfolioGroup) {
@@ -364,6 +380,7 @@ struct RootView: View {
         try? context.save()
         appState.selectPortfolio(portfolio)
         appState.navigationSelection = .portfolio(portfolio.id)
+        appState.notifySuccess(L10n.t("feedback.portfolioCreated"))
     }
 }
 

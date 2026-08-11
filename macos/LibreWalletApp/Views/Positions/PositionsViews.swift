@@ -140,6 +140,7 @@ struct PositionsView: View {
         }
         for tx in toDelete { context.delete(tx) }
         try? context.save()
+        appState.notifySuccess(L10n.t("feedback.positionDeleted", ["symbol": normSymbol]))
     }
 }
 
@@ -226,6 +227,7 @@ struct GroupDetailView: View {
         }
         for tx in toDelete { context.delete(tx) }
         try? context.save()
+        appState.notifySuccess(L10n.t("feedback.positionDeleted", ["symbol": normSymbol]))
     }
 }
 
@@ -345,6 +347,7 @@ struct PortfolioDetailView: View {
         }
         for tx in toDelete { context.delete(tx) }
         try? context.save()
+        appState.notifySuccess(L10n.t("feedback.positionDeleted", ["symbol": normSymbol]))
     }
 }
 
