@@ -5,6 +5,17 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.2] — 2026-08-12
+
+### Dodane (native macOS)
+
+- Banery sukcesu/błędu po imporcie, eksporcie, odświeżaniu, dodawaniu i usuwaniu.
+- Spinner przy odświeżaniu wykresu (jak przy cenach).
+
+### Naprawione (native macOS)
+
+- Eksport backup/CSV otwiera natywny panel zapisu (`NSSavePanel`) zamiast zepsutego `fileExporter`.
+
 ## [0.5.1] — 2026-08-12
 
 ### Naprawione (native macOS)
