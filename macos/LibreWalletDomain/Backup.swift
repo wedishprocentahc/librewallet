@@ -154,7 +154,7 @@ enum BackupService {
             let p = Portfolio(
                 id: dto.id,
                 name: dto.name,
-                baseCurrency: dto.baseCurrency,
+                baseCurrency: CurrencyCode.normalize(dto.baseCurrency),
                 colorHex: dto.colorHex,
                 kind: PortfolioKind(rawValue: dto.kindRaw) ?? .manual,
                 createdAt: dto.createdAt,
@@ -175,7 +175,7 @@ enum BackupService {
                 price: dto.price,
                 gross: dto.gross,
                 fee: dto.fee,
-                currency: dto.currency,
+                currency: CurrencyCode.normalize(dto.currency),
                 cashDelta: dto.cashDelta,
                 externalId: dto.externalId,
                 notes: dto.notes,
@@ -204,12 +204,16 @@ enum BackupService {
         try context.save()
     }
 
-    private static func wipe(context: ModelContext) throws {
+    static func wipe(context: ModelContext) throws {
         for tx in try context.fetch(FetchDescriptor<Transaction>()) { context.delete(tx) }
         for t in try context.fetch(FetchDescriptor<AllocationTarget>()) { context.delete(t) }
         for q in try context.fetch(FetchDescriptor<Quote>()) { context.delete(q) }
         for p in try context.fetch(FetchDescriptor<Portfolio>()) { context.delete(p) }
         for g in try context.fetch(FetchDescriptor<PortfolioGroup>()) { context.delete(g) }
+        // BondHolding may exist in schema
+        if let bonds = try? context.fetch(FetchDescriptor<BondHolding>()) {
+            for b in bonds { context.delete(b) }
+        }
         try context.save()
     }
 

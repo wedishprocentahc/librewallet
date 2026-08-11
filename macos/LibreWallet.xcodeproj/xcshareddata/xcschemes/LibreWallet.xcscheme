@@ -21,6 +21,20 @@
                ReferencedContainer = "container:LibreWallet.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CBAA1FB85DDEDA59F6453FD9"
+               BuildableName = "LibreWalletTests.xctest"
+               BlueprintName = "LibreWalletTests"
+               ReferencedContainer = "container:LibreWallet.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -39,7 +53,20 @@
          </BuildableReference>
       </MacroExpansion>
       <Testables>
+         <TestableReference
+            skipped = "NO"
+            parallelizable = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CBAA1FB85DDEDA59F6453FD9"
+               BuildableName = "LibreWalletTests.xctest"
+               BlueprintName = "LibreWalletTests"
+               ReferencedContainer = "container:LibreWallet.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"

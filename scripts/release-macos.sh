@@ -1,12 +1,19 @@
 #!/usr/bin/env bash
-# Build unsigned LibreWallet.app, pack LibreWallet.zip, optionally create a GitHub Release.
+# Build LibreWallet.app, pack LibreWallet.zip + .pkg, optionally sign/notarize and publish.
 #
 # Usage:
-#   ./scripts/release-macos.sh              # build ZIP only → dist/macos/
-#   ./scripts/release-macos.sh --publish    # build + gh release create (requires gh auth)
+#   ./scripts/release-macos.sh                 # unsigned local artifacts → dist/macos/
+#   ./scripts/release-macos.sh --sign          # Developer ID sign (requires certs)
+#   ./scripts/release-macos.sh --sign --notarize
+#   ./scripts/release-macos.sh --sign --notarize --publish
 #
-# Version comes from macos/project.yml (MARKETING_VERSION / CURRENT_PROJECT_VERSION).
-# Tag format: v<MARKETING_VERSION>  e.g. v0.1.0
+# Version from macos/project.yml (MARKETING_VERSION). Tag: v<VERSION>
+#
+# Env (optional):
+#   LW_TEAM_ID              Apple Team ID (10 chars) — required for --sign
+#   LW_SIGN_IDENTITY        Developer ID Application identity
+#   LW_INSTALLER_IDENTITY   Developer ID Installer identity
+#   LW_NOTARY_PROFILE       notarytool keychain profile (default: librewallet-notary)
 
 set -euo pipefail
 
@@ -14,12 +21,16 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 MACOS="$ROOT/macos"
 DIST="$ROOT/dist/macos"
 PUBLISH=0
+SIGN=0
+NOTARIZE=0
 
 for arg in "$@"; do
   case "$arg" in
     --publish) PUBLISH=1 ;;
+    --sign) SIGN=1 ;;
+    --notarize) NOTARIZE=1; SIGN=1 ;;
     -h|--help)
-      sed -n '2,12p' "$0"
+      sed -n '2,20p' "$0"
       exit 0
       ;;
     *)
@@ -42,15 +53,41 @@ PKG_NAME="LibreWallet-${VERSION}-mac-arm64.pkg"
 APP_NAME="LibreWallet.app"
 
 echo "==> Version ${VERSION} (build ${BUILD}), tag ${TAG}"
+echo "==> Options: sign=${SIGN} notarize=${NOTARIZE} publish=${PUBLISH}"
 
 cd "$MACOS"
 echo "==> xcodegen generate"
 xcodegen generate
 
-echo "==> xcodebuild archive (Release, unsigned)"
+echo "==> xcodebuild archive (Release)"
 ARCHIVE_PATH="$DIST/LibreWallet.xcarchive"
 rm -rf "$DIST"
 mkdir -p "$DIST"
+
+SIGN_ARGS=()
+if [[ "$SIGN" -eq 1 ]]; then
+  TEAM_ID="${LW_TEAM_ID:-}"
+  if [[ -z "$TEAM_ID" ]]; then
+    echo "Dla --sign ustaw LW_TEAM_ID (10-znakowy Team ID z developer.apple.com)." >&2
+    exit 1
+  fi
+  IDENTITY="${LW_SIGN_IDENTITY:-Developer ID Application}"
+  SIGN_ARGS=(
+    CODE_SIGN_STYLE=Manual
+    CODE_SIGN_IDENTITY="$IDENTITY"
+    DEVELOPMENT_TEAM="$TEAM_ID"
+    OTHER_CODE_SIGN_FLAGS="--timestamp"
+    CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO
+  )
+  echo "==> Signing with team ${TEAM_ID}, identity ${IDENTITY}"
+else
+  SIGN_ARGS=(
+    CODE_SIGN_IDENTITY="-"
+    CODE_SIGNING_REQUIRED=NO
+    CODE_SIGNING_ALLOWED=NO
+  )
+  echo "==> Building unsigned (Gatekeeper: prawy → Otwórz)"
+fi
 
 xcodebuild \
   -project LibreWallet.xcodeproj \
@@ -58,15 +95,21 @@ xcodebuild \
   -configuration Release \
   -destination 'generic/platform=macOS' \
   -archivePath "$ARCHIVE_PATH" \
-  CODE_SIGN_IDENTITY="-" \
-  CODE_SIGNING_REQUIRED=NO \
-  CODE_SIGNING_ALLOWED=NO \
+  "${SIGN_ARGS[@]}" \
   archive
 
 APP_SRC="$ARCHIVE_PATH/Products/Applications/$APP_NAME"
 if [[ ! -d "$APP_SRC" ]]; then
   echo "Archive did not contain $APP_NAME at $APP_SRC" >&2
   exit 1
+fi
+
+# Hardened runtime / deep sign pass when --sign (archive may already be signed).
+if [[ "$SIGN" -eq 1 ]]; then
+  IDENTITY="${LW_SIGN_IDENTITY:-Developer ID Application}"
+  echo "==> codesign --deep --options runtime"
+  codesign --force --deep --options runtime --timestamp --sign "$IDENTITY" "$APP_SRC"
+  codesign --verify --deep --strict --verbose=2 "$APP_SRC"
 fi
 
 echo "==> Packing $ZIP_NAME"
@@ -79,6 +122,18 @@ echo "==> Building $PKG_NAME"
 chmod +x "$ROOT/scripts/build-macos-native-pkg.sh"
 "$ROOT/scripts/build-macos-native-pkg.sh" "$APP_SRC" arm64
 
+if [[ "$NOTARIZE" -eq 1 ]]; then
+  chmod +x "$ROOT/scripts/notarize-macos.sh"
+  echo "==> Notarizing app + pkg"
+  "$ROOT/scripts/notarize-macos.sh" "$APP_SRC" "$DIST/$PKG_NAME"
+  # Refresh zip from stapled app
+  (
+    cd "$ARCHIVE_PATH/Products/Applications"
+    rm -f "$DIST/$ZIP_NAME"
+    ditto -c -k --keepParent "$APP_NAME" "$DIST/$ZIP_NAME"
+  )
+fi
+
 NOTES_FILE="$DIST/release-notes.md"
 {
   echo "## LibreWallet ${VERSION} (macOS native)"
@@ -87,9 +142,15 @@ NOTES_FILE="$DIST/release-notes.md"
   echo
   echo "### Instalacja"
   echo
-  echo "1. Pobierz \`${ZIP_NAME}\` i rozpakuj."
-  echo "2. Przenieś \`LibreWallet.app\` do folderu Aplikacje."
-  echo "3. Przy pierwszym otwarciu: **prawy przycisk → Otwórz** (Gatekeeper)."
+  if [[ "$NOTARIZE" -eq 1 ]]; then
+    echo "1. Pobierz \`${PKG_NAME}\` (preferowane) albo \`${ZIP_NAME}\`."
+    echo "2. Zainstaluj / przenieś \`LibreWallet.app\` do **Aplikacje**."
+    echo "3. Uruchom dwuklikiem (build notaryzowany)."
+  else
+    echo "1. Pobierz \`${ZIP_NAME}\` i rozpakuj (albo \`${PKG_NAME}\`)."
+    echo "2. Przenieś \`LibreWallet.app\` do folderu Aplikacje."
+    echo "3. Przy pierwszym otwarciu: **prawy przycisk → Otwórz** (Gatekeeper)."
+  fi
   echo
   if [[ -f "$ROOT/CHANGELOG.md" ]]; then
     echo "### Changelog"
@@ -128,5 +189,7 @@ if [[ "$PUBLISH" -eq 1 ]]; then
   fi
   echo "==> Published: https://github.com/wedishprocentahc/librewallet/releases/tag/${TAG}"
 else
-  echo "==> Done (local only). Publish with: $0 --publish"
+  echo "==> Done (local only)."
+  echo "    Signed+notarized: $0 --sign --notarize"
+  echo "    Publish:          $0 --sign --notarize --publish"
 fi

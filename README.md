@@ -14,16 +14,18 @@ Track your investments on your computer. **Your data never leaves your machine**
 
 ## Download
 
-**Native macOS app (SwiftUI):** get `LibreWallet.zip` from **[Releases](https://github.com/wedishprocentahc/librewallet/releases)** or the [download page](https://wedishprocentahc.github.io/librewallet/).
+**Native macOS app (SwiftUI):** get `LibreWallet.pkg` / `LibreWallet.zip` from **[Releases](https://github.com/wedishprocentahc/librewallet/releases)** or the [download page](https://wedishprocentahc.github.io/librewallet/).
+
+Current line: **native `0.5.x`**. Electron/`1.x` builds are legacy (maintenance only).
 
 | System | File |
 |--------|------|
-| macOS (native) | `LibreWallet.zip` |
-| Older Electron builds (legacy) | `LibreWallet-*-mac-arm64.pkg` / `*-win.exe` (if still listed) |
+| macOS (native) | `LibreWallet.pkg` (preferred) / `LibreWallet.zip` |
+| Older Electron builds (legacy) | `LibreWallet-*-mac-arm64.pkg` / `*-win.exe` (archive in Releases) |
 
-First launch on Mac: **right-click → Open** (Gatekeeper — the app is not notarized with a paid Apple Developer ID).
+First launch on Mac: **right-click → Open** (Gatekeeper — not notarized until you have Developer ID; see [docs/NOTARIZATION.md](docs/NOTARIZATION.md)).
 
-To cut a release locally: `./scripts/release-macos.sh` (add `--publish` to create the GitHub Release). Tag must match `MARKETING_VERSION` in `macos/project.yml` (e.g. `v0.1.0`).
+Local release: `./scripts/release-macos.sh` (unsigned). Signed: `LW_TEAM_ID=… ./scripts/release-macos.sh --sign --notarize`. Tag must match `MARKETING_VERSION` in `macos/project.yml` (e.g. `v0.5.0`).
 
 ---
 

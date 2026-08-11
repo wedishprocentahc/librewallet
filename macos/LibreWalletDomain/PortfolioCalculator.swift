@@ -26,6 +26,10 @@ struct PositionRow: Identifiable, Hashable {
     let name: String
     let currency: String
     let assetType: String
+    let portfolioId: UUID?
+    let portfolioName: String
+    let groupId: UUID?
+    let groupName: String
 
     let quantity: Double
     let avgCost: Double
@@ -64,7 +68,7 @@ enum PortfolioCalculator {
         includeCashInAllocation: Bool = true,
         ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
     ) -> ScopeResult {
-        let baseCurrency = portfolio?.baseCurrency ?? "PLN"
+        let baseCurrency = CurrencyCode.normalize(portfolio?.baseCurrency)
         let scoped = allTransactions
             .filter { tx in
                 guard let portfolio else { return true }
@@ -128,12 +132,17 @@ enum PortfolioCalculator {
                     currentValue = acc.quantity * price
                 }
                 let profit = currentValue - invested
+                let pid = portfolio?.id
                 return PositionRow(
-                    id: "\(acc.symbol)|\(acc.currency)",
+                    id: "\(pid?.uuidString ?? "all")|\(acc.symbol)|\(acc.currency)",
                     symbol: acc.symbol,
                     name: acc.name,
                     currency: acc.currency,
                     assetType: acc.assetType,
+                    portfolioId: pid,
+                    portfolioName: portfolio?.name ?? "",
+                    groupId: portfolio?.group?.id,
+                    groupName: portfolio?.group?.name ?? "",
                     quantity: acc.quantity,
                     avgCost: acc.quantity != 0 ? invested / acc.quantity : 0,
                     invested: invested,
@@ -750,10 +759,9 @@ enum PortfolioCalculator {
 }
 
 private enum IgnoredSymbols {
-    /// Yahoo prices for EEE diverge badly from the broker account — ignore in valuation.
+    /// Delegates to SymbolResolver (EEE and similar Yahoo≠XTB mismatches).
     static func contains(_ symbol: String) -> Bool {
-        let base = symbol.uppercased().split(separator: ".").first.map(String.init) ?? symbol.uppercased()
-        return base == "EEE"
+        SymbolResolver.isIgnored(symbol)
     }
 }
 

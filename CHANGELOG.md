@@ -5,6 +5,24 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.0] — 2026-08-11
+
+### Dodane (native macOS)
+
+- Auto-odświeżanie cen, wyszukiwanie operacji, presety zakresu historii, bogatszy rebalancing (% vs cel).
+- Eksport CSV transakcji, szablon importu, czyszczenie danych, nadpisania pól obligacji.
+- Kalendarz zapadalności obligacji oraz wcześniejszy wykup.
+- Pozycje: wyszukiwanie, grupowanie, zwroty okresowe (1M–YTD).
+- Dashboard: wykres zysku per walor oraz porównanie portfeli.
+- i18n PL/EN, ręczne kursy FX, rozbicie widoków (Dashboard / Positions / Settings).
+- Cashflow, raport podatkowy PL (FIFO z pełnej historii, NBP z daty transakcji, wyłączenie IKE/IKZE, przybliżenie PIT-38, CSV), alerty cen / drift alokacji.
+- Import IBKR CSV.
+- Bezpieczniejsze otwieranie SwiftData (backup store przed wipe) oraz testy roadmapowe.
+
+### Dokumentacja
+
+- `docs/NOTARIZATION.md`, website native-first.
+
 ## [0.1.4] — 2026-08-07
 
 ### Naprawione (native macOS)

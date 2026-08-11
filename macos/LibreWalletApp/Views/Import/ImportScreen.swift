@@ -17,6 +17,8 @@ struct ImportScreen: View {
     @State private var isDropTargeted = false
     @State private var showSavedAlert = false
     @State private var savedCount = 0
+    @State private var templateDoc: LWCSVDocument?
+    @State private var showTemplateExport = false
 
     private var autoCreatesPortfolios: Bool {
         if previewSource?.localizedCaseInsensitiveContains("XTB") == true { return true }
@@ -49,7 +51,8 @@ struct ImportScreen: View {
             Spacer()
         }
         .padding()
-        .navigationTitle("Import")
+        .navigationTitle(L10n.t("nav.import"))
+        .id(appState.localizationEpoch)
         .onAppear(perform: onAppear)
         .alert("Zapisano", isPresented: $showSavedAlert) {
             Button("OK") {
@@ -58,6 +61,12 @@ struct ImportScreen: View {
         } message: {
             Text("Dodano \(savedCount) operacji.")
         }
+        .fileExporter(
+            isPresented: $showTemplateExport,
+            document: templateDoc,
+            contentType: .commaSeparatedText,
+            defaultFilename: "librewallet-import-template.csv"
+        ) { _ in }
     }
 
     private var errorBanner: some View {
@@ -139,9 +148,45 @@ struct ImportScreen: View {
             }
 
             Button {
+                openIBKRPanel()
+            } label: {
+                Label("Import IBKR CSV", systemImage: "building.columns")
+            }
+
+            Button {
                 openUniversalPanel()
             } label: {
                 Label("Import CSV/XLSX", systemImage: "doc")
+            }
+
+            Button {
+                exportTemplate()
+            } label: {
+                Label(L10n.t("import.template"), systemImage: "arrow.down.doc")
+            }
+        }
+    }
+
+    private func exportTemplate() {
+        templateDoc = LWCSVDocument(data: CSVExport.templateCSV())
+        showTemplateExport = true
+    }
+
+    private func openIBKRPanel() {
+        errorMessage = nil
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.canChooseFiles = true
+        panel.allowedFileTypes = ["csv"]
+        panel.title = "Wybierz eksport IBKR (CSV)"
+        panel.prompt = "Wybierz"
+        if panel.runModal() == .OK, let url = panel.url {
+            do {
+                preview = try IBKRImporter.importPreview(from: url)
+                previewSource = "IBKR CSV: \(url.lastPathComponent)"
+            } catch {
+                errorMessage = error.localizedDescription
             }
         }
     }
@@ -296,19 +341,28 @@ struct ImportScreen: View {
         currency: String,
         cache: inout [String: Portfolio]
     ) -> Portfolio {
-        let normalizedCurrency = currency.uppercased()
-        let name = "XTB \(normalizedCurrency) (\(account))"
+        let label = currency.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let baseCurrency = CurrencyCode.normalize(label)
+        // Keep IKE/IKZE in the display name; settle currency is always PLN.
+        let nameToken = CurrencyCode.isAccountProductLabel(label) ? label : baseCurrency
+        let name = "XTB \(nameToken) (\(account))"
         let cacheKey = "\(group.id.uuidString)|\(name)"
         if let cached = cache[cacheKey] {
+            if cached.baseCurrency != baseCurrency {
+                cached.baseCurrency = baseCurrency
+            }
             return cached
         }
         if let existing = portfolios.first(where: { $0.group?.id == group.id && $0.name == name }) {
+            if existing.baseCurrency != baseCurrency {
+                existing.baseCurrency = baseCurrency
+            }
             cache[cacheKey] = existing
             return existing
         }
         let p = Portfolio(
             name: name,
-            baseCurrency: normalizedCurrency,
+            baseCurrency: baseCurrency,
             colorHex: "#176b4d",
             kind: .account,
             createdAt: .now,
@@ -329,7 +383,7 @@ struct ImportScreen: View {
             price: item.price,
             gross: item.gross,
             fee: item.fee,
-            currency: item.currency,
+            currency: CurrencyCode.normalize(item.currency),
             cashDelta: item.cashDelta,
             externalId: item.externalId,
             notes: item.notes,

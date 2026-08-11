@@ -1,0 +1,13 @@
+---
+description: Polish IKE/IKZE accounts are always PLN — never treat IKE/IKZE as a currency
+alwaysApply: true
+---
+
+# IKE / IKZE currency
+
+Polish **IKE** and **IKZE** brokerage accounts (e.g. XTB IKE) are always denominated in **PLN**.
+
+- Never store or display `IKE` / `IKZE` as `Portfolio.baseCurrency` or transaction `currency`.
+- Use `CurrencyCode.normalize(_:)` — maps `IKE`/`IKZE` → `PLN`.
+- Portfolio **names** may still say `XTB IKE (…)` for the account product; only the currency code must be PLN.
+- Apply on import (`currencyHint`, portfolio create, tx insert) and repair existing stores on bootstrap.

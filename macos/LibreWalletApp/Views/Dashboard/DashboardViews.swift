@@ -19,12 +19,14 @@ struct DashboardView: View {
     @State private var benchmarkError: String?
     @State private var showHistoryOperations: Bool = true
     @State private var historyZoom: ClosedRange<Date>?
+    @State private var historyPreset: HistoryPreset = .all
     @State private var hoverDate: Date?
     @State private var priceHistory: [String: [(date: Date, close: Double)]] = [:]
     @State private var cachedScope: ScopeResult?
     @State private var cachedHistoryRows: [HistoryRow] = []
     @State private var cachedChartRows: [ChartHistoryRow] = []
     @State private var isLoadingChart = false
+    @State private var autoRefreshTask: Task<Void, Never>?
 
     var body: some View {
         let scope = cachedScope ?? emptyScope
@@ -83,6 +85,18 @@ struct DashboardView: View {
 
                             Spacer()
 
+                            Picker("Zakres", selection: $historyPreset) {
+                                Text(L10n.t("history.all")).tag(HistoryPreset.all)
+                                Text(L10n.t("history.1y")).tag(HistoryPreset.oneYear)
+                                Text(L10n.t("history.quarter")).tag(HistoryPreset.quarter)
+                                Text(L10n.t("history.ytd")).tag(HistoryPreset.ytd)
+                            }
+                            .labelsHidden()
+                            .pickerStyle(.menu)
+                            .onChange(of: historyPreset) { _, _ in
+                                applyHistoryPreset(historyRows)
+                            }
+
                             Text(domainLabel(visibleDomain))
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
@@ -92,6 +106,7 @@ struct DashboardView: View {
                             Button("+") { zoomIn(historyRows) }
                                 .buttonStyle(.bordered)
                             Button {
+                                historyPreset = .all
                                 historyZoom = defaultDomain(historyRows)
                             } label: {
                                 Image(systemName: "arrow.counterclockwise")
@@ -216,10 +231,53 @@ struct DashboardView: View {
                         )
                     }
                 }
+
+                GroupBox(L10n.t("dashboard.profitChart")) {
+                    let rows = profitRows(scope)
+                    if rows.isEmpty {
+                        ContentUnavailableView(L10n.t("dashboard.noData"), systemImage: "chart.bar")
+                            .frame(maxWidth: .infinity, minHeight: 140)
+                    } else {
+                        Chart(rows) { row in
+                            BarMark(
+                                x: .value("Walor", row.symbol),
+                                y: .value("Zysk", row.profit)
+                            )
+                            .foregroundStyle(row.profit >= 0 ? Color.green : Color.red)
+                        }
+                        .frame(height: 220)
+                        .padding(.top, 8)
+                    }
+                }
+
+                GroupBox(L10n.t("dashboard.portfolioCompare")) {
+                    let rows = portfolioComparisonRows
+                    if rows.isEmpty {
+                        ContentUnavailableView(L10n.t("dashboard.noData"), systemImage: "rectangle.split.3x1")
+                            .frame(maxWidth: .infinity, minHeight: 120)
+                    } else {
+                        VStack(spacing: 8) {
+                            ForEach(rows) { row in
+                                HStack {
+                                    Circle().fill(Color(hex: row.colorHex) ?? .gray).frame(width: 10, height: 10)
+                                    Text(row.name)
+                                    Spacer()
+                                    Text(LWFormatting.money(row.value, currency: row.currency))
+                                    Text(LWFormatting.percent(row.returnPct))
+                                        .foregroundStyle(row.returnPct >= 0 ? .green : .red)
+                                        .frame(width: 72, alignment: .trailing)
+                                }
+                                Divider()
+                            }
+                        }
+                        .padding(.top, 6)
+                    }
+                }
             }
             .padding()
         }
-        .navigationTitle("Dashboard")
+        .navigationTitle(L10n.t("nav.dashboard"))
+        .id(appState.localizationEpoch)
         .alert(
             "Usunąć pozycję?",
             isPresented: Binding(
@@ -245,12 +303,81 @@ struct DashboardView: View {
                 await refreshHistories()
             }
             await refreshChartData()
+            startAutoRefreshLoop()
         }
         .task(id: chartRefreshToken) {
             await refreshChartData()
         }
         .task(id: selectedBenchmarkId) {
             await ensureBenchmarkHistory()
+        }
+        .onChange(of: appState.autoRefreshMinutes) { _, _ in
+            startAutoRefreshLoop()
+        }
+        .onDisappear {
+            autoRefreshTask?.cancel()
+            autoRefreshTask = nil
+        }
+    }
+
+    private func startAutoRefreshLoop() {
+        autoRefreshTask?.cancel()
+        let minutes = appState.autoRefreshMinutes
+        guard minutes > 0 else { return }
+        autoRefreshTask = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: UInt64(minutes) * 60 * 1_000_000_000)
+                if Task.isCancelled { break }
+                await refreshPrices()
+            }
+        }
+    }
+
+    private func profitRows(_ scope: ScopeResult) -> [ProfitBarRow] {
+        scope.positions
+            .map { ProfitBarRow(symbol: $0.symbol, profit: $0.totalProfit) }
+            .sorted { abs($0.profit) > abs($1.profit) }
+            .prefix(12)
+            .map { $0 }
+    }
+
+    private var portfolioComparisonRows: [PortfolioCompareRow] {
+        portfolios.map { p in
+            let s = PortfolioCalculator.calculate(
+                portfolio: p,
+                allTransactions: transactions,
+                quotes: quotes,
+                ratesToPLN: ratesToPLN
+            )
+            return PortfolioCompareRow(
+                id: p.id,
+                name: p.name,
+                colorHex: p.colorHex,
+                value: s.totalValueBase,
+                returnPct: s.returnPct,
+                currency: s.baseCurrency
+            )
+        }
+        .sorted { $0.value > $1.value }
+    }
+
+    private func applyHistoryPreset(_ rows: [HistoryRow]) {
+        let full = defaultDomain(rows)
+        let cal = Calendar.current
+        let end = full.upperBound
+        switch historyPreset {
+        case .all:
+            historyZoom = full
+        case .oneYear:
+            let start = cal.date(byAdding: .year, value: -1, to: end) ?? full.lowerBound
+            historyZoom = max(start, full.lowerBound) ... end
+        case .quarter:
+            let start = cal.date(byAdding: .month, value: -3, to: end) ?? full.lowerBound
+            historyZoom = max(start, full.lowerBound) ... end
+        case .ytd:
+            let comps = cal.dateComponents([.year], from: end)
+            let start = cal.date(from: comps) ?? full.lowerBound
+            historyZoom = max(start, full.lowerBound) ... end
         }
     }
 
@@ -365,7 +492,7 @@ struct DashboardView: View {
                 if isRefreshingPrices {
                     ProgressView().controlSize(.small)
                 } else {
-                    Label("Ceny", systemImage: "arrow.clockwise")
+                    Label(L10n.t("dashboard.prices"), systemImage: "arrow.clockwise")
                 }
             }
             .disabled(isRefreshingPrices)
@@ -1003,486 +1130,30 @@ private extension Date {
     }
 }
 
+private enum HistoryPreset: String, CaseIterable, Hashable {
+    case all
+    case oneYear
+    case quarter
+    case ytd
+}
+
+private struct ProfitBarRow: Identifiable {
+    var id: String { symbol }
+    let symbol: String
+    let profit: Double
+}
+
+private struct PortfolioCompareRow: Identifiable {
+    let id: UUID
+    let name: String
+    let colorHex: String
+    let value: Double
+    let returnPct: Double
+    let currency: String
+}
+
 private enum DashboardScope: Hashable {
     case all
     case group(UUID)
     case portfolio(UUID)
 }
-
-struct TransactionsView: View {
-    @Environment(\.modelContext) private var context
-    @EnvironmentObject private var appState: AppState
-
-    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
-    @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
-
-    @State private var showAdd = false
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            HStack {
-                Picker("Portfel", selection: Binding(get: { appState.selectedPortfolioId }, set: { appState.selectedPortfolioId = $0 })) {
-                    Text("Wszystkie").tag(UUID?.none)
-                    ForEach(portfolios) { portfolio in
-                        Text(portfolio.name).tag(UUID?.some(portfolio.id))
-                    }
-                }
-                .frame(maxWidth: 320)
-
-                Spacer()
-
-                Button {
-                    showAdd = true
-                } label: {
-                    Label("Dodaj", systemImage: "plus")
-                }
-                .buttonStyle(.borderedProminent)
-            }
-            .padding([.horizontal, .top])
-
-            List {
-                ForEach(filteredTransactions) { tx in
-                    TransactionRow(transaction: tx)
-                }
-                .onDelete(perform: deleteTransactions)
-            }
-        }
-        .navigationTitle("Operacje")
-        .sheet(isPresented: $showAdd) {
-            AddTransactionSheet(portfolios: portfolios)
-        }
-    }
-
-    private var filteredTransactions: [Transaction] {
-        guard let pid = appState.selectedPortfolioId else { return transactions }
-        return transactions.filter { $0.portfolio?.id == pid }
-    }
-
-    private func deleteTransactions(at offsets: IndexSet) {
-        let items = offsets.map { filteredTransactions[$0] }
-        for tx in items { context.delete(tx) }
-        try? context.save()
-    }
-}
-
-struct ImportView: View {
-    var body: some View {
-        ImportScreen()
-    }
-}
-
-struct SettingsView: View {
-    @Environment(\.modelContext) private var context
-    @EnvironmentObject private var updateController: UpdateController
-    @State private var exportDoc: LWBackupDocument?
-    @State private var importing = false
-    @State private var showExport = false
-    @State private var errorMessage: String?
-
-    var body: some View {
-        Form {
-            Section("O programie") {
-                LabeledContent("Wersja", value: AppVersion.shortVersion)
-                LabeledContent("Build", value: AppVersion.buildNumber)
-                Button {
-                    Task { await updateController.checkForUpdates(interactive: true) }
-                } label: {
-                    if updateController.isChecking {
-                        ProgressView().controlSize(.small)
-                    } else {
-                        Text("Sprawdź aktualizacje…")
-                    }
-                }
-                .disabled(updateController.isChecking)
-
-                Link("Strona pobierania", destination: LibreWalletDistribution.downloadPageURL)
-                Link("GitHub Releases", destination: LibreWalletDistribution.releasesPageURL)
-            }
-
-            Section("Backup") {
-                Button("Eksportuj backup…") {
-                    do {
-                        exportDoc = LWBackupDocument(data: try BackupService.export(context: context))
-                        showExport = true
-                    } catch {
-                        errorMessage = error.localizedDescription
-                    }
-                }
-
-                Button("Importuj backup…") {
-                    importing = true
-                }
-            }
-
-            if let errorMessage {
-                Section("Błąd") {
-                    Text(errorMessage).foregroundStyle(.red)
-                }
-            }
-        }
-        .padding()
-        .navigationTitle("Ustawienia")
-        .fileExporter(
-            isPresented: $showExport,
-            document: exportDoc,
-            contentType: .json,
-            defaultFilename: "librewallet-backup.json"
-        ) { result in
-            if case .failure(let err) = result {
-                errorMessage = err.localizedDescription
-            }
-        }
-        .fileImporter(
-            isPresented: $importing,
-            allowedContentTypes: [.json],
-            allowsMultipleSelection: false
-        ) { result in
-            do {
-                guard let url = try result.get().first else { return }
-                let data = try Data(contentsOf: url)
-                try BackupService.import(data: data, context: context, wipeExisting: true)
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
-    }
-}
-
-struct PositionsView: View {
-    @Environment(\.modelContext) private var context
-    @EnvironmentObject private var appState: AppState
-
-    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
-    @Query(sort: \Transaction.date) private var transactions: [Transaction]
-    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
-
-    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
-    @State private var ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
-
-    private var scopedPortfolios: [Portfolio] {
-        if let pid = appState.selectedPortfolioId {
-            return portfolios.filter { $0.id == pid }
-        }
-        if let gid = appState.selectedGroupId {
-            return portfolios.filter { $0.group?.id == gid }
-        }
-        return portfolios
-    }
-
-    private var scope: ScopeResult {
-        let scoped = scopedPortfolios
-        if scoped.count == 1, let portfolio = scoped.first {
-            return PortfolioCalculator.calculate(
-                portfolio: portfolio,
-                allTransactions: transactions,
-                quotes: quotes,
-                ratesToPLN: ratesToPLN
-            )
-        }
-        return PortfolioCalculator.aggregateToPLN(
-            portfolios: scoped,
-            allTransactions: transactions,
-            quotes: quotes,
-            ratesToPLN: ratesToPLN
-        )
-    }
-
-    var body: some View {
-        PositionsListContent(
-            scope: scope,
-            emptyDescription: "Brak pozycji w bieżącym zakresie. Wybierz portfel albo zaimportuj operacje.",
-            onDeleteRequest: { pos in
-                confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
-            }
-        )
-        .navigationTitle("Pozycje")
-        .task { await loadRates() }
-        .alert(
-            "Usunąć pozycję?",
-            isPresented: Binding(
-                get: { confirmDeletePosition != nil },
-                set: { if !$0 { confirmDeletePosition = nil } }
-            ),
-            presenting: confirmDeletePosition
-        ) { pos in
-            Button("Anuluj", role: .cancel) {
-                confirmDeletePosition = nil
-            }
-            Button("Usuń", role: .destructive) {
-                deletePosition(symbol: pos.symbol, currency: pos.currency)
-                confirmDeletePosition = nil
-            }
-        } message: { pos in
-            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w bieżącym zakresie.")
-        }
-    }
-
-    private func loadRates() async {
-        if let rates = try? await NBPExchangeRateService.ratesToPLN() {
-            ratesToPLN = rates
-        }
-    }
-
-    private func deletePosition(symbol: String, currency: String) {
-        let scopedIds = Set(scopedPortfolios.map(\.id))
-        let normSymbol = symbol.uppercased()
-        let normCurrency = currency.uppercased()
-        let toDelete = transactions.filter { tx in
-            guard let pid = tx.portfolio?.id, scopedIds.contains(pid) else { return false }
-            return (tx.symbol ?? "").uppercased() == normSymbol
-                && tx.currency.uppercased() == normCurrency
-        }
-        for tx in toDelete { context.delete(tx) }
-        try? context.save()
-    }
-}
-
-struct GroupDetailView: View {
-    let groupId: UUID
-
-    @Environment(\.modelContext) private var context
-    @EnvironmentObject private var appState: AppState
-
-    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
-    @Query(sort: \PortfolioGroup.createdAt) private var groups: [PortfolioGroup]
-    @Query(sort: \Transaction.date) private var transactions: [Transaction]
-    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
-
-    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
-    @State private var ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
-
-    private var group: PortfolioGroup? {
-        groups.first(where: { $0.id == groupId })
-    }
-
-    private var scopedPortfolios: [Portfolio] {
-        portfolios.filter { $0.group?.id == groupId }
-    }
-
-    private var scope: ScopeResult {
-        PortfolioCalculator.aggregateToPLN(
-            portfolios: scopedPortfolios,
-            allTransactions: transactions,
-            quotes: quotes,
-            ratesToPLN: ratesToPLN
-        )
-    }
-
-    var body: some View {
-        PositionsListContent(
-            scope: scope,
-            emptyDescription: "Brak pozycji w tej grupie.",
-            onDeleteRequest: { pos in
-                confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
-            }
-        )
-        .navigationTitle(group?.name ?? "Grupa")
-        .task { await loadRates() }
-        .onAppear {
-            appState.selectedGroupId = groupId
-            appState.selectedPortfolioId = nil
-        }
-        .alert(
-            "Usunąć pozycję?",
-            isPresented: Binding(
-                get: { confirmDeletePosition != nil },
-                set: { if !$0 { confirmDeletePosition = nil } }
-            ),
-            presenting: confirmDeletePosition
-        ) { pos in
-            Button("Anuluj", role: .cancel) {
-                confirmDeletePosition = nil
-            }
-            Button("Usuń", role: .destructive) {
-                deletePosition(symbol: pos.symbol, currency: pos.currency)
-                confirmDeletePosition = nil
-            }
-        } message: { pos in
-            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w tej grupie.")
-        }
-    }
-
-    private func loadRates() async {
-        if let rates = try? await NBPExchangeRateService.ratesToPLN() {
-            ratesToPLN = rates
-        }
-    }
-
-    private func deletePosition(symbol: String, currency: String) {
-        let scopedIds = Set(scopedPortfolios.map(\.id))
-        let normSymbol = symbol.uppercased()
-        let normCurrency = currency.uppercased()
-        let toDelete = transactions.filter { tx in
-            guard let pid = tx.portfolio?.id, scopedIds.contains(pid) else { return false }
-            return (tx.symbol ?? "").uppercased() == normSymbol
-                && tx.currency.uppercased() == normCurrency
-        }
-        for tx in toDelete { context.delete(tx) }
-        try? context.save()
-    }
-}
-
-struct PortfolioDetailView: View {
-    let portfolioId: UUID
-
-    @Environment(\.modelContext) private var context
-    @EnvironmentObject private var appState: AppState
-
-    @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
-    @Query(sort: \Transaction.date) private var transactions: [Transaction]
-    @Query(sort: \Quote.asOf, order: .reverse) private var quotes: [Quote]
-
-    @State private var confirmDeletePosition: (symbol: String, currency: String, name: String)?
-    @State private var ratesToPLN: [String: Double] = NBPExchangeRateService.cachedRatesToPLN()
-
-    private var portfolio: Portfolio? {
-        portfolios.first(where: { $0.id == portfolioId })
-    }
-
-    private var scope: ScopeResult {
-        guard let portfolio else {
-            return PortfolioCalculator.calculate(portfolio: nil, allTransactions: [], quotes: [])
-        }
-        return PortfolioCalculator.calculate(
-            portfolio: portfolio,
-            allTransactions: transactions,
-            quotes: quotes,
-            ratesToPLN: ratesToPLN
-        )
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if let portfolio {
-                portfolioSummary(portfolio: portfolio, scope: scope)
-                    .padding()
-                Divider()
-            }
-
-            PositionsListContent(
-                scope: scope,
-                emptyDescription: "Brak pozycji w tym portfelu. Zaimportuj operacje albo dodaj obligacje.",
-                onDeleteRequest: { pos in
-                    confirmDeletePosition = (pos.symbol, pos.currency, pos.name)
-                }
-            )
-        }
-        .navigationTitle(portfolio?.name ?? "Portfel")
-        .task { await loadRates() }
-        .onAppear {
-            if let portfolio {
-                appState.selectPortfolio(portfolio)
-            }
-        }
-        .alert(
-            "Usunąć pozycję?",
-            isPresented: Binding(
-                get: { confirmDeletePosition != nil },
-                set: { if !$0 { confirmDeletePosition = nil } }
-            ),
-            presenting: confirmDeletePosition
-        ) { pos in
-            Button("Anuluj", role: .cancel) {
-                confirmDeletePosition = nil
-            }
-            Button("Usuń", role: .destructive) {
-                deletePosition(symbol: pos.symbol, currency: pos.currency)
-                confirmDeletePosition = nil
-            }
-        } message: { pos in
-            Text("To skasuje wszystkie operacje dla \(pos.symbol) (\(pos.currency)) w tym portfelu.")
-        }
-    }
-
-    private func loadRates() async {
-        if let rates = try? await NBPExchangeRateService.ratesToPLN() {
-            ratesToPLN = rates
-        }
-    }
-
-    @ViewBuilder
-    private func portfolioSummary(portfolio: Portfolio, scope: ScopeResult) -> some View {
-        HStack(spacing: 24) {
-            summaryMetric(title: "Wartość", value: LWFormatting.money(scope.totalValueBase, currency: portfolio.baseCurrency))
-            summaryMetric(
-                title: "Zysk",
-                value: LWFormatting.money(scope.totalProfitBase, currency: portfolio.baseCurrency),
-                tint: scope.totalProfitBase >= 0 ? .green : .red
-            )
-            summaryMetric(title: "Zwrot", value: String(format: "%.2f%%", scope.returnPct))
-            if scope.hasCashOperations, abs(scope.cashValueBase) > 0.01 {
-                summaryMetric(title: "Gotówka", value: LWFormatting.money(scope.cashValueBase, currency: portfolio.baseCurrency))
-            }
-            Spacer()
-        }
-    }
-
-    private func summaryMetric(title: String, value: String, tint: Color = .primary) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-            Text(value)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(tint)
-        }
-    }
-
-    private func deletePosition(symbol: String, currency: String) {
-        let normSymbol = symbol.uppercased()
-        let normCurrency = currency.uppercased()
-        let toDelete = transactions.filter { tx in
-            guard tx.portfolio?.id == portfolioId else { return false }
-            return (tx.symbol ?? "").uppercased() == normSymbol
-                && tx.currency.uppercased() == normCurrency
-        }
-        for tx in toDelete { context.delete(tx) }
-        try? context.save()
-    }
-}
-
-private struct PositionsListContent: View {
-    let scope: ScopeResult
-    let emptyDescription: String
-    let onDeleteRequest: (PositionRow) -> Void
-
-    var body: some View {
-        if scope.positions.isEmpty {
-            ContentUnavailableView(
-                "Brak pozycji",
-                systemImage: "briefcase",
-                description: Text(emptyDescription)
-            )
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            List {
-                ForEach(scope.positions, id: \.id) { pos in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(pos.symbol).font(.headline)
-                            Text(pos.name).font(.caption).foregroundStyle(.secondary)
-                            Text("\(LWFormatting.number(pos.quantity)) szt. · średnio \(LWFormatting.money(pos.avgCost, currency: pos.currency))")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(LWFormatting.money(pos.currentValue, currency: pos.currency)).font(.headline)
-                            Text(LWFormatting.money(pos.totalProfit, currency: pos.currency))
-                                .font(.caption)
-                                .foregroundStyle(pos.totalProfit >= 0 ? .green : .red)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .contextMenu {
-                        Button("Usuń pozycję…", role: .destructive) {
-                            onDeleteRequest(pos)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-

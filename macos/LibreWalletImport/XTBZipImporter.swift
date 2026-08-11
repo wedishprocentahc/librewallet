@@ -91,9 +91,9 @@ enum XTBZipImporter {
         let name = pick(row, keys: [
             "name", "instrument_name", "nazwa", "instrument_nazwa"
         ])?.trimmed.nilIfEmpty
-        let currency = (pick(row, keys: [
-            "currency", "ccy", "waluta", "currency_code"
-        ]) ?? "PLN").trimmed.uppercased()
+        let currency = CurrencyCode.normalize(
+            pick(row, keys: ["currency", "ccy", "waluta", "currency_code"]) ?? "PLN"
+        )
 
         let quantity = parseNumber(pick(row, keys: ["quantity", "qty", "ilosc", "ilość", "wolumen"]))
         let price = parseNumber(pick(row, keys: ["price", "rate", "cena", "kurs"]))
@@ -195,7 +195,8 @@ enum XTBZipImporter {
 
 private enum XTBXLSX {
     static func currencyHint(fromFileName name: String) -> String? {
-        // e.g. "PLN_53254345_2026-06-10_2026-07-07.xlsx"
+        // e.g. "PLN_53254345_….xlsx" or "IKE_53254345_….xlsx".
+        // Keep IKE/IKZE labels here for portfolio naming/grouping; settle as PLN via CurrencyCode.normalize.
         let base = name.split(separator: "_").first.map(String.init)
         return base?.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
     }

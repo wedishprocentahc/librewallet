@@ -11,30 +11,52 @@ enum LWModelContainer {
             AllocationTarget.self,
             Quote.self,
         ])
-        // Make the store location predictable so it can be wiped easily in dev.
         let url = storeURL()
         try? FileManager.default.createDirectory(
             at: url.deletingLastPathComponent(),
             withIntermediateDirectories: true
         )
+
+        // Prefer opening existing store; SwiftData applies lightweight migration when possible.
         let config = ModelConfiguration(schema: schema, url: url)
         do {
             return try ModelContainer(for: schema, configurations: [config])
         } catch {
-            // SwiftData doesn't always auto-migrate when the schema changes during development.
-            // If we hit a schema mismatch, wipe the local store and recreate it.
+            // Last resort: back up the broken store, then recreate empty.
+            // Prefer restoring from Settings → Import backup (JSON) over this wipe.
+            Self.backupStoreFiles(at: url)
             try? FileManager.default.removeItem(at: url)
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: url.path + "-shm"))
             try? FileManager.default.removeItem(at: URL(fileURLWithPath: url.path + "-wal"))
-            return try! ModelContainer(for: schema, configurations: [config])
+            do {
+                return try ModelContainer(for: schema, configurations: [config])
+            } catch {
+                // Absolute fallback: in-memory container so the app still launches.
+                let memory = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                return try! ModelContainer(for: schema, configurations: [memory])
+            }
         }
     }()
 
     static func storeURL() -> URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        // Unsandboxed dev builds store here; sandboxed builds will still work but use this explicit path.
         let dir = appSupport.appendingPathComponent("LibreWallet", isDirectory: true)
         return dir.appendingPathComponent("LibreWallet.sqlite")
     }
-}
 
+    private static func backupStoreFiles(at url: URL) {
+        let stamp = ISO8601DateFormatter().string(from: Date()).replacingOccurrences(of: ":", with: "-")
+        let backupDir = url.deletingLastPathComponent().appendingPathComponent("StoreBackups", isDirectory: true)
+        try? FileManager.default.createDirectory(at: backupDir, withIntermediateDirectories: true)
+        let dest = backupDir.appendingPathComponent("LibreWallet-\(stamp).sqlite")
+        try? FileManager.default.copyItem(at: url, to: dest)
+        try? FileManager.default.copyItem(
+            at: URL(fileURLWithPath: url.path + "-shm"),
+            to: URL(fileURLWithPath: dest.path + "-shm")
+        )
+        try? FileManager.default.copyItem(
+            at: URL(fileURLWithPath: url.path + "-wal"),
+            to: URL(fileURLWithPath: dest.path + "-wal")
+        )
+    }
+}

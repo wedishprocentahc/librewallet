@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>LibreWallet — pobierz dla macOS</title>
-  <meta name="description" content="Lokalny tracker portfela na Maca. Dane zostają na Twoim komputerze." />
+  <title>LibreWallet — natywny tracker portfela na macOS</title>
+  <meta name="description" content="Lokalny tracker portfela na Maca (SwiftUI). Dane zostają na Twoim komputerze." />
   <style>
     :root {
       --bg: #0f1412;
@@ -81,6 +81,7 @@
       border-radius: 4px;
       font-size: 0.92em;
     }
+    .muted { color: #9ab0a2; margin: 0; }
     footer {
       margin-top: 40px;
       color: #7f9186;
@@ -92,28 +93,46 @@
 <body>
   <main>
     <h1>LibreWallet</h1>
-    <p class="lead">Lokalny tracker portfela na macOS. Twoje dane nie wychodzą z komputera.</p>
+    <p class="lead">Natywna aplikacja macOS (SwiftUI) do śledzenia portfela. Dane zostają na Twoim Macu — bez chmury.</p>
 
     <div class="actions">
-      <a class="button" href="download/mac/">Pobierz dla macOS</a>
-      <a class="button secondary" href="https://github.com/wedishprocentahc/librewallet/releases/latest">GitHub Releases</a>
+      <a class="button" href="https://github.com/wedishprocentahc/librewallet/releases/latest">Pobierz native macOS</a>
+      <a class="button secondary" href="download/mac/">Instrukcja instalacji</a>
     </div>
 
     <div class="card">
-      <h2>Instalacja (ważne przy pierwszym uruchomieniu)</h2>
+      <h2>Co dostajesz</h2>
       <ol>
-        <li>Pobierz instalator <code>LibreWallet.pkg</code> (lub <code>LibreWallet.zip</code>) i zainstaluj.</li>
-        <li>Przenieś <code>LibreWallet.app</code> do folderu <strong>Aplikacje</strong>.</li>
-        <li>Przy pierwszym otwarciu macOS może zablokować plik (brak notarizacji Apple).</li>
-        <li>Kliknij apkę <strong>prawym przyciskiem</strong> → <strong>Otwórz</strong> → potwierdź <strong>Otwórz</strong>.</li>
+        <li>Import XTB ZIP, CSV uniwersalny oraz IBKR CSV</li>
+        <li>Dashboard z benchmarkami, zwrotami pozycji, rebalancingiem i obligacjami skarbowymi</li>
+        <li>Cashflow, uproszczony raport podatkowy PL oraz alerty cen</li>
+        <li>Backup JSON / eksport CSV — dane lokalne</li>
       </ol>
     </div>
 
     <div class="card">
+      <h2>Instalacja (Gatekeeper)</h2>
+      <ol>
+        <li>Pobierz <code>LibreWallet.pkg</code> (preferowane) lub ZIP z Releases.</li>
+        <li>Zainstaluj / przenieś <code>LibreWallet.app</code> do <strong>Aplikacje</strong>.</li>
+        <li>Przy pierwszym otwarciu: <strong>prawy przycisk → Otwórz</strong> (apka nie jest jeszcze notaryzowana).</li>
+      </ol>
+      <p class="muted" style="margin-top:12px">Szczegóły notarizacji dla maintainerów: <code>docs/NOTARIZATION.md</code>.</p>
+    </div>
+
+    <div class="card">
       <h2>Aktualizacje</h2>
-      <p style="margin:0;color:#c5d4cb">
+      <p class="muted">
         W aplikacji: menu LibreWallet → <strong>Sprawdź aktualizacje…</strong>
-        albo Ustawienia → O programie. Aktualizację pobierasz ręcznie (ZIP) i podmieniasz apkę.
+        albo Ustawienia. Preferowany instalator to <code>.pkg</code>.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>Legacy</h2>
+      <p class="muted">
+        Starsze buildy Electron/pkg (<code>1.x</code>) pozostają w archiwum Releases wyłącznie do konserwacji.
+        Nowy rozwój idzie wyłącznie w native macOS (<code>0.5+</code>).
       </p>
     </div>
 

@@ -6,6 +6,10 @@ struct LibreWalletApp: App {
     @StateObject private var appState = AppState()
     @StateObject private var updateController = UpdateController()
 
+    init() {
+        PriceAlertService.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

@@ -22,37 +22,47 @@ struct RootView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: $appState.navigationSelection) {
+                // Localization refresh
                 Section("LibreWallet") {
                     NavigationLink(value: NavigationDestination.dashboard) {
-                        Label("Dashboard", systemImage: "chart.line.uptrend.xyaxis")
+                        Label(L10n.t("nav.dashboard"), systemImage: "chart.line.uptrend.xyaxis")
                     }
                     NavigationLink(value: NavigationDestination.positions) {
-                        Label("Pozycje", systemImage: "briefcase")
+                        Label(L10n.t("nav.positions"), systemImage: "briefcase")
                     }
                     NavigationLink(value: NavigationDestination.transactions) {
-                        Label("Operacje", systemImage: "list.bullet.rectangle")
+                        Label(L10n.t("nav.transactions"), systemImage: "list.bullet.rectangle")
                     }
                 }
 
-                Section("Narzędzia") {
+                Section(L10n.t("nav.tools")) {
                     NavigationLink(value: NavigationDestination.imports) {
-                        Label("Import", systemImage: "arrow.down.doc")
+                        Label(L10n.t("nav.import"), systemImage: "arrow.down.doc")
                     }
                     NavigationLink(value: NavigationDestination.rebalance) {
-                        Label("Rebalancing", systemImage: "arrow.left.arrow.right")
+                        Label(L10n.t("nav.rebalance"), systemImage: "arrow.left.arrow.right")
                     }
                     NavigationLink(value: NavigationDestination.bonds) {
-                        Label("Obligacje", systemImage: "banknote")
+                        Label(L10n.t("nav.bonds"), systemImage: "banknote")
+                    }
+                    NavigationLink(value: NavigationDestination.cashflow) {
+                        Label(L10n.t("nav.cashflow"), systemImage: "arrow.down.left.arrow.up.right")
+                    }
+                    NavigationLink(value: NavigationDestination.tax) {
+                        Label(L10n.t("nav.tax"), systemImage: "doc.text")
+                    }
+                    NavigationLink(value: NavigationDestination.alerts) {
+                        Label(L10n.t("nav.alerts"), systemImage: "bell")
                     }
                 }
 
-                Section("System") {
+                Section(L10n.t("nav.system")) {
                     NavigationLink(value: NavigationDestination.settings) {
-                        Label("Ustawienia", systemImage: "gearshape")
+                        Label(L10n.t("nav.settings"), systemImage: "gearshape")
                     }
                 }
 
-                Section("Grupy") {
+                Section(L10n.t("nav.groups")) {
                     ForEach(groups) { group in
                         DisclosureGroup {
                             ForEach(group.portfolios.sorted(by: { $0.createdAt < $1.createdAt })) { portfolio in
@@ -138,6 +148,7 @@ struct RootView: View {
         .sheet(isPresented: $updateController.showAbout) {
             AboutLibreWalletView()
         }
+        .background(AlertMonitorHost())
         .alert(
             updateController.alertTitle,
             isPresented: $updateController.showAlert
@@ -249,6 +260,7 @@ struct RootView: View {
         .task {
             await bootstrapIfNeeded()
         }
+        .id(appState.localizationEpoch)
     }
 
     @ViewBuilder
@@ -266,6 +278,12 @@ struct RootView: View {
             RebalanceView()
         case .bonds:
             BondsView()
+        case .cashflow:
+            CashflowView()
+        case .tax:
+            TaxReportView()
+        case .alerts:
+            AlertsView()
         case .settings:
             SettingsView()
         case .group(let groupId):
@@ -276,7 +294,34 @@ struct RootView: View {
     }
 
     private func bootstrapIfNeeded() async {
-        // Do not auto-create demo groups/portfolios.
+        repairIKECurrencies()
+    }
+
+    /// IKE/IKZE are account products, not currencies — force PLN on existing stores.
+    private func repairIKECurrencies() {
+        var changed = false
+        let portfolioDesc = FetchDescriptor<Portfolio>()
+        let txDesc = FetchDescriptor<Transaction>()
+        let portfolios = (try? context.fetch(portfolioDesc)) ?? []
+        let transactions = (try? context.fetch(txDesc)) ?? []
+
+        for p in portfolios {
+            let normalized = CurrencyCode.normalize(p.baseCurrency)
+            if p.baseCurrency != normalized {
+                p.baseCurrency = normalized
+                changed = true
+            }
+        }
+        for tx in transactions {
+            let normalized = CurrencyCode.normalize(tx.currency)
+            if tx.currency != normalized {
+                tx.currency = normalized
+                changed = true
+            }
+        }
+        if changed {
+            try? context.save()
+        }
     }
 
     private func createGroup(name: String, portfolios: [DraftPortfolio]) {

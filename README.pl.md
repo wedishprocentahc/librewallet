@@ -14,16 +14,18 @@
 
 ## Pobierz
 
-**Natywna aplikacja macOS (SwiftUI):** plik `LibreWallet.zip` z **[Releases](https://github.com/wedishprocentahc/librewallet/releases)** albo ze [strony pobierania](https://wedishprocentahc.github.io/librewallet/).
+**Natywna aplikacja macOS (SwiftUI):** plik `LibreWallet.pkg` / `LibreWallet.zip` z **[Releases](https://github.com/wedishprocentahc/librewallet/releases)** albo ze [strony pobierania](https://wedishprocentahc.github.io/librewallet/).
+
+Aktualna linia: **native `0.5.x`**. Buildy Electron/`1.x` są legacy (tylko konserwacja).
 
 | System | Plik |
 |--------|------|
-| macOS (native) | `LibreWallet.zip` |
-| Starsze buildy Electron (legacy) | `LibreWallet-*-mac-arm64.pkg` / `*-win.exe` (jeśli nadal w Releases) |
+| macOS (native) | `LibreWallet.pkg` (preferowane) / `LibreWallet.zip` |
+| Starsze buildy Electron (legacy) | `LibreWallet-*-mac-arm64.pkg` / `*-win.exe` (archiwum Releases) |
 
-Pierwsze uruchomienie: **prawy przycisk → Otwórz** (Gatekeeper — apka nie jest notaryzowana płatnym Apple Developer ID).
+Pierwsze uruchomienie: **prawy przycisk → Otwórz** (Gatekeeper — apka nie jest notaryzowana, dopóki nie masz Developer ID; zob. [docs/NOTARIZATION.md](docs/NOTARIZATION.md)).
 
-Lokalny release: `./scripts/release-macos.sh` (z `--publish` tworzy GitHub Release). Tag musi zgadzać się z `MARKETING_VERSION` w `macos/project.yml` (np. `v0.1.0`).
+Lokalny release: `./scripts/release-macos.sh` (unsigned). Ze signingiem: `LW_TEAM_ID=… ./scripts/release-macos.sh --sign --notarize`. Tag musi zgadzać się z `MARKETING_VERSION` w `macos/project.yml` (np. `v0.5.0`).
 
 ---
 
