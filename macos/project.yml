@@ -18,8 +18,8 @@ packages:
 settings:
   base:
     SWIFT_VERSION: "5.9"
-    MARKETING_VERSION: "0.5.2"
-    CURRENT_PROJECT_VERSION: "8"
+    MARKETING_VERSION: "0.5.3"
+    CURRENT_PROJECT_VERSION: "9"
     GENERATE_INFOPLIST_FILE: YES
     INFOPLIST_KEY_CFBundleDisplayName: LibreWallet
     INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.finance

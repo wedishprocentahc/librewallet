@@ -5,6 +5,12 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.3] — 2026-08-12
+
+### Dodane (native macOS)
+
+- Interaktywne wykresy pierścieniowe (alokacja / ekspozycja walutowa): hover wysuwa wycinek, obrys z zaokrąglonymi rogami, dane w środku i podświetlenie legendy.
+
 ## [0.5.2] — 2026-08-12
 
 ### Dodane (native macOS)
