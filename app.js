@@ -4337,10 +4337,17 @@ function detectOperationType(text, amount, symbol, quantity, price) {
 
 function detectAssetType(symbol = "", name = "") {
   const text = normalize(`${symbol} ${name}`);
-  if (/\b(vwce|vuaa|vusa|cspx|iwda|eimi|sxr8|swda|vwrl|acwi|qdve|is3n|iusq|eunl|emim|lcuw|meud|spyl|sppw|pr1w|vhyl|vgeg|veur|zprv|zprx|aggu|iuit|eqac)\b/.test(text)) {
+  const base = String(symbol || "")
+    .toUpperCase()
+    .replace(/\.(PL|WA)$/i, "");
+  if (base.startsWith("ETF") && base.length > 3) {
     return "etf";
   }
-  if (/\b(etf|ucits|ishares|vanguard|xtrackers|amundi|lyxor|invesco|spdr|wisdomtree)\b/.test(text)) return "etf";
+  if (/\b(vwce|vuaa|vusa|cspx|iwda|eimi|sxr8|swda|vwrl|acwi|qdve|is3n|iusq|eunl|emim|lcuw|meud|spyl|sppw|pr1w|vhyl|vgeg|veur|zprv|zprx|aggu|iuit|eqac|etfbw20tr|etfbm40tr|etfspltr|etfdaxpl|etfsp500)\b/.test(text)) {
+    return "etf";
+  }
+  if (/\betf\b|\betf[a-z0-9]{2,}/.test(text)) return "etf";
+  if (/\b(etf|ucits|ishares|vanguard|xtrackers|amundi|lyxor|invesco|spdr|wisdomtree|beta etf)\b/.test(text)) return "etf";
   if (/\b(bond|oblig|treasury|skarb|edo|coi|tos|rod|rso|catalyst)\b/.test(text)) return "bond";
   if (!symbol && /cash|gotow/.test(text)) return "cash";
   if (symbol) return "stock";

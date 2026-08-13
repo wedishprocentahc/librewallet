@@ -14,6 +14,7 @@
 		27462A117AEC79F404098BD5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7F45D9368C3B5F31B76CF2 /* Models.swift */; };
 		289257D0B31981CEADF07791 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40574EFF205A2E0C7C7AC110 /* AppState.swift */; };
 		28A6218FFA19635F24092ABE /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55C151B0499FD7D3C27A0F06 /* Formatting.swift */; };
+		2A6E0556285F5E0C33F4322F /* AssetTypeDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 01F66465FE16D79E61DB693F /* AssetTypeDetectionTests.swift */; };
 		2AB4B7BE5044FE053BEC730C /* PriceAlertService.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5A55378F005AA6DF22E075 /* PriceAlertService.swift */; };
 		3329072110ED3CFF1BA9ED81 /* AppVersionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C677A53B22AB059ED59BFD1 /* AppVersionTests.swift */; };
 		339D601014175AF94E37E10A /* AssetTypeDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34C1D2B7CB9826CD0E503274 /* AssetTypeDetection.swift */; };
@@ -80,6 +81,7 @@
 
 /* Begin PBXFileReference section */
 		00763762100EDA5DC3D43958 /* LibreWallet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LibreWallet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		01F66465FE16D79E61DB693F /* AssetTypeDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetTypeDetectionTests.swift; sourceTree = "<group>"; };
 		0646D787C9CF30EA1ED90E37 /* AlertsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlertsView.swift; sourceTree = "<group>"; };
 		083A44D3AA91E0450B81336A /* TransactionRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionRow.swift; sourceTree = "<group>"; };
 		0D51131AF7F469705566C4EC /* FeedbackBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedbackBanner.swift; sourceTree = "<group>"; };
@@ -168,6 +170,7 @@
 			isa = PBXGroup;
 			children = (
 				4C677A53B22AB059ED59BFD1 /* AppVersionTests.swift */,
+				01F66465FE16D79E61DB693F /* AssetTypeDetectionTests.swift */,
 				114AED6765341B39AFAD680E /* BondPricingTests.swift */,
 				2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */,
 				263E24A0D5DAD4DEC4ED4FD7 /* RoadmapFeatureTests.swift */,
@@ -502,6 +505,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				3329072110ED3CFF1BA9ED81 /* AppVersionTests.swift in Sources */,
+				2A6E0556285F5E0C33F4322F /* AssetTypeDetectionTests.swift in Sources */,
 				81129736E71FA399B31DE0A9 /* BondPricingTests.swift in Sources */,
 				3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */,
 				4F224A4269378F87DA0EEF40 /* RoadmapFeatureTests.swift in Sources */,
@@ -599,7 +603,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -616,7 +620,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.2;
+				MARKETING_VERSION = 0.5.3;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -661,7 +665,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 8;
+				CURRENT_PROJECT_VERSION = 9;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -684,7 +688,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.2;
+				MARKETING_VERSION = 0.5.3;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -6,11 +6,19 @@ enum AssetTypeDetection {
         let name = (name ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let text = normalize("\(symbol) \(name)")
 
-        // Port of app.js detectAssetType()
-        if matches(text, pattern: #"\b(vwce|vuaa|vusa|cspx|iwda|eimi|sxr8|swda|vwrl|acwi|qdve|is3n|iusq|eunl|emim|lcuw|meud|spyl|sppw|pr1w|vhyl|vgeg|veur|zprv|zprx|aggu|iuit|eqac)\b"#) {
+        if isPolishOrGPWETFSymbol(symbol) {
             return "etf"
         }
-        if matches(text, pattern: #"\b(etf|ucits|ishares|vanguard|xtrackers|amundi|lyxor|invesco|spdr|wisdomtree)\b"#) {
+
+        // Port of app.js detectAssetType()
+        if matches(text, pattern: #"\b(vwce|vuaa|vusa|cspx|iwda|eimi|sxr8|swda|vwrl|acwi|qdve|is3n|iusq|eunl|emim|lcuw|meud|spyl|sppw|pr1w|vhyl|vgeg|veur|zprv|zprx|aggu|iuit|eqac|etfbw20tr|etfbm40tr|etfspltr|etfdaxpl|etfsp500)\b"#) {
+            return "etf"
+        }
+        // "etf" as standalone word in name, or ETF-prefix tickers (ETFBW20TR.PL).
+        if matches(text, pattern: #"\betf\b|\betf[a-z0-9]{2,}"#) {
+            return "etf"
+        }
+        if matches(text, pattern: #"\b(etf|ucits|ishares|vanguard|xtrackers|amundi|lyxor|invesco|spdr|wisdomtree|beta etf)\b"#) {
             return "etf"
         }
         if matches(text, pattern: #"\b(bond|oblig|treasury|skarb|edo|coi|tos|rod|ros|ror|dor|ots|rso|catalyst)\b"#) {
@@ -23,6 +31,14 @@ enum AssetTypeDetection {
             return "stock"
         }
         return "other"
+    }
+
+    /// GPW / XTB symbols like `ETFBW20TR.PL` — `\betf\b` misses them (no word boundary after ETF).
+    private static func isPolishOrGPWETFSymbol(_ symbol: String) -> Bool {
+        var base = symbol.uppercased()
+        if base.hasSuffix(".PL") { base = String(base.dropLast(3)) }
+        else if base.hasSuffix(".WA") { base = String(base.dropLast(3)) }
+        return base.hasPrefix("ETF") && base.count > 3
     }
 
     private static func normalize(_ value: String) -> String {

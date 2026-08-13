@@ -145,6 +145,46 @@ struct RootView: View {
                 }
             )
         }
+        .sheet(item: $renamingPortfolio) { portfolio in
+            EditNamedColorSheet(
+                title: "Edytuj portfel",
+                nameLabel: "Nazwa portfela",
+                name: $renameText,
+                color: $editColor,
+                onCancel: { renamingPortfolio = nil },
+                onSave: {
+                    let newName = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !newName.isEmpty else { return }
+                    portfolio.name = newName
+                    if let hex = editColor.toHex() {
+                        portfolio.colorHex = hex
+                    }
+                    try? context.save()
+                    renamingPortfolio = nil
+                    appState.notifySuccess(L10n.t("feedback.portfolioUpdated"))
+                }
+            )
+        }
+        .sheet(item: $renamingGroup) { group in
+            EditNamedColorSheet(
+                title: "Edytuj grupę",
+                nameLabel: "Nazwa grupy",
+                name: $renameText,
+                color: $editColor,
+                onCancel: { renamingGroup = nil },
+                onSave: {
+                    let newName = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !newName.isEmpty else { return }
+                    group.name = newName
+                    if let hex = editColor.toHex() {
+                        group.colorHex = hex
+                    }
+                    try? context.save()
+                    renamingGroup = nil
+                    appState.notifySuccess(L10n.t("feedback.groupUpdated"))
+                }
+            )
+        }
         .sheet(isPresented: $updateController.showAbout) {
             AboutLibreWalletView()
         }
@@ -172,52 +212,6 @@ struct RootView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(updateController.alertMessage)
-        }
-        .alert("Edytuj portfel", isPresented: Binding(
-            get: { renamingPortfolio != nil },
-            set: { if !$0 { renamingPortfolio = nil } }
-        )) {
-            TextField("Nazwa", text: $renameText)
-            ColorPicker("Kolor", selection: $editColor, supportsOpacity: false)
-            Button("Anuluj", role: .cancel) {
-                renamingPortfolio = nil
-            }
-            Button("Zapisz") {
-                guard let p = renamingPortfolio else { return }
-                let newName = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !newName.isEmpty {
-                    p.name = newName
-                    p.colorHex = editColor.toHex() ?? p.colorHex
-                    try? context.save()
-                    appState.notifySuccess(L10n.t("feedback.portfolioUpdated"))
-                }
-                renamingPortfolio = nil
-            }
-        } message: {
-            Text("Ustaw nazwę i kolor portfela.")
-        }
-        .alert("Edytuj grupę", isPresented: Binding(
-            get: { renamingGroup != nil },
-            set: { if !$0 { renamingGroup = nil } }
-        )) {
-            TextField("Nazwa", text: $renameText)
-            ColorPicker("Kolor", selection: $editColor, supportsOpacity: false)
-            Button("Anuluj", role: .cancel) {
-                renamingGroup = nil
-            }
-            Button("Zapisz") {
-                guard let g = renamingGroup else { return }
-                let newName = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !newName.isEmpty {
-                    g.name = newName
-                    g.colorHex = editColor.toHex() ?? g.colorHex
-                    try? context.save()
-                    appState.notifySuccess(L10n.t("feedback.groupUpdated"))
-                }
-                renamingGroup = nil
-            }
-        } message: {
-            Text("Ustaw nazwę i kolor grupy.")
         }
         .alert("Usunąć portfel?", isPresented: Binding(
             get: { confirmDeletePortfolio != nil },
@@ -399,6 +393,86 @@ private struct DraftPortfolio: Identifiable, Hashable {
         if copy.currency.isEmpty { copy.currency = "PLN" }
         copy.colorHex = color.toHex() ?? colorHex
         return copy
+    }
+}
+
+private struct EditNamedColorSheet: View {
+    let title: String
+    let nameLabel: String
+    @Binding var name: String
+    @Binding var color: Color
+    let onCancel: () -> Void
+    let onSave: () -> Void
+
+    private let presets: [(String, Color)] = [
+        ("Zielony", Color(hex: "#176B4D") ?? .green),
+        ("Niebieski", Color(hex: "#1B4F8A") ?? .blue),
+        ("Fiolet", Color(hex: "#6B3FA0") ?? .purple),
+        ("Czerwony", Color(hex: "#A13A32") ?? .red),
+        ("Pomarańcz", Color(hex: "#C36A1C") ?? .orange),
+        ("Szary", Color(hex: "#5A6168") ?? .gray),
+    ]
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section(nameLabel) {
+                    TextField(nameLabel, text: $name)
+                }
+                Section("Kolor") {
+                    HStack(spacing: 12) {
+                        ColorPicker("Wybór koloru", selection: $color, supportsOpacity: false)
+                            .labelsHidden()
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(color)
+                            .frame(width: 36, height: 24)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                    .strokeBorder(Color.secondary.opacity(0.35), lineWidth: 1)
+                            )
+                        Text(color.toHex() ?? "—")
+                            .font(.caption.monospaced())
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+
+                    HStack(spacing: 8) {
+                        ForEach(Array(presets.enumerated()), id: \.offset) { _, preset in
+                            Button {
+                                color = preset.1
+                            } label: {
+                                Circle()
+                                    .fill(preset.1)
+                                    .frame(width: 22, height: 22)
+                                    .overlay {
+                                        if colorsMatch(color, preset.1) {
+                                            Circle().strokeBorder(Color.primary, lineWidth: 2)
+                                        }
+                                    }
+                            }
+                            .buttonStyle(.plain)
+                            .help(preset.0)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+            .navigationTitle(title)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Anuluj", action: onCancel)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Zapisz", action: onSave)
+                        .disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .frame(minWidth: 420, minHeight: 260)
+    }
+
+    private func colorsMatch(_ a: Color, _ b: Color) -> Bool {
+        a.toHex()?.uppercased() == b.toHex()?.uppercased()
     }
 }
 

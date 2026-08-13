@@ -5,6 +5,13 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.4] — 2026-08-13
+
+### Naprawione (native macOS)
+
+- Polskie ETF-y GPW (np. `ETFBW20TR.PL`, `ETFSPLTR.PL`) rozpoznawane jako ETF zamiast akcji.
+- Edycja koloru grupy/portfela: działający `ColorPicker` w oknie (sheet) z presetami; niezawodny zapis hex.
+
 ## [0.5.3] — 2026-08-12
 
 ### Dodane (native macOS)
