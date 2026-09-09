@@ -9,6 +9,7 @@ struct ImportScreen: View {
 
     @Query(sort: \Portfolio.createdAt) private var portfolios: [Portfolio]
     @Query(sort: \PortfolioGroup.createdAt) private var groups: [PortfolioGroup]
+    @Query private var storedTransactions: [Transaction]
 
     @State private var preview: [ImportedTransaction] = []
     @State private var previewSource: String?
@@ -22,11 +23,21 @@ struct ImportScreen: View {
         return preview.contains { !($0.account ?? "").isEmpty }
     }
 
+    private var importPlan: ImportDeduper.Outcome {
+        ImportDeduper.filterNew(preview, existingExternalIds: existingExternalIds())
+    }
+
     private var canCommit: Bool {
         !preview.isEmpty && (autoCreatesPortfolios || selectedPortfolioId != nil)
     }
 
-    private var commitTitle: String { "Zapisz (\(preview.count))" }
+    private var commitTitle: String {
+        let plan = importPlan
+        if plan.skippedDuplicates > 0 {
+            return "Zapisz (\(plan.toInsert.count), −\(plan.skippedDuplicates) dup)"
+        }
+        return "Zapisz (\(plan.toInsert.count))"
+    }
     private var previewTitle: String { previewSource ?? "Import" }
     private var xtbAccountsSummary: String? {
         let accounts = Set(preview.compactMap(\.account)).sorted()
@@ -76,6 +87,10 @@ struct ImportScreen: View {
                     if let currenciesSummary {
                         Text(currenciesSummary).font(.caption).foregroundStyle(.secondary)
                     }
+                    let plan = importPlan
+                    Text("Do zapisu: \(plan.toInsert.count) · duplikaty: \(plan.skippedDuplicates)")
+                        .font(.caption)
+                        .foregroundStyle(plan.skippedDuplicates > 0 ? Color.orange : Color.secondary)
 
                     List(preview.prefix(200)) { row in
                         ImportRow(row: row)
@@ -87,7 +102,7 @@ struct ImportScreen: View {
                         Button("Wyczyść", action: clearPreview)
                         Button(commitTitle, action: commitPreview)
                             .buttonStyle(.borderedProminent)
-                            .disabled(!canCommit)
+                            .disabled(!canCommit || plan.toInsert.isEmpty)
                     }
                 }
                 .padding(.top, 6)
@@ -269,8 +284,17 @@ struct ImportScreen: View {
     private func commitPreview() {
         errorMessage = nil
 
+        // Snapshot IDs once; insert() also guards against races / batch dups.
+        var knownIds = existingExternalIds()
+        let filtered = ImportDeduper.filterNew(preview, existingExternalIds: knownIds)
+        guard !filtered.toInsert.isEmpty else {
+            notifyImportResult(saved: 0, skipped: filtered.skippedDuplicates)
+            clearPreview()
+            return
+        }
+
         if autoCreatesPortfolios {
-            commitXTBGrouped()
+            commitXTBGrouped(filtered.toInsert, skippedDuplicates: filtered.skippedDuplicates, knownIds: &knownIds)
             return
         }
 
@@ -280,23 +304,32 @@ struct ImportScreen: View {
             return
         }
 
-        let count = preview.count
-        for item in preview {
-            insert(item, into: portfolio)
+        var savedCount = 0
+        for item in filtered.toInsert {
+            if insert(item, into: portfolio, knownIds: &knownIds) {
+                savedCount += 1
+            }
         }
         try? context.save()
         clearPreview()
-        appState.notifySuccess(L10n.t("feedback.importSaved", ["count": "\(count)"]))
+        notifyImportResult(
+            saved: savedCount,
+            skipped: filtered.skippedDuplicates + (filtered.toInsert.count - savedCount)
+        )
         appState.navigationSelection = .transactions
     }
 
-    private func commitXTBGrouped() {
+    private func commitXTBGrouped(
+        _ items: [ImportedTransaction],
+        skippedDuplicates: Int,
+        knownIds: inout Set<String>
+    ) {
         // Group by (account, currency) and create/find portfolios automatically.
         struct XTBKey: Hashable {
             let account: String
             let currency: String
         }
-        let grouped = Dictionary(grouping: preview) { item in
+        let grouped = Dictionary(grouping: items) { item in
             XTBKey(account: item.account ?? "XTB", currency: item.currency)
         }
 
@@ -305,7 +338,7 @@ struct ImportScreen: View {
         var lastPortfolio: Portfolio?
         var savedCount = 0
 
-        for (key, items) in grouped {
+        for (key, groupItems) in grouped {
             let portfolio = ensureXTBPortfolio(
                 group: group,
                 account: key.account,
@@ -313,10 +346,11 @@ struct ImportScreen: View {
                 cache: &portfolioCache
             )
             lastPortfolio = portfolio
-            for item in items {
-                insert(item, into: portfolio)
+            for item in groupItems {
+                if insert(item, into: portfolio, knownIds: &knownIds) {
+                    savedCount += 1
+                }
             }
-            savedCount += items.count
         }
 
         try? context.save()
@@ -324,8 +358,41 @@ struct ImportScreen: View {
             appState.selectPortfolio(lastPortfolio)
         }
         clearPreview()
-        appState.notifySuccess(L10n.t("feedback.importSaved", ["count": "\(savedCount)"]))
+        notifyImportResult(
+            saved: savedCount,
+            skipped: skippedDuplicates + (items.count - savedCount)
+        )
         appState.navigationSelection = .transactions
+    }
+
+    private func existingExternalIds() -> Set<String> {
+        // Prefer live @Query (same as dashboard); fall back to explicit fetch.
+        let fromQuery = storedTransactions.compactMap(\.externalId)
+        if !fromQuery.isEmpty || !storedTransactions.isEmpty {
+            return Set(
+                fromQuery
+                    .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+            )
+        }
+        let txs = (try? context.fetch(FetchDescriptor<Transaction>())) ?? []
+        return Set(
+            txs.compactMap(\.externalId)
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        )
+    }
+
+    private func notifyImportResult(saved: Int, skipped: Int) {
+        if saved == 0, skipped > 0 {
+            appState.notifySuccess(L10n.t("feedback.importAllDuplicates", ["skipped": "\(skipped)"]))
+        } else if skipped > 0 {
+            appState.notifySuccess(
+                L10n.t("feedback.importSavedWithSkipped", ["count": "\(saved)", "skipped": "\(skipped)"])
+            )
+        } else {
+            appState.notifySuccess(L10n.t("feedback.importSaved", ["count": "\(saved)"]))
+        }
     }
 
     private func ensureXTBGroup() -> PortfolioGroup {
@@ -375,7 +442,17 @@ struct ImportScreen: View {
         return p
     }
 
-    private func insert(_ item: ImportedTransaction, into portfolio: Portfolio) {
+    @discardableResult
+    private func insert(
+        _ item: ImportedTransaction,
+        into portfolio: Portfolio,
+        knownIds: inout Set<String>
+    ) -> Bool {
+        let ext = item.externalId?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !ext.isEmpty {
+            if knownIds.contains(ext) { return false }
+            knownIds.insert(ext)
+        }
         let tx = Transaction(
             date: item.date,
             type: item.type,
@@ -387,13 +464,14 @@ struct ImportScreen: View {
             fee: item.fee,
             currency: CurrencyCode.normalize(item.currency),
             cashDelta: item.cashDelta,
-            externalId: item.externalId,
+            externalId: ext.isEmpty ? nil : ext,
             notes: item.notes,
             source: item.source,
             assetType: item.assetType,
             portfolio: portfolio
         )
         context.insert(tx)
+        return true
     }
 }
 

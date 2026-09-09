@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		00974618DE9DA3F5C520DFD9 /* AlertsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0646D787C9CF30EA1ED90E37 /* AlertsView.swift */; };
 		02BDD43C5A2AF998EF0D803D /* IBKRImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69A88ADA08F27CF4874F1B59 /* IBKRImporter.swift */; };
+		0F18ECA333F6427ABB5EC9AC /* ImportDeduperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC3652DAED754A418678400F /* ImportDeduperTests.swift */; };
 		0BEBDDC72FD7B1422391EBEB /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 2FE0ABC39E78B10CFAB7D1C1 /* ZIPFoundation */; };
 		1331B6ABF1CF6EBA9F1667E6 /* PeriodReturns.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8E1707131663406CE382F4D /* PeriodReturns.swift */; };
 		27462A117AEC79F404098BD5 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7F45D9368C3B5F31B76CF2 /* Models.swift */; };
@@ -38,6 +39,7 @@
 		6D5DB1E0B6531CEE63F2589B /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E2ED05C566CB990A9D864C2 /* Backup.swift */; };
 		6FD2030AFFBDECB39CB1C536 /* SymbolMappingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1432BF79D78EE7786DB9E278 /* SymbolMappingSheet.swift */; };
 		71730FE5819199FF1743D5F7 /* CoreXLSX in Frameworks */ = {isa = PBXBuildFile; productRef = CC4214F57180E8B85AACFDD6 /* CoreXLSX */; };
+		5BB480E3DD5D4498B8B8C70B /* ImportDeduper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F419A98B496474CA14A56AF /* ImportDeduper.swift */; };
 		78603CFCB514C299425123B6 /* ImportPlaceholders.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */; };
 		7930A4E39A39BF1F4CD1DD11 /* AddTransactionSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B68E3963CD60CA9F30A75F5 /* AddTransactionSheet.swift */; };
 		7E81C26F92215637A6F5671F /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70B2C09BA345E27CDF0500D0 /* AppPreferences.swift */; };
@@ -109,6 +111,7 @@
 		666F3089A1B7A298DFA96B29 /* BondPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BondPresets.swift; sourceTree = "<group>"; };
 		68C39E719ADE4DA6B7064E76 /* PricingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PricingService.swift; sourceTree = "<group>"; };
 		69A88ADA08F27CF4874F1B59 /* IBKRImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IBKRImporter.swift; sourceTree = "<group>"; };
+		5F419A98B496474CA14A56AF /* ImportDeduper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDeduper.swift; sourceTree = "<group>"; };
 		6A4E893991208A136C0CD351 /* XTBZipImporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XTBZipImporterTests.swift; sourceTree = "<group>"; };
 		6E2ED05C566CB990A9D864C2 /* Backup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Backup.swift; sourceTree = "<group>"; };
 		70B2C09BA345E27CDF0500D0 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
@@ -118,6 +121,7 @@
 		8AC37FC1DA6E0013E728FF23 /* NavigationDestination.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationDestination.swift; sourceTree = "<group>"; };
 		8B68E3963CD60CA9F30A75F5 /* AddTransactionSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddTransactionSheet.swift; sourceTree = "<group>"; };
 		8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPlaceholders.swift; sourceTree = "<group>"; };
+		CC3652DAED754A418678400F /* ImportDeduperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportDeduperTests.swift; sourceTree = "<group>"; };
 		8DB8E0056B4A2B5410410895 /* TransactionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransactionsView.swift; sourceTree = "<group>"; };
 		933AF8B638C821EE4675426C /* LibreWalletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = LibreWalletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA7F45D9368C3B5F31B76CF2 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -172,6 +176,7 @@
 				4C677A53B22AB059ED59BFD1 /* AppVersionTests.swift */,
 				01F66465FE16D79E61DB693F /* AssetTypeDetectionTests.swift */,
 				114AED6765341B39AFAD680E /* BondPricingTests.swift */,
+				CC3652DAED754A418678400F /* ImportDeduperTests.swift */,
 				2D4E3E9EB435F8D94F626CB4 /* PortfolioCalculatorTests.swift */,
 				263E24A0D5DAD4DEC4ED4FD7 /* RoadmapFeatureTests.swift */,
 				DF58367142B80435F4D481C1 /* SymbolResolverTests.swift */,
@@ -209,6 +214,7 @@
 			children = (
 				3841508530FAFB937E7198E0 /* CSV.swift */,
 				69A88ADA08F27CF4874F1B59 /* IBKRImporter.swift */,
+				5F419A98B496474CA14A56AF /* ImportDeduper.swift */,
 				C717B9874B810B3DF6034232 /* ImportedTransaction.swift */,
 				8C66F8611082DDD92D509EF3 /* ImportPlaceholders.swift */,
 				31779618A277EF73F85DBDC7 /* UniversalImporter.swift */,
@@ -468,6 +474,7 @@
 				48501517143E2E865746A5E6 /* FeedbackBanner.swift in Sources */,
 				28A6218FFA19635F24092ABE /* Formatting.swift in Sources */,
 				02BDD43C5A2AF998EF0D803D /* IBKRImporter.swift in Sources */,
+				5BB480E3DD5D4498B8B8C70B /* ImportDeduper.swift in Sources */,
 				78603CFCB514C299425123B6 /* ImportPlaceholders.swift in Sources */,
 				E4CBD84F7E7F32BE51483AF3 /* ImportScreen.swift in Sources */,
 				460C9749F049269746105CE6 /* ImportedTransaction.swift in Sources */,
@@ -507,6 +514,7 @@
 				3329072110ED3CFF1BA9ED81 /* AppVersionTests.swift in Sources */,
 				2A6E0556285F5E0C33F4322F /* AssetTypeDetectionTests.swift in Sources */,
 				81129736E71FA399B31DE0A9 /* BondPricingTests.swift in Sources */,
+				0F18ECA333F6427ABB5EC9AC /* ImportDeduperTests.swift in Sources */,
 				3B1155A1DB13EF2D73329C51 /* PortfolioCalculatorTests.swift in Sources */,
 				4F224A4269378F87DA0EEF40 /* RoadmapFeatureTests.swift in Sources */,
 				4AEA00B9B943A6D4BA7BDE6C /* SymbolResolverTests.swift in Sources */,
@@ -603,7 +611,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -620,7 +628,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.3;
+				MARKETING_VERSION = 0.5.4;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -665,7 +673,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 9;
+				CURRENT_PROJECT_VERSION = 10;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -688,7 +696,7 @@
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © LibreWallet";
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.5.3;
+				MARKETING_VERSION = 0.5.4;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
