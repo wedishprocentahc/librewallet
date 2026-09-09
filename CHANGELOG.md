@@ -5,6 +5,13 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.5] — 2026-09-09
+
+### Naprawione (native macOS)
+
+- Ponowny import XTB nie dubluje transakcji o tym samym `externalId` (duplikaty w pliku i już istniejące w bazie są pomijane).
+- Podgląd importu pokazuje, ile operacji trafi do zapisu, a ile zostanie pominiętych jako duplikaty.
+
 ## [0.5.4] — 2026-08-13
 
 ### Naprawione (native macOS)
