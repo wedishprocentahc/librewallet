@@ -120,11 +120,19 @@ Wszystko zostaje na Twoim komputerze. Rób regularne kopie w **Import i ustawien
 
 ## Lokalne API (integracje)
 
-Gdy LibreWallet działa lokalnie (`npm run server` lub aplikacja desktop), serwer nasłuchuje domyślnie na `http://127.0.0.1:8787`.
+Gdy działa **natywna apka macOS** (albo `npm run server`), nasłuchuje `http://127.0.0.1:8787`.
 
 | Endpoint | Metoda | Opis |
 |----------|--------|------|
-| `/api/holdings` | `POST` | Frontend wysyła `{ portfolios, transactions }` po każdym zapisie |
-| `/api/holdings` | `GET` | Zwraca zcache'owane aktywne instrumenty dla zewnętrznych narzędzi (np. Inwestor / OpenClaw) |
+| `/api/health` | `GET` | Status usługi |
+| `/api/agent-feed` | `GET` | Bogaty feed (pozycje z qty/P/L, cash, świeżość) + zapis `agent-feed.json` |
+| `/api/holdings` | `GET` | Aktywne instrumenty (symbole, nazwy, rynki) — bez ilości i cen zakupu |
+| `/api/portfolio` | `GET` | Podsumowanie portfela + holdings (`status: ok` / `no_data`) |
+| `/api/quotes` | `POST` | macOS: odświeża ceny w bazie; web: proxy Yahoo |
+| `/api/holdings` | `POST` | Web: cache po zapisie stanu; macOS: no-op (GET i tak czyta na żywo) |
 
-Odpowiedź GET zawiera symbole, nazwy i rynki — bez ilości ani cen zakupu. Ruch zostaje na Twoim komputerze; nie wystawiaj serwera poza localhost bez świadomej decyzji.
+Na macOS dane biorą się **na żywo ze SwiftData**. Dodatkowo apka zapisuje atomowo:
+
+`~/Library/Application Support/LibreWallet/agent-feed.json`
+
+(agent może czytać plik nawet gdy HTTP chwilowo nie działa). Ruch API zostaje na localhost.

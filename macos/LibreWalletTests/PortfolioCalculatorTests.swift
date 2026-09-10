@@ -92,5 +92,97 @@ final class PortfolioCalculatorTests: XCTestCase {
         XCTAssertEqual(scope.positions[0].currentValue, 800, accuracy: 1e-9)
         XCTAssertEqual(scope.totalValueBase, 800, accuracy: 1e-9)
     }
+
+    func testBondPortfolioWithoutDepositsDoesNotPoisonAggregateCash() {
+        let bonds = Portfolio(name: "Obligacje", baseCurrency: "PLN", colorHex: "#000", kind: .manual, createdAt: .now, group: nil)
+        let broker = Portfolio(name: "XTB EUR (1)", baseCurrency: "EUR", colorHex: "#000", kind: .account, createdAt: .now, group: nil)
+
+        let bondBuy = Transaction(
+            date: Date(timeIntervalSince1970: 0),
+            type: .buy,
+            symbol: "EDO",
+            name: "EDO",
+            quantity: 12,
+            price: 100,
+            gross: 1200,
+            fee: 0,
+            currency: "PLN",
+            assetType: "bond",
+            portfolio: bonds
+        )
+        let eurDeposit = Transaction(
+            date: Date(timeIntervalSince1970: 0),
+            type: .deposit,
+            symbol: nil,
+            name: nil,
+            quantity: nil,
+            price: nil,
+            gross: 2.38,
+            fee: 0,
+            currency: "EUR",
+            cashDelta: 2.38,
+            portfolio: broker
+        )
+
+        let scope = PortfolioCalculator.aggregateToPLN(
+            portfolios: [bonds, broker],
+            allTransactions: [bondBuy, eurDeposit],
+            quotes: [],
+            ratesToPLN: ["PLN": 1, "EUR": 4]
+        )
+
+        // Bond buys without cash ops must not subtract 1200 PLN from free funds.
+        XCTAssertEqual(scope.cashValueBase, 2.38 * 4, accuracy: 1e-9)
+        XCTAssertEqual(scope.allocationByType["cash"] ?? -1, 2.38 * 4, accuracy: 1e-9)
+        XCTAssertFalse(scope.cashRows.contains(where: { $0.currency == "PLN" && $0.value < 0 }))
+    }
+
+    func testDropsOppositeSignInternalTransferLegs() {
+        let portfolio = Portfolio(
+            name: "XTB PLN (53254345)",
+            baseCurrency: "PLN",
+            colorHex: "#000",
+            kind: .account,
+            createdAt: .now,
+            group: nil
+        )
+        let deposit = Transaction(
+            date: Date(timeIntervalSince1970: 0),
+            type: .deposit,
+            gross: 200,
+            fee: 0,
+            currency: "PLN",
+            cashDelta: 200,
+            portfolio: portfolio
+        )
+        let wrongIn = Transaction(
+            date: Date(timeIntervalSince1970: 1),
+            type: .transfer,
+            gross: 200,
+            fee: 0,
+            currency: "PLN",
+            cashDelta: 200,
+            notes: "Transfer from 53254345 to 53255466",
+            portfolio: portfolio
+        )
+        let rightOut = Transaction(
+            date: Date(timeIntervalSince1970: 2),
+            type: .transfer,
+            gross: 200,
+            fee: 0,
+            currency: "PLN",
+            cashDelta: -200,
+            notes: "Transfer from 53254345 to 53255466",
+            portfolio: portfolio
+        )
+
+        let scope = PortfolioCalculator.calculate(
+            portfolio: portfolio,
+            allTransactions: [deposit, wrongIn, rightOut],
+            quotes: []
+        )
+        // Deposit 200, then only the outbound -200 should apply → cash 0.
+        XCTAssertEqual(scope.cashValueBase, 0, accuracy: 1e-9)
+    }
 }
 

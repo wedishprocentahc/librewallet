@@ -15,6 +15,12 @@ struct LibreWalletApp: App {
             RootView()
                 .environmentObject(appState)
                 .environmentObject(updateController)
+                .task {
+                    LocalIntegrationServer.shared.start(container: LWModelContainer.shared)
+                    AgentFeedPublisher.configure(container: LWModelContainer.shared)
+                    _ = try? await NBPExchangeRateService.ratesToPLN()
+                    AgentFeedPublisher.publishNow()
+                }
         }
         .modelContainer(LWModelContainer.shared)
         .commands {

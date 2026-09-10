@@ -25,6 +25,13 @@ struct SettingsView: View {
             Section(L10n.t("settings.about")) {
                 LabeledContent(L10n.t("settings.version"), value: AppVersion.shortVersion)
                 LabeledContent(L10n.t("settings.build"), value: AppVersion.buildNumber)
+                LabeledContent(
+                    "API (OpenClaw)",
+                    value: LocalIntegrationServer.shared.isRunning
+                        ? "http://127.0.0.1:8787"
+                        : (LocalIntegrationServer.shared.lastError ?? "wyłączone")
+                )
+                LabeledContent("Agent feed", value: AgentFeedStore.fileURL.path)
                 Button {
                     Task { await updateController.checkForUpdates(interactive: true) }
                 } label: {

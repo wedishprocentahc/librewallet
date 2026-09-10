@@ -1,36 +1,46 @@
 ---
-description: Local /api/holdings endpoint for external tool integration (Inwestor/OpenClaw)
-globs: server.js,app.js
+description: Local API + agent-feed for OpenClaw / Inwestor
+globs: server.js,app.js,macos/**/LocalIntegration*.swift,macos/**/AgentFeed.swift
 alwaysApply: false
 ---
 
-# Holdings API (local integration)
+# Local integration API (OpenClaw / Inwestor)
 
-LibreWallet exposes portfolio holdings to **local tools only** via `/api/holdings`.
+LibreWallet exposes portfolio data to **local tools only**.
 
-## Flow
+## Preferred: agent feed (rich)
 
-1. Frontend (`app.js`) calls `holdingsSync()` on boot (`finishBoot`) and after every `saveState()`.
-2. `holdingsSync()` POSTs `{ portfolios, transactions }` to `/api/holdings` (debounced 300 ms, `.catch(() => {})`).
-3. `server.js` parses transactions, computes net positions, caches active instruments in memory.
-4. External tools `GET http://127.0.0.1:8787/api/holdings` to read the cache.
+Native macOS writes atomically:
 
-## GET response shape
+`~/Library/Application Support/LibreWallet/agent-feed.json`
 
-```json
-{
-  "instruments": [
-    { "symbol": "AAPL.US", "name": "Apple", "currency": "USD", "assetType": "stock", "market": "NASDAQ", "portfolioName": "XTB PLN" }
-  ],
-  "updatedAt": "2026-06-16T12:00:00.000Z",
-  "portfolioCount": 2
-}
-```
+Same JSON via:
 
-Quantities, prices, and transaction details are **not** exposed in GET — only instrument metadata.
+`GET http://127.0.0.1:8787/api/agent-feed`
+
+Includes `positions[]` (qty, cost, value, P/L), `cash[]` per portfolio/currency, aggregates, and quote freshness (`quotesAgeMinutes`, `staleSymbols`, `missingQuotes`). No account numbers / `externalId` / notes.
+
+File works even if HTTP is down (as long as feed was published recently). HTTP rebuilds + rewrites the file on each GET.
+
+## Legacy endpoints (still supported)
+
+| Method | Path | Behavior |
+|--------|------|----------|
+| `GET` | `/api/health` | `{ ok, service, version, source? }` |
+| `GET` | `/api/holdings` | Metadata-only instruments (compat) |
+| `GET` | `/api/portfolio` | Aggregates + metadata holdings (compat) |
+| `POST` | `/api/holdings` | Web cache update; macOS no-op |
+| `POST` | `/api/quotes` | macOS: refresh store quotes + republish feed |
+
+## Runtime
+
+1. **Native macOS** — `LocalIntegrationServer` on `127.0.0.1:8787` + live SwiftData; `AgentFeedPublisher` on save / launch / quote refresh.
+2. **Web / `server.js`** — in-memory holdings cache only (no agent-feed file).
+
+Prefer native app as source of truth. Only one process can bind `:8787`.
 
 ## Security
 
-- Server binds to `127.0.0.1` by default (`HOST` env overrides).
-- No auth — acceptable because traffic stays on loopback.
-- Do not bind to `0.0.0.0` unless you understand LAN exposure risk.
+- Bind `127.0.0.1` only.
+- No auth on loopback.
+- Do not use `0.0.0.0` without understanding LAN exposure.

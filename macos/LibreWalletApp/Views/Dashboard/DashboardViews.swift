@@ -603,7 +603,19 @@ struct DashboardView: View {
             KPI(title: "Zysk", value: LWFormatting.money(scope.totalProfitBase, currency: scope.baseCurrency), accent: scope.totalProfitBase >= 0 ? .green : .red)
             KPI(title: "Zwrot", value: LWFormatting.percent(scope.returnPct), accent: scope.returnPct >= 0 ? .green : .red)
             KPI(title: "Wkład", value: LWFormatting.money(scope.netInvestedBase, currency: scope.baseCurrency))
+            if scope.hasCashOperations, abs(scope.cashValueBase) > 0.01 {
+                KPI(title: "Gotówka", value: cashBreakdownLabel(scope), accent: .secondary)
+            }
         }
+    }
+
+    private func cashBreakdownLabel(_ scope: ScopeResult) -> String {
+        let positive = scope.cashRows.filter { $0.value > 0.005 }
+        if positive.count <= 1 {
+            return LWFormatting.money(scope.cashValueBase, currency: scope.baseCurrency)
+        }
+        let parts = positive.map { LWFormatting.money($0.value, currency: $0.currency) }
+        return parts.joined(separator: " + ")
     }
 
     private func allocationRows(_ scope: ScopeResult) -> [AllocationRow] {

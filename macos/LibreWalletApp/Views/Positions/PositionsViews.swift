@@ -320,7 +320,14 @@ struct PortfolioDetailView: View {
             )
             summaryMetric(title: "Zwrot", value: String(format: "%.2f%%", scope.returnPct))
             if scope.hasCashOperations, abs(scope.cashValueBase) > 0.01 {
-                summaryMetric(title: "Gotówka", value: LWFormatting.money(scope.cashValueBase, currency: CurrencyCode.normalize(portfolio.baseCurrency)))
+                let cashLabel: String = {
+                    let positive = scope.cashRows.filter { $0.value > 0.001 }
+                    if positive.count > 1 {
+                        return positive.map { LWFormatting.money($0.value, currency: $0.currency) }.joined(separator: " · ")
+                    }
+                    return LWFormatting.money(scope.cashValueBase, currency: CurrencyCode.normalize(portfolio.baseCurrency))
+                }()
+                summaryMetric(title: "Gotówka", value: cashLabel)
             }
             Spacer()
         }

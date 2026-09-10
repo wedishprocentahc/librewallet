@@ -156,15 +156,19 @@ enum PortfolioCalculator {
             .filter { abs($0.quantity) > 0.0000001 || abs($0.totalProfit) > 0.0001 }
             .sorted { $0.symbol < $1.symbol }
 
-        let cashRows: [CashRow] = cash
-            .map { (currency, value) in CashRow(id: currency, currency: currency, value: value) }
-            .sorted { $0.currency < $1.currency }
+        // JS parity: expose cash only when we have explicit cash operations.
+        // Manual bond portfolios (buys without deposits) must not emit a large negative cash
+        // row — otherwise aggregateToPLN merges it into PLN and hides real free funds.
+        let includeCashInValue = hasCashOperations
+        let cashRows: [CashRow] = includeCashInValue
+            ? cash
+                .map { (currency, value) in CashRow(id: currency, currency: currency, value: value) }
+                .sorted { $0.currency < $1.currency }
+            : []
 
         let positionValueBase = positionRows.reduce(0) { $0 + max(0, $1.currentValue) }
         let cashValueBase = cashRows.reduce(0) { $0 + $1.value }
-        // JS parity: include cash in value only when we have explicit cash operations.
-        let includeCashInValue = hasCashOperations
-        let totalValueBase = positionValueBase + (includeCashInValue ? cashValueBase : 0)
+        let totalValueBase = positionValueBase + cashValueBase
 
         let openPositionCost = positionRows
             .filter { abs($0.quantity) > 0.0000001 }
@@ -261,11 +265,13 @@ enum PortfolioCalculator {
             netInvestedPLN += convertToPLN(scope.netInvestedBase, currency: base, rates: ratesToPLN)
             totalProfitPLN += convertToPLN(scope.totalProfitBase, currency: base, rates: ratesToPLN)
             positionValuePLN += convertToPLN(scope.positionValueBase, currency: base, rates: ratesToPLN)
-            cashValuePLN += convertToPLN(scope.cashValueBase, currency: base, rates: ratesToPLN)
 
             allPositions.append(contentsOf: scope.positions)
-            for row in scope.cashRows {
-                mergedCash[row.currency, default: 0] += row.value
+            if scope.hasCashOperations {
+                cashValuePLN += convertToPLN(scope.cashValueBase, currency: base, rates: ratesToPLN)
+                for row in scope.cashRows {
+                    mergedCash[row.currency, default: 0] += row.value
+                }
             }
             allTransactionsOut.append(contentsOf: scope.transactions)
             hasCashOperations = hasCashOperations || scope.hasCashOperations
@@ -658,7 +664,10 @@ enum PortfolioCalculator {
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? -gross)
             return
         case .transfer:
-            addCash(&cash, currency: currency, delta: norm.cashDelta ?? 0)
+            let delta = norm.cashDelta ?? 0
+            if shouldApplyTransfer(notes: tx.notes, cashDelta: delta, portfolioName: tx.portfolio?.name) {
+                addCash(&cash, currency: currency, delta: delta)
+            }
             return
         default:
             break
@@ -755,6 +764,62 @@ enum PortfolioCalculator {
 
     private static func addCash(_ cash: inout [String: Double], currency: String, delta: Double) {
         cash[currency, default: 0] += delta
+    }
+
+    /// XTB Cash Operations often lists both signed legs of an internal transfer on the same
+    /// account statement. Keep only the leg whose sign matches this portfolio's role.
+    private static func shouldApplyTransfer(notes: String?, cashDelta: Double, portfolioName: String?) -> Bool {
+        guard abs(cashDelta) > 0.0000001 else { return true }
+        let text = notes ?? ""
+        let account = accountId(fromPortfolioName: portfolioName)
+
+        if let match = firstMatch(in: text, pattern: #"Transfer from (\d+) to (\d+)"#) {
+            let src = match.0
+            let dst = match.1
+            if let account {
+                if account == src { return cashDelta < 0 }
+                if account == dst { return cashDelta > 0 }
+            }
+            // Unknown account: keep both only if signs differ and we can't decide — prefer outbound/inbound by wording.
+            return true
+        }
+
+        if let match = firstMatch(in: text, pattern: #"from TA:\s*(\d+)\s*to:\s*(\d+)"#) {
+            let src = match.0
+            let dst = match.1
+            if let account {
+                if account == src { return cashDelta < 0 }
+                if account == dst { return cashDelta > 0 }
+            }
+            return true
+        }
+
+        if text.range(of: #"Transfer out operation on account with id \d+"#, options: .regularExpression) != nil {
+            return cashDelta < 0
+        }
+        if text.range(of: #"Transfer in operation on account with id \d+"#, options: .regularExpression) != nil {
+            return cashDelta > 0
+        }
+        return true
+    }
+
+    private static func accountId(fromPortfolioName name: String?) -> String? {
+        guard let name,
+              let open = name.lastIndex(of: "("),
+              let close = name.lastIndex(of: ")"),
+              open < close else { return nil }
+        let id = String(name[name.index(after: open)..<close])
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return id.allSatisfy(\.isNumber) ? id : nil
+    }
+
+    private static func firstMatch(in text: String, pattern: String) -> (String, String)? {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
+              let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+              match.numberOfRanges >= 3,
+              let r1 = Range(match.range(at: 1), in: text),
+              let r2 = Range(match.range(at: 2), in: text) else { return nil }
+        return (String(text[r1]), String(text[r2]))
     }
 }
 
