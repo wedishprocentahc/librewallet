@@ -5,6 +5,18 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.6] — 2026-09-10
+
+### Dodane (native macOS)
+
+- Lokalne API na `127.0.0.1:8787` (`/api/health`, `/api/holdings`, `/api/portfolio`, `POST /api/quotes`) pod integracje agentów (np. OpenClaw).
+- Agent feed: bogaty JSON pozycji i gotówki (`GET /api/agent-feed` + plik `agent-feed.json` w Application Support).
+- W Ustawieniach widoczny adres API i ścieżka agent feed.
+
+### Naprawione (native macOS)
+
+- Gotówka w agregacie / wykresie nie pokazuje ujemnego salda z portfeli bez operacji kasowych (np. obligacje kupione bez depozytu).
+
 ## [0.5.5] — 2026-09-09
 
 ### Naprawione (native macOS)
