@@ -24,7 +24,11 @@ struct ImportScreen: View {
     }
 
     private var importPlan: ImportDeduper.Outcome {
-        ImportDeduper.filterNew(preview, existingExternalIds: existingExternalIds())
+        ImportDeduper.filterNew(
+            preview,
+            existingExternalIds: existingExternalIds(),
+            existingFingerprints: existingFingerprints()
+        )
     }
 
     private var canCommit: Bool {
@@ -286,7 +290,11 @@ struct ImportScreen: View {
 
         // Snapshot IDs once; insert() also guards against races / batch dups.
         var knownIds = existingExternalIds()
-        let filtered = ImportDeduper.filterNew(preview, existingExternalIds: knownIds)
+        let filtered = ImportDeduper.filterNew(
+            preview,
+            existingExternalIds: knownIds,
+            existingFingerprints: existingFingerprints()
+        )
         guard !filtered.toInsert.isEmpty else {
             notifyImportResult(saved: 0, skipped: filtered.skippedDuplicates)
             clearPreview()
@@ -381,6 +389,22 @@ struct ImportScreen: View {
                 .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                 .filter { !$0.isEmpty }
         )
+    }
+
+    private func existingFingerprints() -> Set<String> {
+        let txs = storedTransactions.isEmpty
+            ? ((try? context.fetch(FetchDescriptor<Transaction>())) ?? [])
+            : storedTransactions
+        return Set(txs.map {
+            ImportDeduper.fingerprint(
+                type: $0.typeRaw,
+                symbol: $0.symbol,
+                date: $0.date,
+                quantity: $0.quantity,
+                cashDelta: $0.cashDelta,
+                currency: $0.currency
+            )
+        })
     }
 
     private func notifyImportResult(saved: Int, skipped: Int) {

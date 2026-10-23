@@ -428,6 +428,9 @@ enum PortfolioCalculator {
                     }
 
                     let anchorClose = anchorCloses[symbolKey]?.close ?? 0
+                    // Anchor on the last real trade price, not the average cost: otherwise every
+                    // trade resets the whole position to cost and erases earlier unrealized gains.
+                    if let anchorPrice = acc.anchorPrice, anchorPrice > 0 { price = anchorPrice }
                     // On the trade day itself keep cost-basis valuation (ratio = 1) to avoid
                     // one-day dips from timestamp / quote-alignment mismatches.
                     if day != tradeDay, anchorClose > 0 {
@@ -713,6 +716,7 @@ enum PortfolioCalculator {
             } else if norm.price > 0 {
                 acc.lastPrice = norm.price
             }
+            if qty > 0, value > 0 { acc.anchorPrice = value / qty }
             acc.lastTradeDate = Calendar.current.startOfDay(for: tx.date)
             if let terms = BondPricing.resolveTerms(
                 symbol: tx.symbol,
@@ -747,6 +751,7 @@ enum PortfolioCalculator {
                 }
             }
             acc.realized += value - fee - costSold
+            if qty > 0, value > 0 { acc.anchorPrice = value / qty }
             acc.lastTradeDate = Calendar.current.startOfDay(for: tx.date)
             addCash(&cash, currency: currency, delta: norm.cashDelta ?? (value - fee))
         case .dividend, .interest:
@@ -841,6 +846,10 @@ private struct PositionAccumulator {
     var realized: Double = 0
     var income: Double = 0
     var lastPrice: Double? = nil
+    /// Actual per-unit trade price (account currency) of the last buy/sell. Unlike `lastPrice`
+    /// (weighted average cost) it is a market observation, so it can anchor the daily valuation
+    /// without wiping unrealized gains of older lots.
+    var anchorPrice: Double? = nil
     var lastTradeDate: Date? = nil
     var bondLots: [BondLot] = []
 }

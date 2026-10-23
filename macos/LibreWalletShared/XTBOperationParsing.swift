@@ -8,7 +8,7 @@ enum XTBOperationParsing {
 
     static func parseDealComment(_ comment: String?) -> DealDetails {
         let text = comment ?? ""
-        let pattern = #"\b(?:OPEN|CLOSE)\s+(?:BUY|SELL)\s+([0-9]+(?:[.,][0-9]+)?)(?:\s*/\s*[0-9]+(?:[.,][0-9]+)?)?\s*@\s*([0-9]+(?:[.,][0-9]+)?)"#
+        let pattern = #"\b(?:OPEN|CLOSE)\s+(?:BUY|SELL)\s+(?:\S*[A-Za-z]\S*\s+)?([0-9]+(?:[.,][0-9]+)?)(?:\s*/\s*[0-9]+(?:[.,][0-9]+)?)?\s*@\s*([0-9]+(?:[.,][0-9]+)?)"#
         guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]),
               let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
               match.numberOfRanges >= 3,
