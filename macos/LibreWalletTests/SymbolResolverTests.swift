@@ -84,4 +84,17 @@ final class SymbolResolverTests: XCTestCase {
             }
         }
     }
+
+    func testUsListingInPlnAccountAcceptsUsdQuote() throws {
+        let resolved = try SymbolResolver.resolve(xtbSymbol: "NVDA.US", positionCurrency: "PLN", overrides: []).get()
+        XCTAssertEqual(resolved.expectedCurrency, "PLN")
+        XCTAssertTrue(resolved.accepts(currency: "USD"))
+        XCTAssertTrue(resolved.accepts(currency: "PLN"))
+        XCTAssertFalse(resolved.accepts(currency: "EUR"))
+    }
+
+    func testLondonListingStillStrictBecauseOfPence() throws {
+        let resolved = try SymbolResolver.resolve(xtbSymbol: "CSPX.UK", positionCurrency: "PLN", overrides: []).get()
+        XCTAssertFalse(resolved.accepts(currency: "GBP"))
+    }
 }

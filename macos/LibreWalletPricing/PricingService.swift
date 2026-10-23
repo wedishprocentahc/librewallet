@@ -159,7 +159,7 @@ enum PricingService {
         // Currency hard-fail when meta is present.
         if let meta = result["meta"] as? [String: Any],
            let ccy = (meta["currency"] as? String)?.uppercased(),
-           ccy != resolved.expectedCurrency {
+           !resolved.accepts(currency: ccy) {
             throw FetchError.currencyMismatch(
                 expected: resolved.expectedCurrency,
                 got: ccy,
@@ -209,7 +209,7 @@ enum PricingService {
         guard price > 0 else { throw FetchError.noData(resolved.providerSymbol) }
 
         let currency = ((meta["currency"] as? String) ?? resolved.expectedCurrency).uppercased()
-        if currency != resolved.expectedCurrency {
+        if !resolved.accepts(currency: currency) {
             throw FetchError.currencyMismatch(
                 expected: resolved.expectedCurrency,
                 got: currency,

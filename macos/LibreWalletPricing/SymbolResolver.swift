@@ -13,6 +13,16 @@ struct ResolvedSymbol: Hashable {
     let expectedCurrency: String
     /// True when resolution came from a user override.
     let fromOverride: Bool
+    /// Currency the listing is quoted in (USD/EUR markets only). A quote in this currency is
+    /// accepted even when the position lives in another account currency (e.g. NVDA.US held in
+    /// a PLN account); the price is converted with NBP rates when valuing the position.
+    /// GBP is deliberately excluded: Yahoo reports London prices in pence (GBp).
+    var nativeCurrency: String? = nil
+
+    func accepts(currency: String) -> Bool {
+        let c = currency.uppercased()
+        return c == expectedCurrency || c == nativeCurrency
+    }
 }
 
 enum SymbolResolver {
@@ -62,7 +72,8 @@ enum SymbolResolver {
             provider: .yahoo,
             providerSymbol: rule.providerSymbol,
             expectedCurrency: expected,
-            fromOverride: false
+            fromOverride: false,
+            nativeCurrency: ["USD", "EUR"].contains(rule.expectedCurrency) ? rule.expectedCurrency : nil
         ))
     }
 
