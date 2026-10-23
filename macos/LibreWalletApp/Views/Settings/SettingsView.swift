@@ -147,6 +147,10 @@ struct SettingsView: View {
                 }
             }
 
+            Section(L10n.t("settings.sync")) {
+                SyncSettingsSection()
+            }
+
             Section(L10n.t("settings.backup")) {
                 Button(L10n.t("settings.exportBackup")) {
                     exportBackup()

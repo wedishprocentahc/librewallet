@@ -17,14 +17,14 @@ struct LWBackup: Codable {
     static let formatId = "librewallet-backup"
     static let currentVersion = 1
 
-    struct GroupDTO: Codable {
+    struct GroupDTO: Codable, Equatable {
         let id: UUID
         let name: String
         let colorHex: String
         let createdAt: Date
     }
 
-    struct PortfolioDTO: Codable {
+    struct PortfolioDTO: Codable, Equatable {
         let id: UUID
         let groupId: UUID?
         let name: String
@@ -34,7 +34,7 @@ struct LWBackup: Codable {
         let createdAt: Date
     }
 
-    struct TransactionDTO: Codable {
+    struct TransactionDTO: Codable, Equatable {
         let id: UUID
         let portfolioId: UUID?
         let date: Date
@@ -53,7 +53,7 @@ struct LWBackup: Codable {
         let assetType: String?
     }
 
-    struct TargetDTO: Codable {
+    struct TargetDTO: Codable, Equatable {
         let id: UUID
         let portfolioId: UUID?
         let assetType: String

@@ -17,6 +17,8 @@ struct LibreWalletApp: App {
                 .environmentObject(updateController)
                 .task {
                     LocalIntegrationServer.shared.start(container: LWModelContainer.shared)
+                    SyncCoordinator.shared.onDataMerged = { AgentFeedPublisher.publishNow() }
+                    SyncCoordinator.shared.start(container: LWModelContainer.shared)
                     AgentFeedPublisher.configure(container: LWModelContainer.shared)
                     _ = try? await NBPExchangeRateService.ratesToPLN()
                     AgentFeedPublisher.publishNow()
