@@ -5,6 +5,14 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.8] — 2026-10-23
+
+### Dodane (native macOS)
+
+- Dwustronna synchronizacja danych między komputerami przez folder współdzielony np. przez Syncthing (Ustawienia → Synchronizacja). Każdy komputer zapisuje własny plik i scala dane z pozostałych (zmiany, usunięcia; ten sam raport zaimportowany na obu komputerach nie dubluje danych); sama baza nie jest synchronizowana.
+- Konfigurator w Ustawieniach: ścieżka folderu danych i folderu synchronizacji (kopiuj / pokaż w Finderze), instrukcja konfiguracji Syncthing krok po kroku oraz przycisk „Testuj połączenie” z potwierdzeniem odbioru z drugiego komputera.
+- Kopia zapasowa JSON przed każdym scaleniem zmieniającym dane (`SyncBackups/`, ostatnie 10).
+
 ## [0.5.7] — 2026-10-23
 
 ### Naprawione (native macOS)
