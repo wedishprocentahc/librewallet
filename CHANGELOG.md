@@ -5,6 +5,12 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.9] — 2026-10-23
+
+### Naprawione (native macOS)
+
+- Wycena akcji z rynków USD/EUR trzymanych na koncie w innej walucie (np. NVDA.US na koncie PLN): notowanie w walucie rynku jest akceptowane i przeliczane kursem NBP, zamiast być odrzucane jako niezgodność waluty (pozycja była wtedy wyceniana po koszcie zakupu). Dotyczy też historii cen do wykresu. Rynek londyński pozostaje ścisły (ceny w pensach).
+
 ## [0.5.8] — 2026-10-23
 
 ### Dodane (native macOS)
