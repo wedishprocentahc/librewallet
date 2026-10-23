@@ -5,6 +5,14 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [0.5.7] — 2026-10-23
+
+### Naprawione (native macOS)
+
+- Import XTB: duplikaty są wykrywane także po treści operacji (typ, symbol, czas, ilość, kwota, waluta), nie tylko po `externalId` — ponowny eksport z innymi ID i milisekundami nie dubluje już zamknięć pozycji.
+- Import XTB: komentarze w formie `OPEN BUY PKN.PL 1 @ 154.74` (ticker po BUY/SELL) są poprawnie parsowane; wcześniej zakup trafiał do bazy bez ilości.
+- Wykres wartości: wycena dzienna startuje od ceny ostatniej transakcji zamiast średniego kosztu, więc każda transakcja nie zeruje już zysku niezrealizowanego całej pozycji.
+
 ## [0.5.6] — 2026-09-10
 
 ### Dodane (native macOS)
