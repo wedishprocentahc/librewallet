@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { diskAssets, seaAssets } from "./assets.ts";
 import { createApp } from "./http.ts";
+import { osNotifier } from "./notify.ts";
 import { defaultDataDir } from "./paths.ts";
 import { Service } from "./service.ts";
 import { Store } from "./store.ts";
@@ -45,7 +46,7 @@ async function main(): Promise<void> {
   }
 
   const store = new Store(process.env.LIBREWALLET_DATA_DIR ?? defaultDataDir());
-  const service = new Service(store, { version });
+  const service = new Service(store, { version, notifier: osNotifier });
   const backup = service.ensureDailyBackup();
   const server = createApp(service, { assets });
 

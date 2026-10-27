@@ -12,7 +12,8 @@ export function formDialog({ title, fields, submitLabel = t("common.save"), dang
   return new Promise((resolve) => {
     const dlg = h("dialog");
     const inputs = {};
-    const form = h("form", { method: "dialog", class: "form" });
+    const formId = `f${Math.random().toString(36).slice(2)}`;
+    const form = h("form", { method: "dialog", class: "form", id: formId });
     for (const f of fields) {
       let input;
       if (f.type === "select") {
@@ -28,7 +29,8 @@ export function formDialog({ title, fields, submitLabel = t("common.save"), dang
       form.append(h("label", { class: f.wide ? "wide" : "" }, f.label, input));
     }
     const cancel = h("button", { type: "button", class: "btn", onclick: () => { dlg.close(); resolve(null); } }, t("common.cancel"));
-    const ok = h("button", { type: "submit", class: `btn ${danger ? "danger" : "primary"}` }, submitLabel);
+    // The footer sits outside the <form>, so the submit button is tied to it with the form attribute.
+    const ok = h("button", { type: "submit", form: formId, class: `btn ${danger ? "danger" : "primary"}` }, submitLabel);
     dlg.append(h("h3", {}, title), form, h("div", { class: "footer" }, cancel, ok));
     form.addEventListener("submit", (ev) => {
       ev.preventDefault();

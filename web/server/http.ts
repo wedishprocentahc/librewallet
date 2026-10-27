@@ -61,6 +61,7 @@ export function buildRoutes(s: Service): Route[] {
     route("PUT", "/api/alerts/:id", (c) => { s.setAlertEnabled(c.params.id!, c.body.enabled !== false); return reply({ ok: true }); }),
     route("DELETE", "/api/alerts/:id", (c) => { s.deleteAlert(c.params.id!); return reply({ ok: true }); }),
     route("POST", "/api/alerts/check", (c) => reply({ fired: s.checkAlerts(c.body.force === true) })),
+    route("POST", "/api/notifications/test", () => reply({ sent: s.sendTestNotification() })),
     route("GET", "/api/notifications", () => reply({ notifications: s.drainNotifications() })),
     route("POST", "/api/portfolios", (c) => reply(s.createPortfolio(c.body))),
     route("PUT", "/api/portfolios/:id", (c) => reply(s.updatePortfolio(c.params.id!, c.body))),

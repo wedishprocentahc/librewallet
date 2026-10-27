@@ -17,6 +17,7 @@ const uiDir = join(dir, "ui");
 let base = "";
 let server: ReturnType<typeof createApp>;
 let service: Service;
+const sent: [string, string][] = [];
 
 // Offline network: Yahoo + NBP answered locally.
 const fakeFetch: FetchFn = async (url) => {
@@ -32,7 +33,7 @@ before(async () => {
   const { mkdirSync } = await import("node:fs");
   mkdirSync(uiDir);
   writeFileSync(join(uiDir, "index.html"), "<h1>ok</h1>");
-  service = new Service(new Store(join(dir, "data")), { version: "9.9.9", fetchFn: fakeFetch });
+  service = new Service(new Store(join(dir, "data")), { version: "9.9.9", fetchFn: fakeFetch, notifier: (title, body) => { sent.push([title, body]); } });
   server = createApp(service, { assets: diskAssets(uiDir) });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -99,6 +100,10 @@ test("rebalance targets, bonds and alerts", async () => {
   assert.equal(fired.filter((n: { kind: string }) => n.kind === "price").length, 1);
   assert.equal((await api("/api/alerts/check", { method: "POST", json: {} })).json().fired.filter((n: { kind: string }) => n.kind === "price").length, 0);
   assert.equal((await api("/api/notifications")).json().notifications.length >= 1, true);
+  assert.ok(sent.some(([, body]) => body.includes("AAPL.US")), "price alert reached the system notifier");
+  const before = sent.length;
+  await api("/api/notifications/test", { method: "POST", json: {} });
+  assert.equal(sent.length, before + 1);
 });
 
 test("tax report with historical FX, cashflow", async () => {

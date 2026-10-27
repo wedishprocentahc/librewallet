@@ -60,7 +60,9 @@ export async function render(root, app) {
   // ---- browser notifications
   const supported = "Notification" in window;
   const status = !supported ? "—" : Notification.permission === "granted" ? t("alerts.notifications.status.authorized") : Notification.permission === "denied" ? t("alerts.notifications.status.denied") : t("alerts.notifications.status.notDetermined");
-  root.append(panel(t("alerts.browserNotifications"), h("div", { class: "toolbar" }, h("span", {}, status),
+  root.append(panel(t("alerts.notifications"), h("div", { class: "toolbar" },
+    h("button", { class: "btn", onclick: async () => { await guarded(() => api.post("/api/notifications/test"), t("alerts.notifications.test")); } }, t("alerts.notifications.test")), h("span", { class: "muted" }, t("alerts.systemHint"))),
+    h("div", { class: "toolbar" }, h("strong", {}, `${t("alerts.browserNotifications")}: `), h("span", {}, status),
     supported && Notification.permission !== "granted" ? h("button", { class: "btn", onclick: async () => { await Notification.requestPermission(); await reload(); } }, t("alerts.browserNotifications.enable")) : null,
-    supported && Notification.permission === "granted" ? h("button", { class: "btn", onclick: () => new Notification("LibreWallet", { body: t("alerts.notify.testBody") }) }, t("alerts.notifications.test")) : null)));
+    null)));
 }

@@ -20,6 +20,7 @@ import {
 } from "../core/scope.ts";
 import { resolveSymbol, type SymbolMapping } from "../core/symbols.ts";
 import { emptyDataset, newId, type Dataset, type PriceAlert, type Transaction, TRANSACTION_TYPES } from "../core/types.ts";
+import type { Notifier } from "./notify.ts";
 import type { Store } from "./store.ts";
 
 export interface Settings {
@@ -82,9 +83,11 @@ export class Service {
   private previews = new Map<string, { items: ImportedTransaction[]; source: string | null; createdAt: number }>();
   private fetchFn: FetchFn;
   private lastRefresh: Date | null = null;
+  private readonly notifier: Notifier | null;
 
-  constructor(store: Store, opts: { version?: string; fetchFn?: FetchFn } = {}) {
+  constructor(store: Store, opts: { version?: string; fetchFn?: FetchFn; notifier?: Notifier } = {}) {
     this.store = store;
+    this.notifier = opts.notifier ?? null;
     this.version = opts.version ?? "0.0.0";
     this.fetchFn = opts.fetchFn ?? USER_AGENT_FETCH;
     this.data = store.loadDataset();
@@ -448,7 +451,16 @@ export class Service {
     this.store.setSetting("driftNotified", { day: today, assets: [...done] });
     if (fired.some((n) => n.kind === "price")) this.persist();
     this.notifications.push(...fired);
+    for (const n of fired) this.notifier?.(n.kind === "price" ? "LibreWallet · price alert" : "LibreWallet · allocation drift", n.body);
     return fired;
+  }
+
+  /** Sends a test notification through every channel (system + in-app). */
+  sendTestNotification(): AppNotification {
+    const n: AppNotification = { id: newId(), kind: "price", title: "test", body: "LibreWallet", at: new Date().toISOString() };
+    this.notifier?.("LibreWallet", "Test OK — powiadomienia LibreWallet działają.");
+    this.notifications.push({ ...n, body: "Test OK" });
+    return n;
   }
 
   drainNotifications(): AppNotification[] {
