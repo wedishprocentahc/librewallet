@@ -18,7 +18,7 @@ import {
   actualPct, attachBenchmark, benchmarkOptions, benchmarkSeries, rebalanceSuggestions, scopedPortfolios, scopeHistory, scopeResult,
   type ScopeSel, setTargetPct, targetPercentages,
 } from "../core/scope.ts";
-import type { SymbolMapping } from "../core/symbols.ts";
+import { resolveSymbol, type SymbolMapping } from "../core/symbols.ts";
 import { emptyDataset, newId, type Dataset, type PriceAlert, type Transaction, TRANSACTION_TYPES } from "../core/types.ts";
 import type { Store } from "./store.ts";
 
@@ -170,7 +170,7 @@ export class Service {
       s.fxOverrides = Object.fromEntries(Object.entries(patch.fxOverrides as Record<string, unknown>).map(([k, v]) => [k.toUpperCase(), num(v, k)]).filter(([, v]) => (v as number) > 0));
     }
     if (Array.isArray(patch.symbolMappings)) {
-      s.symbolMappings = (patch.symbolMappings as SymbolMapping[]).map((m) => ({ id: m.id.trim().toUpperCase(), provider: m.provider === "stooq" ? "stooq" : "yahoo", providerSymbol: m.providerSymbol.trim() })).filter((m) => m.id && m.providerSymbol);
+      s.symbolMappings = (patch.symbolMappings as SymbolMapping[]).map((m) => ({ id: m.id.trim().toUpperCase(), provider: m.provider === "stooq" ? "stooq" : "yahoo", providerSymbol: m.providerSymbol.trim().toUpperCase(), ...(m.note?.trim() ? { note: m.note.trim() } : {}) })).filter((m) => m.id && m.providerSymbol);
     }
     this.saveSettings();
     return this.settings;
@@ -234,10 +234,29 @@ export class Service {
         returns: allPeriodReturns(p.symbol, p.currentPrice, this.histories),
         quoteAsOf: q?.asOf.toISOString() ?? null,
         priceSource: p.assetType === "bond" && !q ? "bond" : q ? "quote" : "cost",
+        resolution: p.assetType === "bond" ? "bond" : this.resolution(p.symbol, p.currency),
         meta: this.quoteMeta[p.symbol] ?? null,
       };
     });
     return { scope: this.scopeSummary(result, scope), positions: rows.sort((a, b) => b.currentValue - a.currentValue) };
+  }
+
+  private resolution(symbol: string, currency: string): "ok" | "ignored" | "unresolved" {
+    const r = resolveSymbol(symbol, currency, this.settings.symbolMappings);
+    return r.ok ? "ok" : r.error === "ignored" ? "ignored" : "unresolved";
+  }
+
+  /** Try a Yahoo symbol for an XTB ticker without saving anything (mapping dialog "test"). */
+  async testQuote(xtbSymbol: string, providerSymbol: string, currency: string | null) {
+    const id = xtbSymbol.trim().toUpperCase();
+    const yahoo = providerSymbol.trim().toUpperCase();
+    const mappings = yahoo ? [...this.settings.symbolMappings.filter((m) => m.id !== id), { id, provider: "yahoo" as const, providerSymbol: yahoo }] : this.settings.symbolMappings.filter((m) => m.id !== id);
+    try {
+      const q = await fetchQuote(this.fetchFn, id, currency, mappings);
+      return { ok: true, price: q.price, currency: q.currency, providerSymbol: q.resolved.providerSymbol, asOf: q.asOf.toISOString() };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
   }
 
   transactions(scope: ScopeSel, q: { search?: string; type?: string; limit?: number }) {

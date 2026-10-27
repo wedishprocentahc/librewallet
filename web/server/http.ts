@@ -87,6 +87,7 @@ export function buildRoutes(s: Service): Route[] {
     route("GET", "/api/holdings", () => reply(s.holdings())),
     route("GET", "/api/portfolio", () => reply(s.portfolioApi())),
     route("GET", "/api/agent-feed", () => reply(s.agentFeed())),
+    route("POST", "/api/quotes/test", async (c) => reply(await s.testQuote(String(c.body.symbol ?? ""), String(c.body.providerSymbol ?? ""), typeof c.body.currency === "string" ? c.body.currency : null))),
     route("POST", "/api/quotes", async () => reply(await s.refreshQuotes())),
   ];
 }

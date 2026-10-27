@@ -6,6 +6,7 @@ export interface SymbolMapping {
   id: string; // XTB symbol, uppercased
   provider: QuoteProvider;
   providerSymbol: string;
+  note?: string;
 }
 
 export interface ResolvedSymbol {

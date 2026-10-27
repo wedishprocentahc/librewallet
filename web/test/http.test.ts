@@ -130,3 +130,14 @@ test("import preview → commit, backup export → restore, clear", async () => 
   assert.equal(restored.transactions, counts);
   assert.equal((await api("/api/backup/restore", { method: "POST", body: "{}", headers: { "Content-Type": "application/json" } })).status, 400);
 });
+
+test("ticker mapping: test a Yahoo symbol without saving, resolution flag on positions", async () => {
+  const t = (await api("/api/quotes/test", { method: "POST", json: { symbol: "AAPL.US", providerSymbol: "AAPL", currency: "USD" } })).json();
+  assert.equal(t.ok, true);
+  assert.equal(t.price, 200);
+  assert.deepEqual(service.settings.symbolMappings, []);
+  const bad = (await api("/api/quotes/test", { method: "POST", json: { symbol: "BARE", providerSymbol: "", currency: "PLN" } })).json();
+  assert.equal(bad.ok, false);
+  await api("/api/settings", { method: "PUT", json: { symbolMappings: [{ id: "bare", provider: "yahoo", providerSymbol: "bare.wa", note: "x" }] } });
+  assert.deepEqual(service.settings.symbolMappings, [{ id: "BARE", provider: "yahoo", providerSymbol: "BARE.WA", note: "x" }]);
+});

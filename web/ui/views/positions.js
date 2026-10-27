@@ -2,7 +2,7 @@ import { api } from "../api.js";
 import { h } from "../dom.js";
 import { dateTime, money, number, pct, signed, tone } from "../format.js";
 import { assetLabel, t } from "../i18n.js";
-import { confirmDialog, empty, formDialog, guarded, kpi, panel, select, table } from "../widgets.js";
+import { confirmDialog, empty, guarded, kpi, panel, select, table, toast } from "../widgets.js";
 
 const state = { groupBy: "none", showClosed: false };
 const PERIODS = ["1M", "3M", "6M", "1Y", "YTD"];
@@ -38,7 +38,8 @@ export async function render(root, app) {
     { label: t("col.name"), wrap: true, render: (p) => p.name },
     { label: t("col.qty"), num: true, render: (p) => number(p.quantity, 6) },
     { label: t("col.avgCost"), num: true, render: (p) => money(p.avgCost, p.currency) },
-    { label: t("col.price"), num: true, render: (p) => h("span", { title: priceTitle(p) }, money(p.currentPrice, p.currency), p.priceSource === "cost" ? h("span", { class: "badge warn", title: t("pos.priceSource.cost") }, "≈") : null) },
+    { label: t("col.price"), num: true, render: (p) => h("span", { title: priceTitle(p) }, money(p.currentPrice, p.currency), p.priceSource === "cost" ? h("span", { class: "badge warn", title: t("pos.priceSource.cost") }, "≈") : null,
+      p.resolution === "unresolved" || p.resolution === "ignored" ? h("div", { class: "warn", style: { fontSize: "11px" } }, p.resolution === "ignored" ? t("mapping.ignored") : t("mapping.unresolved")) : null) },
     { label: t("col.value"), num: true, render: (p) => money(p.currentValue, p.currency) },
     { label: t("col.profit"), num: true, cls: (p) => tone(p.profit), render: (p) => `${signed(p.profit, (v) => money(v, p.currency))} (${pct(p.profitPct, 1)})` },
     { label: t("col.realized"), num: true, cls: (p) => tone(p.realized), render: (p) => money(p.realized, p.currency) },
@@ -69,20 +70,46 @@ async function removePosition(app, p) {
   if (await guarded(() => api.post("/api/positions/delete", { symbol: p.symbol, currency: p.currency, scope: app.scope, portfolioId: p.portfolioId }), t("feedback.positionDeleted", { symbol: p.symbol }))) await app.refresh();
 }
 
-async function mapTicker(app, p) {
+export async function mapTicker(app, p) {
   const current = app.boot.settings.symbolMappings.find((m) => m.id === p.symbol);
-  const v = await formDialog({
-    title: t("mapping.title"),
-    fields: [
-      { name: "yahoo", label: `${t("mapping.yahoo")} (${p.symbol})`, value: current?.providerSymbol ?? p.meta?.providerSymbol ?? "", wide: true },
-    ],
-    submitLabel: t("mapping.save"),
-  });
-  if (v === null) return;
-  const rest = app.boot.settings.symbolMappings.filter((m) => m.id !== p.symbol);
-  const next = v.yahoo.trim() ? [...rest, { id: p.symbol, provider: "yahoo", providerSymbol: v.yahoo.trim() }] : rest;
-  if (await guarded(() => api.put("/api/settings", { symbolMappings: next }), v.yahoo.trim() ? t("feedback.mappingSaved") : t("feedback.mappingCleared"))) {
-    await guarded(() => api.post("/api/refresh/quotes"));
+  const dlg = h("dialog");
+  const yahoo = h("input", { value: current?.providerSymbol ?? p.meta?.providerSymbol ?? "", placeholder: "DIA.WA", autocomplete: "off" });
+  const note = h("input", { value: current?.note ?? "", autocomplete: "off" });
+  const status = h("p", { class: "muted" });
+  const info = p.resolution === "unresolved" ? t("mapping.unresolved") : p.resolution === "ignored" ? t("mapping.ignored") : current ? t("mapping.override") : t("mapping.auto");
+  const close = () => { dlg.close(); dlg.remove(); };
+  const save = async (mapping) => {
+    const rest = app.boot.settings.symbolMappings.filter((m) => m.id !== p.symbol);
+    const next = mapping ? [...rest, mapping] : rest;
+    if (!(await guarded(() => api.put("/api/settings", { symbolMappings: next })))) return;
+    if (mapping) {
+      const r = await guarded(() => api.post("/api/refresh/quotes"));
+      const fail = r?.failed.find((f) => f.symbol === p.symbol);
+      if (fail) { status.className = "neg"; status.textContent = fail.error; await app.refresh({ view: false }); return; }
+      toast(t("feedback.mappingSaved"));
+    } else toast(t("feedback.mappingCleared"));
+    close();
     await app.refresh();
-  }
+  };
+  dlg.append(
+    h("h3", {}, `${t("mapping.title")} · ${p.symbol}`),
+    h("dl", { class: "kv" }, h("dt", {}, t("mapping.currency")), h("dd", {}, p.currency), h("dt", {}, t("mapping.override")), h("dd", {}, info),
+      p.meta ? [h("dt", {}, t("mapping.last")), h("dd", {}, `${p.meta.providerSymbol} · ${p.meta.currency} · ${dateTime(p.meta.asOf)}`)] : null),
+    h("div", { class: "form" }, h("label", { class: "wide" }, t("mapping.yahoo"), yahoo), h("label", { class: "wide" }, t("mapping.note"), note)),
+    status,
+    h("div", { class: "footer" },
+      current ? h("button", { class: "btn danger", onclick: () => save(null) }, t("mapping.clear")) : null,
+      h("span", { class: "grow" }),
+      h("button", { class: "btn", onclick: async (e) => {
+        e.target.disabled = true;
+        const r = await guarded(() => api.post("/api/quotes/test", { symbol: p.symbol, providerSymbol: yahoo.value, currency: p.currency }));
+        e.target.disabled = false;
+        if (!r) return;
+        status.className = r.ok ? "pos" : "neg";
+        status.textContent = r.ok ? `${number(r.price)} ${r.currency} ← ${r.providerSymbol}` : r.error;
+      } }, t("mapping.test")),
+      h("button", { class: "btn", onclick: close }, t("common.cancel")),
+      h("button", { class: "btn primary", onclick: () => yahoo.value.trim() && save({ id: p.symbol, provider: "yahoo", providerSymbol: yahoo.value.trim().toUpperCase(), note: note.value.trim() || undefined }) }, t("mapping.save"))));
+  document.body.append(dlg);
+  dlg.showModal();
 }
