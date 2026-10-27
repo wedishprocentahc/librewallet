@@ -62,12 +62,12 @@ test("universal XLSX reads first sheet", () => {
 });
 
 test("IBKR CSV: buy/sell sides, thousands separators, asset category", () => {
-  const csv = "Symbol,DateTime,Quantity,T. Price,Proceeds,Comm/Fee,Currency,Buy/Sell,Asset Category,TradeID\nAAPL,2024-03-01,\"1,000\",150.5,\"-150,500\",-1.2,USD,BUY,Stocks,t1\nVWCE,2024-03-02,-2,100,200,0,EUR,SELL,ETFs,t2\n";
+  const csv = "Symbol,DateTime,Quantity,T. Price,Proceeds,Comm/Fee,Currency,Buy/Sell,Asset Category,TradeID\nAAPL,2024-03-01,\"1,000.5\",150.5,\"-150,500.25\",-1.2,USD,BUY,Stocks,t1\nVWCE,2024-03-02,-2,100,200,0,EUR,SELL,ETFs,t2\n";
   const items = importIbkr(enc(csv));
   assert.equal(items.length, 2);
   assert.equal(items[0]!.type, "buy");
-  near(items[0]!.quantity!, 1000);
-  near(items[0]!.gross, 150500);
+  near(items[0]!.quantity!, 1000.5);
+  near(items[0]!.gross, 150500.25);
   near(items[0]!.fee, 1.2);
   assert.equal(items[0]!.assetType, "stock");
   assert.equal(items[1]!.type, "sell");
