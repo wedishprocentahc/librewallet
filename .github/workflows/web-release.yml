@@ -1,0 +1,60 @@
+name: Web app (Windows / Linux / macOS)
+
+on:
+  push:
+    tags: ["web-v*"]
+  pull_request:
+    paths: ["web/**", "docs/backup-samples/**", ".github/workflows/web-release.yml"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, name: linux-x64, file: librewallet }
+          - { os: windows-latest, name: windows-x64, file: librewallet.exe }
+          - { os: macos-latest, name: macos-arm64, file: librewallet }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Smoke test the single-file build
+        shell: bash
+        run: |
+          LIBREWALLET_DATA_DIR="$RUNNER_TEMP/lw" PORT=8799 ./dist/${{ matrix.file }} --no-open &
+          for i in $(seq 1 20); do curl -fs http://127.0.0.1:8799/api/health && break; sleep 1; done
+          curl -fs http://127.0.0.1:8799/ | grep -q LibreWallet
+      - uses: actions/upload-artifact@v4
+        with:
+          name: librewallet-web-${{ matrix.name }}
+          path: web/dist/${{ matrix.file }}
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/web-v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+      - name: Package
+        run: |
+          cd artifacts
+          for d in */; do n="${d%/}"; (cd "$n" && chmod +x * 2>/dev/null; zip -r "../${n}.zip" .); done
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.zip

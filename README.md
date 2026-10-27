@@ -4,6 +4,10 @@
 
 Track your investments on your computer. **Your data never leaves your machine** — no cloud account, no third-party server.
 
+## Windows / Linux
+
+A cross-platform web version (same features, data stored locally) lives in [`web/`](web/README.md).
+
 ## Screenshots
 
 *Fictional example data — Apple, Microsoft, Google, Amazon, NVIDIA, Tesla, Meta, and more.*

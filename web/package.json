@@ -4,9 +4,16 @@
   "type": "module",
   "version": "0.1.0",
   "description": "LibreWallet cross-platform port: TypeScript core + local backend + web UI",
-  "engines": { "node": ">=22.18" },
+  "engines": {
+    "node": ">=22.18"
+  },
   "scripts": {
     "test": "node --test 'test/*.test.ts'",
-    "start": "node server/main.ts"
+    "start": "node server/main.ts",
+    "build": "node scripts/build-sea.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "postject": "^1.0.0-alpha.6"
   }
 }

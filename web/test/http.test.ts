@@ -5,6 +5,7 @@ import type { AddressInfo } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, before, test } from "node:test";
+import { diskAssets } from "../server/assets.ts";
 import { createApp } from "../server/http.ts";
 import { Service } from "../server/service.ts";
 import { Store } from "../server/store.ts";
@@ -32,7 +33,7 @@ before(async () => {
   mkdirSync(uiDir);
   writeFileSync(join(uiDir, "index.html"), "<h1>ok</h1>");
   service = new Service(new Store(join(dir, "data")), { version: "9.9.9", fetchFn: fakeFetch });
-  server = createApp(service, { uiDir });
+  server = createApp(service, { assets: diskAssets(uiDir) });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
 });

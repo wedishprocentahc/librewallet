@@ -1,6 +1,6 @@
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
-import { readFile } from "node:fs/promises";
-import { extname, join, normalize, sep } from "node:path";
+import { extname } from "node:path";
+import type { AssetReader } from "./assets.ts";
 import { HttpError, parseScope, type Service } from "./service.ts";
 
 const MIME: Record<string, string> = {
@@ -112,7 +112,7 @@ function send(res: ServerResponse, status: number, body: string | Buffer, header
   res.end(body);
 }
 
-export function createApp(service: Service, opts: { uiDir: string }): Server {
+export function createApp(service: Service, opts: { assets: AssetReader }): Server {
   const routes = buildRoutes(service);
   return createServer(async (req, res) => {
     try {
@@ -143,13 +143,10 @@ export function createApp(service: Service, opts: { uiDir: string }): Server {
 
       if (method !== "GET" && method !== "HEAD") throw new HttpError(405, "Method not allowed");
       const rel = url.pathname === "/" ? "index.html" : decodeURIComponent(url.pathname.slice(1));
-      const file = normalize(join(opts.uiDir, rel));
-      if (file !== opts.uiDir && !file.startsWith(opts.uiDir + sep)) throw new HttpError(403, "Forbidden");
-      try {
-        send(res, 200, await readFile(file), { "Content-Type": MIME[extname(file)] ?? "application/octet-stream" });
-      } catch {
-        throw new HttpError(404, "Not found");
-      }
+      if (rel.split(/[\\/]/).includes("..")) throw new HttpError(403, "Forbidden");
+      const body = await opts.assets(rel);
+      if (!body) throw new HttpError(404, "Not found");
+      send(res, 200, body, { "Content-Type": MIME[extname(rel)] ?? "application/octet-stream" });
     } catch (e) {
       const status = e instanceof HttpError ? e.status : 500;
       const message = e instanceof Error ? e.message : "Server error";
