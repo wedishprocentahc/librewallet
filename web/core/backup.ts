@@ -26,7 +26,12 @@ const arr = (v: unknown): Record<string, unknown>[] => (Array.isArray(v) ? (v as
 
 /** Serialize to the shared backup format (sorted keys, nulls omitted). */
 export function exportBackup(data: Dataset, exportedAt: Date = new Date()): string {
-  const obj = {
+  return JSON.stringify(sortKeys(backupObject(data, exportedAt)), null, 2) + "\n";
+}
+
+/** The backup as a plain object (also the row format of the local database). */
+export function backupObject(data: Dataset, exportedAt: Date = new Date()) {
+  return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: iso(exportedAt),
@@ -54,7 +59,6 @@ export function exportBackup(data: Dataset, exportedAt: Date = new Date()): stri
       lastTriggeredAt: a.lastTriggeredAt ? iso(a.lastTriggeredAt) : null, symbol: a.symbol, targetPrice: a.targetPrice,
     })),
   };
-  return JSON.stringify(sortKeys(obj), null, 2) + "\n";
 }
 
 function sortKeys(v: unknown): unknown {
@@ -74,6 +78,10 @@ export function importBackup(text: string): { data: Dataset; hasAlerts: boolean;
   } catch {
     throw new BackupError("To nie jest poprawny plik JSON.");
   }
+  return datasetFromObject(raw);
+}
+
+export function datasetFromObject(raw: Record<string, unknown>): { data: Dataset; hasAlerts: boolean; exportedAt: Date | null } {
   if (raw.format !== BACKUP_FORMAT) throw new BackupError("To nie jest backup LibreWallet.");
   const version = num(raw.version, "version");
   if (version > BACKUP_VERSION) throw new BackupError(`Backup w nowszej wersji formatu (${version}) — zaktualizuj LibreWallet.`);
