@@ -8,3 +8,4 @@ fixtures/
 macos/LibreWallet.xcodeproj/project.xcworkspace/xcuserdata/
 macos/LibreWallet.xcodeproj/xcuserdata/
 **/*.xcuserstate
+._*

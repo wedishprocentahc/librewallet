@@ -1,0 +1,12 @@
+{
+  "name": "librewallet-web",
+  "private": true,
+  "type": "module",
+  "version": "0.1.0",
+  "description": "LibreWallet cross-platform port: TypeScript core + local backend + web UI",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "test": "node --test 'test/*.test.ts'",
+    "start": "node --experimental-sqlite server/main.ts"
+  }
+}
