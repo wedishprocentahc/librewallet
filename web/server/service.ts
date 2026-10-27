@@ -1,3 +1,5 @@
+import { renameSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { SUPPORTED_ASSET_TYPES } from "../core/assetType.ts";
 import { BackupError, exportBackup, importBackup } from "../core/backup.ts";
 import { BOND_NOMINAL, BOND_PRESETS, bondCurrentPrice, type BondTerms, maturityDate, termsFromPreset } from "../core/bonds.ts";
@@ -103,6 +105,21 @@ export class Service {
   }
   persist(): void {
     this.store.saveDataset(this.data);
+    this.scheduleAgentFeed();
+  }
+
+  /** Mirrors the native app: a fresh `agent-feed.json` next to the database after changes (debounced). */
+  private feedTimer: NodeJS.Timeout | undefined;
+  private scheduleAgentFeed(): void {
+    clearTimeout(this.feedTimer);
+    this.feedTimer = setTimeout(() => {
+      try {
+        const file = join(this.store.dir, "agent-feed.json");
+        writeFileSync(`${file}.tmp`, JSON.stringify(this.agentFeed(), null, 2));
+        renameSync(`${file}.tmp`, file);
+      } catch { /* the feed is best-effort */ }
+    }, 300);
+    this.feedTimer.unref();
   }
   private saveSettings(): void {
     this.store.setSetting("app", this.settings);
@@ -600,9 +617,19 @@ export class Service {
   }
 
   // ---------------------------------------------------------------- refresh
+  /** Symbols worth fetching: bond series (EDO, OTS, …) are valued from their terms, not from a market feed. */
+  private marketSymbols(): string[] {
+    const bondOnly = new Map<string, boolean>();
+    for (const t of this.data.transactions) {
+      const s = t.symbol?.toUpperCase();
+      if (s) bondOnly.set(s, (bondOnly.get(s) ?? true) && (t.assetType ?? "").toLowerCase() === "bond");
+    }
+    return [...bondOnly].filter(([, bond]) => !bond).map(([s]) => s);
+  }
+
   async refreshQuotes(): Promise<{ updated: number; failed: { symbol: string; error: string }[] }> {
     const txs = this.data.transactions;
-    const symbols = [...new Set(txs.map((t) => t.symbol?.toUpperCase()).filter((s): s is string => !!s))];
+    const symbols = this.marketSymbols();
     const ccy = mostCommonCurrencyBySymbol(txs);
     const failed: { symbol: string; error: string }[] = [];
     let updated = 0;
@@ -637,7 +664,7 @@ export class Service {
 
   async refreshHistories(): Promise<{ symbols: number }> {
     const txs = this.data.transactions;
-    const symbols = [...new Set(txs.map((t) => t.symbol?.toUpperCase()).filter((s): s is string => !!s))];
+    const symbols = this.marketSymbols();
     const ccy = mostCommonCurrencyBySymbol(txs);
     const queue = [...symbols];
     const worker = async () => {
