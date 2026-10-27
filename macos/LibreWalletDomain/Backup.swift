@@ -13,9 +13,13 @@ struct LWBackup: Codable {
     let transactions: [TransactionDTO]
     let targets: [TargetDTO]
     let quotes: [QuoteDTO]
+    /// Added in v2; absent in v1 files.
+    let bonds: [BondDTO]?
+    /// Added in v2; absent in v1 files.
+    let alerts: [PriceAlert]?
 
     static let formatId = "librewallet-backup"
-    static let currentVersion = 1
+    static let currentVersion = 2
 
     struct GroupDTO: Codable, Equatable {
         let id: UUID
@@ -61,6 +65,19 @@ struct LWBackup: Codable {
         let createdAt: Date
     }
 
+    struct BondDTO: Codable, Equatable {
+        let id: UUID
+        let portfolioId: UUID?
+        let symbol: String
+        let currency: String
+        let termMonths: Int
+        let firstYearRate: Double
+        let margin: Double
+        let indexation: String
+        let capitalization: Bool
+        let earlyRedemptionFee: Double
+    }
+
     struct QuoteDTO: Codable {
         let id: UUID
         let symbol: String
@@ -71,12 +88,13 @@ struct LWBackup: Codable {
 }
 
 enum BackupService {
-    static func export(context: ModelContext) throws -> Data {
+    static func export(context: ModelContext, alerts: [PriceAlert] = AppPreferences.priceAlerts) throws -> Data {
         let groups = try context.fetch(FetchDescriptor<PortfolioGroup>())
         let portfolios = try context.fetch(FetchDescriptor<Portfolio>())
         let transactions = try context.fetch(FetchDescriptor<Transaction>())
         let targets = try context.fetch(FetchDescriptor<AllocationTarget>())
         let quotes = try context.fetch(FetchDescriptor<Quote>())
+        let bonds = try context.fetch(FetchDescriptor<BondHolding>())
 
         let backup = LWBackup(
             format: LWBackup.formatId,
@@ -123,7 +141,22 @@ enum BackupService {
                     createdAt: $0.createdAt
                 )
             },
-            quotes: quotes.map { .init(id: $0.id, symbol: $0.symbol, currency: $0.currency, price: $0.price, asOf: $0.asOf) }
+            quotes: quotes.map { .init(id: $0.id, symbol: $0.symbol, currency: $0.currency, price: $0.price, asOf: $0.asOf) },
+            bonds: bonds.map {
+                .init(
+                    id: $0.id,
+                    portfolioId: $0.portfolio?.id,
+                    symbol: $0.symbol,
+                    currency: $0.currency,
+                    termMonths: $0.termMonths,
+                    firstYearRate: $0.firstYearRate,
+                    margin: $0.margin,
+                    indexation: $0.indexation,
+                    capitalization: $0.capitalization,
+                    earlyRedemptionFee: $0.earlyRedemptionFee
+                )
+            },
+            alerts: alerts
         )
 
         let encoder = JSONEncoder()
@@ -138,6 +171,9 @@ enum BackupService {
         let backup = try decoder.decode(LWBackup.self, from: data)
         guard backup.format == LWBackup.formatId else {
             throw BackupError.invalidFormat
+        }
+        guard backup.version <= LWBackup.currentVersion else {
+            throw BackupError.unsupportedVersion(backup.version)
         }
 
         if wipeExisting {
@@ -201,6 +237,26 @@ enum BackupService {
             context.insert(Quote(id: dto.id, symbol: dto.symbol, currency: dto.currency, price: dto.price, asOf: dto.asOf))
         }
 
+        for dto in backup.bonds ?? [] {
+            context.insert(BondHolding(
+                id: dto.id,
+                symbol: dto.symbol,
+                currency: CurrencyCode.normalize(dto.currency),
+                termMonths: dto.termMonths,
+                firstYearRate: dto.firstYearRate,
+                margin: dto.margin,
+                indexation: dto.indexation,
+                capitalization: dto.capitalization,
+                earlyRedemptionFee: dto.earlyRedemptionFee,
+                portfolio: dto.portfolioId.flatMap { portfoliosById[$0] }
+            ))
+        }
+
+        // A full restore replaces alerts too; a v1 file has none, so keep the current ones.
+        if wipeExisting, let alerts = backup.alerts {
+            AppPreferences.priceAlerts = alerts
+        }
+
         try context.save()
     }
 
@@ -219,10 +275,12 @@ enum BackupService {
 
     enum BackupError: LocalizedError {
         case invalidFormat
+        case unsupportedVersion(Int)
 
         var errorDescription: String? {
             switch self {
             case .invalidFormat: "To nie jest backup LibreWallet."
+            case .unsupportedVersion(let v): "Backup w nowszej wersji formatu (\(v)) — zaktualizuj LibreWallet."
             }
         }
     }

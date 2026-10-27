@@ -1,0 +1,86 @@
+{
+  "alerts": [
+    {
+      "above": true,
+      "currency": "USD",
+      "enabled": true,
+      "id": "77777777-7777-4777-8777-777777777777",
+      "symbol": "AAPL.US",
+      "targetPrice": 200
+    }
+  ],
+  "bonds": [
+    {
+      "capitalization": true,
+      "currency": "PLN",
+      "earlyRedemptionFee": 0.7,
+      "firstYearRate": 5.6,
+      "id": "66666666-6666-4666-8666-666666666666",
+      "indexation": "cpi",
+      "margin": 1.5,
+      "portfolioId": "22222222-2222-4222-8222-222222222222",
+      "symbol": "EDO0935",
+      "termMonths": 120
+    }
+  ],
+  "exportedAt": "2026-10-01T09:00:00Z",
+  "format": "librewallet-backup",
+  "groups": [
+    {
+      "colorHex": "#176b4d",
+      "createdAt": "2026-01-02T08:00:00Z",
+      "id": "11111111-1111-4111-8111-111111111111",
+      "name": "Long term"
+    }
+  ],
+  "portfolios": [
+    {
+      "baseCurrency": "PLN",
+      "colorHex": "#176b4d",
+      "createdAt": "2026-01-02T08:00:00Z",
+      "groupId": "11111111-1111-4111-8111-111111111111",
+      "id": "22222222-2222-4222-8222-222222222222",
+      "kindRaw": "account",
+      "name": "XTB"
+    }
+  ],
+  "quotes": [
+    {
+      "asOf": "2026-10-01T08:30:00Z",
+      "currency": "USD",
+      "id": "55555555-5555-4555-8555-555555555555",
+      "price": 190.5,
+      "symbol": "AAPL.US"
+    }
+  ],
+  "targets": [
+    {
+      "assetType": "etf",
+      "createdAt": "2026-01-02T08:00:00Z",
+      "id": "44444444-4444-4444-8444-444444444444",
+      "portfolioId": "22222222-2222-4222-8222-222222222222",
+      "targetPct": 60
+    }
+  ],
+  "transactions": [
+    {
+      "assetType": "stock",
+      "cashDelta": -952.5,
+      "currency": "USD",
+      "date": "2026-02-10T14:30:00Z",
+      "externalId": "123456",
+      "fee": 0,
+      "gross": 952.5,
+      "id": "33333333-3333-4333-8333-333333333333",
+      "name": "Apple Inc.",
+      "notes": "OPEN BUY 5 @ 190.50",
+      "portfolioId": "22222222-2222-4222-8222-222222222222",
+      "price": 190.5,
+      "quantity": 5,
+      "source": "xtb",
+      "symbol": "AAPL.US",
+      "typeRaw": "buy"
+    }
+  ],
+  "version": 2
+}

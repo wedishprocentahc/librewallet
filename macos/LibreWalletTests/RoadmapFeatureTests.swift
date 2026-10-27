@@ -296,4 +296,74 @@ final class BackupRoundTripTests: XCTestCase {
         XCTAssertEqual(txs.count, 1)
         XCTAssertEqual(portfolios.first?.name, "P")
     }
+
+    // MARK: - Backup v2 (bonds, alerts, v1 compatibility)
+
+    private func makeBackupContext() throws -> ModelContext {
+        let schema = Schema([
+            PortfolioGroup.self,
+            Portfolio.self,
+            Transaction.self,
+            BondHolding.self,
+            AllocationTarget.self,
+            Quote.self,
+        ])
+        let container = try ModelContainer(for: schema, configurations: [ModelConfiguration(isStoredInMemoryOnly: true)])
+        return ModelContext(container)
+    }
+
+    private func fixture(_ name: String) throws -> Data {
+        let url = URL(fileURLWithPath: #filePath)
+            .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("docs/backup-samples/\(name)")
+        return try Data(contentsOf: url)
+    }
+
+    func testBackupRoundTripKeepsBonds() throws {
+        let context = try makeBackupContext()
+        let portfolio = Portfolio(name: "P", baseCurrency: "PLN", colorHex: "#176b4d", kind: .manual, createdAt: .now, group: nil)
+        context.insert(portfolio)
+        context.insert(BondHolding(
+            symbol: "EDO0935", currency: "PLN", termMonths: 120, firstYearRate: 5.6, margin: 1.5,
+            indexation: "cpi", capitalization: true, earlyRedemptionFee: 0.7, portfolio: portfolio
+        ))
+        try context.save()
+
+        let data = try BackupService.export(context: context, alerts: [])
+        try BackupService.wipe(context: context)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<BondHolding>()).isEmpty)
+        try BackupService.import(data: data, context: context, wipeExisting: false)
+
+        let bonds = try context.fetch(FetchDescriptor<BondHolding>())
+        XCTAssertEqual(bonds.count, 1)
+        XCTAssertEqual(bonds.first?.symbol, "EDO0935")
+        XCTAssertEqual(bonds.first?.portfolio?.name, "P")
+    }
+
+    func testImportsV1BackupWithoutBondsOrAlerts() throws {
+        let context = try makeBackupContext()
+        try BackupService.import(data: try fixture("v1-swift.json"), context: context, wipeExisting: false)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Portfolio>()).count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Transaction>()).count, 1)
+        XCTAssertTrue(try context.fetch(FetchDescriptor<BondHolding>()).isEmpty)
+    }
+
+    func testImportsV2Fixture() throws {
+        let context = try makeBackupContext()
+        try BackupService.import(data: try fixture("v2-full.json"), context: context, wipeExisting: false)
+        let bonds = try context.fetch(FetchDescriptor<BondHolding>())
+        XCTAssertEqual(bonds.count, 1)
+        XCTAssertEqual(bonds.first?.termMonths, 120)
+        XCTAssertEqual(bonds.first?.portfolio?.name, "XTB")
+        XCTAssertEqual(try context.fetch(FetchDescriptor<AllocationTarget>()).count, 1)
+        XCTAssertEqual(try context.fetch(FetchDescriptor<Quote>()).count, 1)
+    }
+
+    func testRejectsNewerBackupVersion() throws {
+        let context = try makeBackupContext()
+        var json = try JSONSerialization.jsonObject(with: try fixture("v2-full.json")) as! [String: Any]
+        json["version"] = LWBackup.currentVersion + 1
+        let data = try JSONSerialization.data(withJSONObject: json)
+        XCTAssertThrowsError(try BackupService.import(data: data, context: context, wipeExisting: false))
+    }
 }

@@ -5,6 +5,12 @@ Wszystkie istotne zmiany w projekcie są dokumentowane w tym pliku.
 Format oparty o [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/).
 Wersje natywnej aplikacji macOS (`macos/`) zaczynają się od **0.1.0** i są niezależne od starszych release’ów Electron/web (`1.x`).
 
+## [Unreleased]
+
+### Naprawione (native macOS)
+
+- Kopia zapasowa JSON zawiera teraz obligacje i alerty cenowe (format v2, patrz `docs/backup-format.md`). Wcześniej przywrócenie kopii kasowało obligacje bez możliwości odzyskania. Pliki v1 nadal się wczytują; kopia w nowszej wersji formatu jest odrzucana z komunikatem.
+
 ## [0.5.9] — 2026-10-23
 
 ### Naprawione (native macOS)
