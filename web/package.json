@@ -7,6 +7,6 @@
   "engines": { "node": ">=22.18" },
   "scripts": {
     "test": "node --test 'test/*.test.ts'",
-    "start": "node --experimental-sqlite server/main.ts"
+    "start": "node server/main.ts"
   }
 }
