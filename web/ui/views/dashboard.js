@@ -3,17 +3,43 @@ import { bars, donut, lineChart, PALETTE } from "../charts.js";
 import { h } from "../dom.js";
 import { dateTime, money, pct, signed, tone } from "../format.js";
 import { assetLabel, t } from "../i18n.js";
-import { empty, guarded, kpi, panel, select, table, toast } from "../widgets.js";
+import { empty, guarded, kpi, panel, select, table } from "../widgets.js";
 
 const RANGES = [["all", "history.all"], ["1y", "history.1y"], ["quarter", "history.quarter"], ["ytd", "history.ytd"]];
-const range = { value: "all" };
+const state = { range: "all", showOps: true, zoom: null };
 
-function sliceRows(rows, preset) {
+function sliceByPreset(rows, preset) {
   if (preset === "all" || rows.length === 0) return rows;
   const last = new Date(rows[rows.length - 1].dayKey + "T00:00:00");
   const start = preset === "ytd" ? new Date(last.getFullYear(), 0, 1) : new Date(last.getFullYear(), last.getMonth() - (preset === "1y" ? 12 : 3), last.getDate());
   const key = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`;
   return rows.filter((r) => r.dayKey >= key);
+}
+
+function sliceByZoom(rows, zoom) {
+  if (!zoom || rows.length === 0) return rows;
+  return rows.filter((r) => r.dayKey >= zoom.start && r.dayKey <= zoom.end);
+}
+
+function dayMs(key) {
+  return new Date(key + "T00:00:00").getTime();
+}
+
+function zoomAround(rows, factor) {
+  if (rows.length < 2) return null;
+  const fullStart = rows[0].dayKey, fullEnd = rows[rows.length - 1].dayKey;
+  const current = state.zoom ?? { start: fullStart, end: fullEnd };
+  const c0 = dayMs(current.start), c1 = dayMs(current.end);
+  const center = (c0 + c1) / 2;
+  const half = Math.max(86400_000 * 7, ((c1 - c0) / 2) * factor);
+  const f0 = dayMs(fullStart), f1 = dayMs(fullEnd);
+  const start = Math.min(f1, Math.max(f0, center - half));
+  const end = Math.min(f1, Math.max(f0, center + half));
+  const toKey = (ms) => {
+    const d = new Date(ms);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  return { start: toKey(start), end: toKey(end) };
 }
 
 export async function render(root, app) {
@@ -39,22 +65,27 @@ export async function render(root, app) {
     kpi(t("kpi.invested"), money(s.netInvested, ccy)),
     s.hasCashOperations ? kpi(t("dash.cash"), money(s.cashValue, ccy)) : null));
 
-  // ---- history chart
   const chartHost = h("div");
+  const domainLabel = h("span", { class: "muted" });
   const draw = () => {
-    const rows = sliceRows(d.history, range.value);
+    const base = sliceByPreset(d.history, state.range);
+    const rows = sliceByZoom(base, state.zoom);
     chartHost.replaceChildren();
-    if (rows.length < 2) { chartHost.append(empty(t("dash.noHistory"))); return; }
+    if (rows.length < 2) { chartHost.append(empty(t("dash.noHistory"))); domainLabel.textContent = ""; return; }
+    domainLabel.textContent = `${rows[0].dayKey} – ${rows[rows.length - 1].dayKey}`;
     const series = [
       { key: "value", label: t("dash.valueLine"), color: "#2e7d5b", area: true },
       { key: "invested", label: t("dash.investedLine"), color: "#b8731c" },
       ...(d.hasBenchmark ? [{ key: "benchmark", label: t("dash.benchmarkLine"), color: "#7f8c8d", dashed: true }] : []),
     ];
-    chartHost.append(lineChart({ rows, series, currency: ccy, markers: d.markers }),
-      h("div", { class: "legend-inline" }, series.map((x) => h("span", {}, h("span", { class: "dot", style: { background: x.color } }), x.label)), h("span", {}, h("span", { class: "dot", style: { background: "#3b6fb6" } }), t("dash.operations"))));
+    const markers = state.showOps ? d.markers : [];
+    chartHost.append(lineChart({ rows, series, currency: ccy, markers }),
+      h("div", { class: "legend-inline" }, series.map((x) => h("span", {}, h("span", { class: "dot", style: { background: x.color } }), x.label)),
+        state.showOps ? h("span", {}, h("span", { class: "dot", style: { background: "#3b6fb6" } }), t("dash.operations")) : null));
   };
-  const chips = h("div", { class: "chips" }, RANGES.map(([id, key]) => h("button", { class: `chip ${range.value === id ? "active" : ""}`, onclick: (e) => {
-    range.value = id;
+  const chips = h("div", { class: "chips" }, RANGES.map(([id, key]) => h("button", { class: `chip ${state.range === id ? "active" : ""}`, onclick: (e) => {
+    state.range = id;
+    state.zoom = null;
     e.target.parentElement.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
     e.target.classList.add("active");
     draw();
@@ -68,19 +99,23 @@ export async function render(root, app) {
     e.target.disabled = false;
   } }, t("dashboard.chartRefresh"));
   root.append(panel(t("dashboard.history"),
-    h("div", { class: "toolbar" }, chips, h("span", { class: "grow" }), h("label", { class: "muted" }, `${t("dash.benchmark")} `, benchSelect), histBtn),
+    h("div", { class: "toolbar" }, chips, h("span", { class: "grow" }),
+      h("label", { class: "muted" }, h("input", { type: "checkbox", checked: state.showOps, onchange: (e) => { state.showOps = e.target.checked; draw(); } }), ` ${t("dash.operations")}`),
+      h("label", { class: "muted" }, `${t("dash.benchmark")} `, benchSelect),
+      domainLabel,
+      h("button", { class: "btn", title: t("dash.zoomOut"), onclick: () => { state.zoom = zoomAround(sliceByPreset(d.history, state.range), 1.4); draw(); } }, "−"),
+      h("button", { class: "btn", title: t("dash.zoomIn"), onclick: () => { state.zoom = zoomAround(sliceByPreset(d.history, state.range), 0.7); draw(); } }, "+"),
+      histBtn),
     d.benchmarkError ? h("div", { class: "warn" }, t("dash.benchmarkError", { error: d.benchmarkError })) : null,
     chartHost));
   draw();
 
-  // ---- allocation + currency
   const typeSlices = Object.entries(s.allocationByType).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v], i) => ({ label: assetLabel(k), value: v, color: PALETTE[i % PALETTE.length] }));
   const ccySlices = Object.entries(s.allocationByCurrency).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v], i) => ({ label: k, value: v, color: PALETTE[(i + 3) % PALETTE.length] }));
   root.append(h("div", { class: "grid2" },
     panel(t("dashboard.allocation"), typeSlices.length ? donut({ slices: typeSlices, currency: ccy }) : empty(t("dashboard.noData"))),
     panel(t("dashboard.fx"), ccySlices.length ? donut({ slices: ccySlices }) : empty(t("dashboard.noData")))));
 
-  // ---- profit per symbol + portfolio comparison
   root.append(h("div", { class: "grid2" },
     panel(t("dashboard.profitChart"), d.profitBars.length ? bars({ items: d.profitBars.map((p) => ({ label: p.symbol, value: p.profit })), currency: ccy }) : empty(t("dashboard.noData"))),
     panel(t("dashboard.portfolioCompare"), table({

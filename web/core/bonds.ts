@@ -1,4 +1,4 @@
-import { addMonths, startOfDay } from "./dates.ts";
+import { addMonths, parseDayKey, startOfDay } from "./dates.ts";
 
 export interface BondPreset {
   code: string;
@@ -33,6 +33,8 @@ export interface BondTerms {
   capitalization: boolean;
   earlyRedemptionFee: number;
   nominal: number;
+  /** Optional absolute maturity from notes (`maturity=YYYY-MM-DD`), overrides termMonths. */
+  maturityOverride?: string;
 }
 
 export interface BondLot {
@@ -55,6 +57,9 @@ export function termsFromPreset(p: BondPreset): BondTerms {
 }
 
 export function maturityDate(terms: BondTerms, purchase: Date): Date {
+  if (terms.maturityOverride && /^\d{4}-\d{2}-\d{2}/.test(terms.maturityOverride)) {
+    return parseDayKey(terms.maturityOverride.slice(0, 10));
+  }
   return addMonths(purchase, terms.termMonths);
 }
 
@@ -113,6 +118,7 @@ export function parseBondNotes(notes: string | null | undefined): BondTerms | nu
   const cap = matchToken(notes, "cap")?.toLowerCase();
   const capitalization = cap === "true" || cap === "1" || cap === "yes";
   const fee = matchNumber(notes, "fee") ?? 0;
+  const maturityOverride = matchToken(notes, "maturity");
   if (code === "" && !(rate > 0)) return null;
   return {
     code: code === "" ? "BOND" : code,
@@ -123,6 +129,7 @@ export function parseBondNotes(notes: string | null | undefined): BondTerms | nu
     capitalization,
     earlyRedemptionFee: fee,
     nominal: BOND_NOMINAL,
+    ...(maturityOverride && /^\d{4}-\d{2}-\d{2}/.test(maturityOverride) ? { maturityOverride: maturityOverride.slice(0, 10) } : {}),
   };
 }
 

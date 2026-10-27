@@ -1,6 +1,8 @@
 import { h, clear } from "./dom.js";
 import { t } from "./i18n.js";
 
+export const COLOR_PRESETS = ["#176B4D", "#1B4F8A", "#6B3FA0", "#A13A32", "#C36A1C", "#5A6168"];
+
 export function toast(message, kind = "info") {
   const el = h("div", { class: `toast ${kind === "error" ? "error" : ""}` }, message);
   document.getElementById("toasts").append(el);
@@ -22,6 +24,17 @@ export function formDialog({ title, fields, submitLabel = t("common.save"), dang
         input = h("textarea", { name: f.name, rows: 3, value: f.value ?? "" });
       } else if (f.type === "checkbox") {
         input = h("input", { type: "checkbox", name: f.name, checked: !!f.value });
+      } else if (f.type === "color") {
+        const hex = (f.value || COLOR_PRESETS[0]).toUpperCase();
+        const picker = h("input", { type: "color", name: f.name, value: hex });
+        const swatches = h("div", { class: "swatches" }, COLOR_PRESETS.map((c) => h("button", {
+          type: "button", class: `swatch ${c.toUpperCase() === hex ? "active" : ""}`, style: { background: c }, title: c,
+          onclick: (e) => { picker.value = c; swatches.querySelectorAll(".swatch").forEach((el) => el.classList.toggle("active", el === e.currentTarget)); },
+        })));
+        input = h("div", { class: "color-field" }, picker, swatches);
+        inputs[f.name] = picker;
+        form.append(h("label", { class: f.wide ? "wide" : "" }, f.label, input));
+        continue;
       } else {
         input = h("input", { type: f.type ?? "text", name: f.name, value: f.value ?? "", step: f.step, required: f.required, autocomplete: "off" });
       }

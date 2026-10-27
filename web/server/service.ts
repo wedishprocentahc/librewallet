@@ -149,6 +149,7 @@ export class Service {
     return {
       version: this.version,
       dataDir: this.store.dir,
+      agentFeedPath: join(this.store.dir, "agent-feed.json"),
       settings: this.settings,
       groups: d.groups.map((g) => ({ ...g, createdAt: g.createdAt.toISOString() })),
       portfolios: d.portfolios.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() })),
@@ -294,11 +295,24 @@ export class Service {
 
   bonds() {
     const lots = bondMaturityLots(this.data.transactions, this.data.portfolios);
+    const serialize = (l: (typeof lots)[number]) => ({
+      portfolioId: l.portfolioId, portfolioName: l.portfolioName, symbol: l.symbol, name: l.name, currency: l.currency,
+      quantity: l.quantity, unitValue: l.unitValue, totalValue: l.totalValue, isPast: l.isPast, year: l.year,
+      key: `${l.portfolioId}|${l.symbol}|${dayKey(l.purchaseDate)}`,
+      purchaseDate: l.purchaseDate.toISOString(),
+      maturityDate: l.maturityDate.toISOString(),
+    });
     return {
       presets: BOND_PRESETS,
       nominal: BOND_NOMINAL,
-      held: lots.map((l) => ({ ...l, key: `${l.portfolioId}|${l.symbol}|${dayKey(l.purchaseDate)}`, purchaseDate: l.purchaseDate.toISOString(), maturityDate: l.maturityDate.toISOString() })),
-      byYear: bondsGroupedByYear(lots).map((g) => ({ year: g.year, items: g.items.map((l) => ({ ...l, key: `${l.portfolioId}|${l.symbol}|${dayKey(l.purchaseDate)}`, purchaseDate: l.purchaseDate.toISOString(), maturityDate: l.maturityDate.toISOString() })) })),
+      summary: {
+        series: lots.length,
+        quantity: lots.reduce((s, l) => s + l.quantity, 0),
+        value: lots.reduce((s, l) => s + l.totalValue, 0),
+        overdue: lots.filter((l) => l.isPast).length,
+      },
+      held: lots.map(serialize),
+      byYear: bondsGroupedByYear(lots).map((g) => ({ year: g.year, items: g.items.map(serialize) })),
     };
   }
 
@@ -320,14 +334,19 @@ export class Service {
     const date = body.date ? new Date(String(body.date)) : new Date();
     if (Number.isNaN(date.getTime())) throw new HttpError(400, "Nieprawidłowa data.");
     let notes = `Bond ${terms.code} term=${terms.termMonths}m rate=${terms.firstYearRate}% margin=${terms.margin} index=${terms.indexation} cap=${terms.capitalization} fee=${terms.earlyRedemptionFee}`;
-    if (body.maturity) notes += ` maturity=${String(body.maturity).slice(0, 10)}`;
+    const maturityRaw = optStr(body.maturity);
+    if (maturityRaw) {
+      const m = maturityRaw.slice(0, 10);
+      notes += ` maturity=${m}`;
+      terms.maturityOverride = m;
+    }
     const tx = this.newTx({
       portfolioId: portfolio.id, date, typeRaw: "buy", symbol: terms.code, name: preset.name, quantity: count, price: BOND_NOMINAL, gross: count * BOND_NOMINAL,
       currency: portfolio.baseCurrency, notes, source: "Bond preset", assetType: "bond",
     });
     this.data.transactions.push(tx);
     this.persist();
-    return { id: tx.id, estimatedValue: count * bondCurrentPrice(terms, date), maturity: maturityDate(terms, date).toISOString() };
+    return { id: tx.id, estimatedValue: count * bondCurrentPrice(terms, date), maturity: dayKey(maturityDate(terms, date)) };
   }
 
   redeemBond(body: Record<string, unknown>) {
@@ -404,9 +423,12 @@ export class Service {
     const matching = new Set(matchingAlerts(this.data.quotes, this.data.alerts).map((a) => a.id));
     const quotes = new Map(this.data.quotes.map((q) => [q.symbol.toUpperCase(), q]));
     const symbols = [...new Set(this.data.transactions.map((t) => t.symbol?.toUpperCase()).filter((s): s is string => !!s))].sort();
+    const open = scopeResult(this.ctx(), { kind: "all" }).positions
+      .filter((p) => Math.abs(p.quantity) > 1e-7 && p.assetType !== "bond")
+      .map((p) => ({ id: `${p.portfolioId}|${p.symbol}|${p.currency}`, symbol: p.symbol, currency: p.currency, name: p.name, portfolioName: p.portfolioName }));
     return {
       alerts: this.data.alerts.map((a) => ({ ...a, lastTriggeredAt: a.lastTriggeredAt?.toISOString() ?? null, breached: matching.has(a.id), lastPrice: quotes.get(a.symbol.toUpperCase())?.price ?? null })),
-      drift, driftThreshold: this.settings.allocationDriftPct, driftScope: scopeToString(this.settings.alertDriftScope), symbols,
+      drift, driftThreshold: this.settings.allocationDriftPct, driftScope: scopeToString(this.settings.alertDriftScope), symbols, positions: open,
     };
   }
 
@@ -593,8 +615,9 @@ export class Service {
       this.data.transactions.map((t) => importFingerprint(t.typeRaw, t.symbol, t.date, t.quantity, t.cashDelta, t.currency)),
     );
     const accounts = [...new Set(items.map((i) => i.account).filter((a): a is string => !!a))].sort();
+    const currencies = [...new Set(items.map((i) => normalizeCurrency(i.currency)))].sort();
     return {
-      token, source, total: items.length, newCount: plan.toInsert.length, duplicates: plan.skippedDuplicates, accounts,
+      token, source, total: items.length, newCount: plan.toInsert.length, duplicates: plan.skippedDuplicates, accounts, currencies,
       autoPortfolios: items.some((i) => /xtb/i.test(i.source ?? "") || i.account),
       items: items.slice(0, 500).map((i) => ({ ...i, date: i.date.toISOString() })),
     };
@@ -735,6 +758,31 @@ export class Service {
     return { quotes, ratesError: rates };
   }
 
+  /** Check GitHub for a newer `web-v*` release (same idea as the native UpdateChecker). */
+  async checkUpdates(): Promise<{ status: "upToDate" | "updateAvailable" | "failed"; current: string; latest?: string; releaseURL?: string; downloadURL?: string; error?: string }> {
+    const current = this.version;
+    try {
+      const res = await this.fetchFn("https://api.github.com/repos/wedishprocentahc/librewallet/releases?per_page=30", {
+        headers: { Accept: "application/vnd.github+json", "User-Agent": `LibreWallet-Web/${current}` },
+      });
+      if (!res.ok) return { status: "failed", current, error: `HTTP ${res.status}` };
+      const releases = (await res.json()) as { tag_name?: string; html_url?: string; assets?: { name: string; browser_download_url: string }[]; draft?: boolean; prerelease?: boolean }[];
+      const web = (Array.isArray(releases) ? releases : []).find((r) => !r.draft && !r.prerelease && typeof r.tag_name === "string" && /^web-v/i.test(r.tag_name));
+      if (!web?.tag_name) return { status: "upToDate", current };
+      const latest = web.tag_name.replace(/^web-v/i, "").replace(/^v/i, "");
+      if (!isVersionOlder(current, latest)) return { status: "upToDate", current, latest };
+      const platform = process.platform === "win32" ? "windows" : process.platform === "darwin" ? "macos" : "linux";
+      const asset = web.assets?.find((a) => a.name.toLowerCase().includes(platform)) ?? web.assets?.[0];
+      return {
+        status: "updateAvailable", current, latest,
+        releaseURL: web.html_url ?? "https://github.com/wedishprocentahc/librewallet/releases",
+        downloadURL: asset?.browser_download_url,
+      };
+    } catch (e) {
+      return { status: "failed", current, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
   // ---------------------------------------------------------------- integration API
   holdings() {
     return holdingsResponse(this.data.portfolios, this.data.transactions);
@@ -757,6 +805,21 @@ export class Service {
 
 export function scopeToString(s: ScopeSel): string {
   return s.kind === "all" ? "all" : `${s.kind}:${s.id}`;
+}
+
+/** Semver-ish: true if `lhs` is strictly older than `rhs` (strips leading v / web-v). */
+export function isVersionOlder(lhs: string, rhs: string): boolean {
+  const norm = (raw: string) => {
+    let s = raw.trim().replace(/^web-/i, "").replace(/^v/i, "");
+    s = s.split("-")[0] ?? s;
+    return s.split(".").slice(0, 3).map((p) => Number.parseInt(p, 10) || 0);
+  };
+  const a = norm(lhs), b = norm(rhs);
+  for (let i = 0; i < 3; i++) {
+    if ((a[i] ?? 0) < (b[i] ?? 0)) return true;
+    if ((a[i] ?? 0) > (b[i] ?? 0)) return false;
+  }
+  return false;
 }
 
 function serializeHistories(h: Histories): Record<string, [number, number][]> {

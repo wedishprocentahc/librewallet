@@ -4,7 +4,7 @@ import { dateTime, number, pct } from "../format.js";
 import { assetLabel, t } from "../i18n.js";
 import { empty, guarded, panel, select, table, toast } from "../widgets.js";
 
-const state = { symbol: "", currency: "PLN", targetPrice: "", above: true };
+const state = { symbol: "", currency: "PLN", targetPrice: "", above: true, picked: "" };
 
 export async function render(root, app) {
   const d = await api.get("/api/alerts");
@@ -16,17 +16,36 @@ export async function render(root, app) {
     } }, t("alerts.checkNow"))));
   root.append(h("p", { class: "muted" }, t("alerts.liveHint")));
 
-  // ---- price alerts
-  const symbolInput = h("input", { list: "symbols", value: state.symbol, placeholder: "AAPL.US", oninput: (e) => { state.symbol = e.target.value; } });
+  const symbolInput = h("input", { list: "symbols", value: state.symbol, placeholder: "AAPL.US", oninput: (e) => {
+    state.symbol = e.target.value;
+    if (state.picked) {
+      const opt = d.positions.find((p) => p.id === state.picked);
+      if (opt && e.target.value.trim().toUpperCase() !== opt.symbol.toUpperCase()) state.picked = "";
+    }
+  } });
+  const currencyInput = h("input", { value: state.currency, oninput: (e) => { state.currency = e.target.value; } });
+  const positionOpts = [{ value: "", label: t("alerts.customSymbol") }, ...d.positions.map((p) => ({
+    value: p.id,
+    label: `${p.symbol} · ${p.currency}${p.portfolioName ? ` (${p.portfolioName})` : ""}`,
+  }))];
+
   root.append(panel(t("alerts.priceHeader"),
     h("datalist", { id: "symbols" }, d.symbols.map((s) => h("option", { value: s }))),
     h("div", { class: "form" },
+      d.positions.length ? h("label", { class: "wide" }, t("alerts.fromPositions"), select(positionOpts, state.picked, (v) => {
+        state.picked = v;
+        const opt = d.positions.find((p) => p.id === v);
+        if (opt) { state.symbol = opt.symbol; state.currency = opt.currency; symbolInput.value = opt.symbol; currencyInput.value = opt.currency; }
+      })) : null,
       h("label", {}, t("alerts.symbol"), symbolInput),
-      h("label", {}, t("alerts.currency"), h("input", { value: state.currency, oninput: (e) => { state.currency = e.target.value; } })),
+      h("label", {}, t("alerts.currency"), currencyInput),
       h("label", {}, t("alerts.targetPrice"), h("input", { type: "number", step: "any", value: state.targetPrice, oninput: (e) => { state.targetPrice = e.target.value; } })),
       h("label", {}, t("alerts.scope"), select([{ value: "1", label: t("alerts.above") }, { value: "0", label: t("alerts.below") }], state.above ? "1" : "0", (v) => { state.above = v === "1"; })),
       h("button", { class: "btn primary", onclick: async () => {
-        if (await guarded(() => api.post("/api/alerts", { symbol: state.symbol, currency: state.currency, targetPrice: state.targetPrice, above: state.above }), t("feedback.alertAdded"))) { state.symbol = ""; state.targetPrice = ""; await reload(); }
+        if (await guarded(() => api.post("/api/alerts", { symbol: state.symbol, currency: state.currency, targetPrice: state.targetPrice, above: state.above }), t("feedback.alertAdded"))) {
+          state.symbol = ""; state.targetPrice = ""; state.picked = "";
+          await reload();
+        }
       } }, t("alerts.add"))),
     h("h3", {}, t("alerts.priceList")),
     d.alerts.length === 0 ? empty(t("alerts.empty")) : table({
@@ -42,7 +61,6 @@ export async function render(root, app) {
       rows: d.alerts,
     })));
 
-  // ---- allocation drift
   const scopes = [{ value: "all", label: t("common.all") }, ...app.boot.groups.map((g) => ({ value: `group:${g.id}`, label: `${t("nav.groups")}: ${g.name}` })), ...app.boot.portfolios.map((p) => ({ value: `portfolio:${p.id}`, label: p.name }))];
   root.append(panel(t("alerts.driftHeader"),
     h("div", { class: "toolbar" },
@@ -57,12 +75,10 @@ export async function render(root, app) {
         { label: "Δ", num: true, render: (i) => pct(i.driftPct) },
       ], rows: d.drift }))));
 
-  // ---- browser notifications
   const supported = "Notification" in window;
   const status = !supported ? "—" : Notification.permission === "granted" ? t("alerts.notifications.status.authorized") : Notification.permission === "denied" ? t("alerts.notifications.status.denied") : t("alerts.notifications.status.notDetermined");
   root.append(panel(t("alerts.notifications"), h("div", { class: "toolbar" },
     h("button", { class: "btn", onclick: async () => { await guarded(() => api.post("/api/notifications/test"), t("alerts.notifications.test")); } }, t("alerts.notifications.test")), h("span", { class: "muted" }, t("alerts.systemHint"))),
     h("div", { class: "toolbar" }, h("strong", {}, `${t("alerts.browserNotifications")}: `), h("span", {}, status),
-    supported && Notification.permission !== "granted" ? h("button", { class: "btn", onclick: async () => { await Notification.requestPermission(); await reload(); } }, t("alerts.browserNotifications.enable")) : null,
-    null)));
+    supported && Notification.permission !== "granted" ? h("button", { class: "btn", onclick: async () => { await Notification.requestPermission(); await reload(); } }, t("alerts.browserNotifications.enable")) : null)));
 }

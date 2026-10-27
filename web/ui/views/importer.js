@@ -42,7 +42,9 @@ export async function render(root, app) {
   root.append(panel(`${t("import.preview")} · ${p.source ?? ""}`,
     h("div", { class: "toolbar" },
       h("span", {}, t("import.newOps", { count: p.newCount })), p.duplicates ? h("span", { class: "badge warn" }, t("import.duplicates", { count: p.duplicates })) : null,
-      p.accounts.length ? h("span", { class: "muted" }, t("import.accounts", { accounts: p.accounts.join(", ") })) : null, h("span", { class: "grow" }),
+      p.accounts.length ? h("span", { class: "muted" }, t("import.accounts", { accounts: p.accounts.join(", ") })) : null,
+      (p.currencies?.length ?? 0) > 1 ? h("span", { class: "muted" }, t("import.currencies", { currencies: p.currencies.join(", ") })) : null,
+      h("span", { class: "grow" }),
       p.autoPortfolios ? h("span", { class: "muted" }, t("import.autoPortfolios")) : h("label", { class: "muted" }, `${t("import.targetPortfolio")} `, select(app.boot.portfolios.map((x) => ({ value: x.id, label: x.name })), state.target, (v) => { state.target = v; })),
       h("button", { class: "btn", onclick: async () => { state.preview = null; await reload(); } }, t("import.cancel")), commitBtn),
     p.items.length ? table({

@@ -4,14 +4,20 @@ import { dateTime, money, number, pct, signed, tone } from "../format.js";
 import { assetLabel, t } from "../i18n.js";
 import { confirmDialog, empty, guarded, kpi, panel, select, table, toast } from "../widgets.js";
 
-const state = { groupBy: "none", showClosed: false };
+const state = { groupBy: "none", showClosed: false, search: "" };
 const PERIODS = ["1M", "3M", "6M", "1Y", "YTD"];
 
 export async function render(root, app) {
   const d = await api.get(`/api/positions?scope=${encodeURIComponent(app.scope)}`);
   const s = d.scope;
   const open = d.positions.filter((p) => Math.abs(p.quantity) > 1e-7);
-  const rows = state.showClosed ? d.positions : open;
+  const q = state.search.trim().toLowerCase();
+  const filtered = (state.showClosed ? d.positions : open).filter((p) => {
+    if (!q) return true;
+    const hay = [p.symbol, p.name, p.currency, p.assetType, p.portfolioName, p.groupName, assetLabel(p.assetType)].join(" ").toLowerCase();
+    return hay.includes(q);
+  });
+  const rows = filtered;
 
   const keyOf = {
     none: () => "",
@@ -22,8 +28,13 @@ export async function render(root, app) {
   }[state.groupBy];
 
   const redraw = () => app.refresh();
+  const search = h("input", {
+    type: "search", class: "search", placeholder: t("common.search"), value: state.search,
+    onkeydown: (e) => { if (e.key === "Enter") { state.search = e.target.value; redraw(); } },
+  });
   root.append(
     h("header", { class: "top" }, h("h1", {}, `${t("positions.title")} · ${app.scopeTitle()}`), h("span", { class: "spacer" }),
+      search, h("button", { class: "btn", onclick: () => { state.search = search.value; redraw(); } }, t("common.search")),
       h("label", { class: "muted" }, `${t("positions.groupBy")} `, select([["none", "positions.group.none"], ["type", "positions.group.type"], ["currency", "positions.group.currency"], ["portfolio", "positions.group.portfolio"], ["group", "positions.group.group"]].map(([value, k]) => ({ value, label: t(k) })), state.groupBy, (v) => { state.groupBy = v; redraw(); })),
       h("label", { class: "muted" }, h("input", { type: "checkbox", checked: state.showClosed, onchange: (e) => { state.showClosed = e.target.checked; redraw(); } }), ` ${t("pos.showClosed")}`),
       h("button", { class: "btn primary", onclick: () => app.refreshPrices() }, t("ui.refresh"))),

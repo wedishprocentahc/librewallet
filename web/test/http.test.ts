@@ -82,19 +82,27 @@ test("end-to-end: create portfolio, add operations, compute dashboard, refresh q
 });
 
 test("rebalance targets, bonds and alerts", async () => {
+  const boot = (await api("/api/bootstrap")).json();
+  assert.ok(boot.agentFeedPath.endsWith("agent-feed.json"));
+
   const p = service.data.portfolios[0]!;
   await api("/api/targets", { method: "PUT", json: { scope: "all", assetType: "stock", pct: 100 } });
   const rb = (await api("/api/rebalance?scope=all")).json();
   assert.equal(rb.targets.stock, 100);
   assert.ok(rb.suggestions.length >= 1);
 
-  const bond = (await api("/api/bonds", { method: "POST", json: { portfolioId: p.id, preset: "EDO", count: 10, date: "2024-01-01" } })).json();
+  const bond = (await api("/api/bonds", { method: "POST", json: { portfolioId: p.id, preset: "EDO", count: 10, date: "2024-01-01", maturity: "2040-01-01" } })).json();
   assert.ok(bond.estimatedValue > 1000);
-  const held = (await api("/api/bonds")).json().held;
-  assert.equal(held.length, 1);
-  assert.equal((await api("/api/bonds/redeem", { method: "POST", json: { key: held[0].key, quantity: 4 } })).status, 200);
+  assert.equal(String(bond.maturity).slice(0, 10), "2040-01-01");
+  const bonds = (await api("/api/bonds")).json();
+  assert.equal(bonds.held.length, 1);
+  assert.equal(bonds.summary.series, 1);
+  assert.equal(bonds.summary.overdue, 0);
+  assert.equal((await api("/api/bonds/redeem", { method: "POST", json: { key: bonds.held[0].key, quantity: 4 } })).status, 200);
   assert.equal((await api("/api/bonds")).json().held[0].quantity, 6);
 
+  const alertView = (await api("/api/alerts")).json();
+  assert.ok(alertView.positions.some((x: { symbol: string }) => x.symbol === "AAPL.US"));
   await api("/api/alerts", { method: "POST", json: { symbol: "aapl.us", currency: "USD", targetPrice: 150, above: true } });
   const fired = (await api("/api/alerts/check", { method: "POST", json: {} })).json().fired;
   assert.equal(fired.filter((n: { kind: string }) => n.kind === "price").length, 1);
@@ -104,6 +112,11 @@ test("rebalance targets, bonds and alerts", async () => {
   const before = sent.length;
   await api("/api/notifications/test", { method: "POST", json: {} });
   assert.equal(sent.length, before + 1);
+
+  // Offline fakeFetch does not speak GitHub; treat as failed/upToDate without crashing.
+  const updates = (await api("/api/updates/check")).json();
+  assert.equal(updates.current, "9.9.9");
+  assert.ok(updates.status === "failed" || updates.status === "upToDate" || updates.status === "updateAvailable");
 });
 
 test("tax report with historical FX, cashflow", async () => {
@@ -123,6 +136,7 @@ test("import preview → commit, backup export → restore, clear", async () => 
   const zip = makeZip({ "777/PLN_777_x.xlsx": cash });
   const prev = (await api("/api/import/preview", { method: "POST", body: zip, headers: { "X-Filename": "xtb.zip", "Content-Type": "application/octet-stream" } })).json();
   assert.equal(prev.newCount, 1);
+  assert.ok(Array.isArray(prev.currencies));
   const done = (await api("/api/import/commit", { method: "POST", json: { token: prev.token } })).json();
   assert.equal(done.saved, 1);
   assert.equal((await api("/api/import/commit", { method: "POST", json: { token: prev.token } })).status, 404);

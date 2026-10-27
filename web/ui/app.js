@@ -1,7 +1,7 @@
 import { api } from "./api.js";
 import { clear, h } from "./dom.js";
 import { getLang, setLang, t } from "./i18n.js";
-import { confirmDialog, formDialog, guarded, toast } from "./widgets.js";
+import { COLOR_PRESETS, confirmDialog, formDialog, guarded, toast } from "./widgets.js";
 
 const VIEWS = [
   { id: "dashboard", key: "nav.dashboard", load: () => import("./views/dashboard.js") },
@@ -108,13 +108,16 @@ function renderSidebar() {
 
 const groupOptions = () => [{ value: "", label: t("ui.none") }, ...app.boot.groups.map((g) => ({ value: g.id, label: g.name }))];
 
+const currencyOptions = () => ["PLN", "EUR", "USD"].map((c) => ({ value: c, label: c }));
+
 async function addPortfolio() {
   const v = await formDialog({
     title: t("ui.newPortfolio"),
     fields: [
       { name: "name", label: t("ui.name"), required: true },
-      { name: "baseCurrency", label: t("ui.currency"), value: "PLN" },
+      { name: "baseCurrency", label: t("ui.currency"), type: "select", options: currencyOptions(), value: "PLN" },
       { name: "groupId", label: t("ui.group"), type: "select", options: groupOptions(), value: app.scope.startsWith("group:") ? app.scope.slice(6) : "" },
+      { name: "colorHex", label: t("ui.color"), type: "color", value: COLOR_PRESETS[0] },
     ],
   });
   if (!v) return;
@@ -127,8 +130,9 @@ async function editPortfolio(p) {
     title: t("ui.edit"),
     fields: [
       { name: "name", label: t("ui.name"), value: p.name, required: true },
-      { name: "baseCurrency", label: t("ui.currency"), value: p.baseCurrency },
+      { name: "baseCurrency", label: t("ui.currency"), type: "select", options: currencyOptions(), value: p.baseCurrency },
       { name: "groupId", label: t("ui.group"), type: "select", options: groupOptions(), value: p.groupId ?? "" },
+      { name: "colorHex", label: t("ui.color"), type: "color", value: p.colorHex || COLOR_PRESETS[0] },
     ],
   });
   if (v && (await guarded(() => api.put(`/api/portfolios/${p.id}`, { ...v, groupId: v.groupId || null }), t("feedback.portfolioUpdated")))) await app.refresh();
@@ -140,12 +144,62 @@ async function removePortfolio(p) {
 }
 
 async function addGroup() {
-  const v = await formDialog({ title: t("ui.newGroup"), fields: [{ name: "name", label: t("ui.name"), required: true }] });
-  if (v && (await guarded(() => api.post("/api/groups", v), t("feedback.groupCreated")))) await app.refresh();
+  const result = await createGroupDialog();
+  if (!result) return;
+  const g = await guarded(() => api.post("/api/groups", { name: result.name, colorHex: result.colorHex }), t("feedback.groupCreated"));
+  if (!g) return;
+  for (const p of result.portfolios) {
+    if (!p.name.trim()) continue;
+    await guarded(() => api.post("/api/portfolios", { name: p.name.trim(), baseCurrency: p.baseCurrency || "PLN", colorHex: p.colorHex, groupId: g.id, kind: p.kind || "account" }));
+  }
+  await app.refresh();
+}
+
+/** Sheet matching native CreateGroupSheet: group name/color + optional draft portfolios. */
+function createGroupDialog() {
+  return new Promise((resolve) => {
+    const dlg = h("dialog", { class: "wide-dialog" });
+    const name = h("input", { required: true, autocomplete: "off" });
+    const color = h("input", { type: "color", value: COLOR_PRESETS[0] });
+    const drafts = [{ name: "", currency: "PLN", kind: "account", colorHex: COLOR_PRESETS[0] }];
+    const list = h("div", { class: "draft-list" });
+    const redraw = () => {
+      list.replaceChildren(...drafts.map((d, i) => h("div", { class: "draft-row form" },
+        h("label", { class: "wide" }, t("ui.name"), h("input", { value: d.name, oninput: (e) => { d.name = e.target.value; } })),
+        h("label", {}, t("ui.currency"), h("select", { onchange: (e) => { d.currency = e.target.value; } }, currencyOptions().map((o) => h("option", { value: o.value, selected: o.value === d.currency }, o.label)))),
+        h("label", {}, t("ui.kind"), h("select", { onchange: (e) => { d.kind = e.target.value; } }, [{ value: "account", label: t("ui.kind.account") }, { value: "manual", label: t("ui.kind.manual") }].map((o) => h("option", { value: o.value, selected: o.value === d.kind }, o.label)))),
+        h("label", {}, t("ui.color"), h("input", { type: "color", value: d.colorHex, oninput: (e) => { d.colorHex = e.target.value; } })),
+        h("button", { type: "button", class: "icon-btn", title: t("common.delete"), onclick: () => { drafts.splice(i, 1); if (!drafts.length) drafts.push({ name: "", currency: "PLN", kind: "account", colorHex: COLOR_PRESETS[0] }); redraw(); } }, "✕"))));
+    };
+    redraw();
+    const close = (v) => { dlg.close(); resolve(v); };
+    dlg.append(
+      h("h3", {}, t("ui.newGroup")),
+      h("div", { class: "form" }, h("label", { class: "wide" }, t("ui.name"), name), h("label", {}, t("ui.color"), color)),
+      h("h4", {}, t("ui.groupPortfolios")),
+      list,
+      h("button", { type: "button", class: "btn", onclick: () => { drafts.push({ name: "", currency: "PLN", kind: "account", colorHex: COLOR_PRESETS[0] }); redraw(); } }, t("ui.addPortfolio")),
+      h("div", { class: "footer" },
+        h("button", { class: "btn", onclick: () => close(null) }, t("common.cancel")),
+        h("button", { class: "btn primary", onclick: () => {
+          if (!name.value.trim()) return;
+          close({ name: name.value.trim(), colorHex: color.value, portfolios: drafts.map((d) => ({ name: d.name, baseCurrency: d.currency, kind: d.kind, colorHex: d.colorHex })) });
+        } }, t("ui.create"))));
+    dlg.addEventListener("close", () => { dlg.remove(); resolve(null); });
+    document.body.append(dlg);
+    dlg.showModal();
+    name.focus();
+  });
 }
 
 async function renameGroup(g) {
-  const v = await formDialog({ title: t("ui.rename"), fields: [{ name: "name", label: t("ui.name"), value: g.name, required: true }] });
+  const v = await formDialog({
+    title: t("ui.rename"),
+    fields: [
+      { name: "name", label: t("ui.name"), value: g.name, required: true },
+      { name: "colorHex", label: t("ui.color"), type: "color", value: g.colorHex || COLOR_PRESETS[0] },
+    ],
+  });
   if (v && (await guarded(() => api.put(`/api/groups/${g.id}`, v), t("feedback.groupUpdated")))) await app.refresh();
 }
 
